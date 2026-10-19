@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101a20">
+<title>Kamado Command Center · BBQ bereidingsplanner + MEATER v4</title>
+<style>
+:root{--bg:#0c1318;--panel:#142129;--panel2:#1b2a32;--stroke:#304049;--text:#f5f1e8;--muted:#a5b4b8;--amber:#f2a561;--amber2:#b96b31;--green:#6dd3ad;--red:#f39489;--shadow:0 18px 50px #0003;--radius:18px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 90% 600px at 86% -10%,#2c3c31 0,transparent 75%),var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:3px}a{color:var(--amber)}.shell{max-width:1230px;margin:0 auto;padding:30px 22px 60px}.eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--amber);font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}.brandicon{display:inline-grid;place-items:center;border:1px solid #f2a56158;background:#f2a56110;width:36px;height:36px;border-radius:12px;font-size:19px}.intro{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:12px 0 28px}.intro h1{margin:7px 0;font-size:clamp(30px,5vw,52px);line-height:1.08;letter-spacing:-.043em;font-weight:800}.intro h1 span{color:var(--amber)}.sub{max-width:600px;color:var(--muted);font-size:15px;margin:0}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;gap:8px;align-items:center;justify-content:center;border-radius:11px;padding:11px 14px;font-weight:730;border:1px solid var(--stroke);background:var(--panel2);color:var(--text);white-space:nowrap;transition:transform .12s,background .12s}.btn:hover{background:#283a43;transform:translateY(-1px)}.btn.primary{background:var(--amber);color:#201a14;border-color:var(--amber)}.btn.primary:hover{background:#ffd1a7}.btn.ghost{background:transparent}.btn.small{font-size:13px;padding:9px 11px}.btn.danger{border-color:#ce6e634a;color:#ffc3bc;background:#5a302c33}.layout-top{display:grid;grid-template-columns:1.55fr 1fr;gap:16px}.panel{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(154deg,#17262c,#111e25);box-shadow:var(--shadow)}.setup{padding:22px}.side{padding:20px;background:radial-gradient(ellipse at 110% -10%,#39523b99,transparent 85%),linear-gradient(150deg,#1b302b,#142128)}.sec-title{font-size:18px;font-weight:820;margin:0 0 5px;letter-spacing:-.015em}.sec-sub{margin:0 0 18px;color:var(--muted);font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px;min-width:0}.field>label{font-size:12px;color:var(--muted);font-weight:650}.field input,.field select,.field textarea{width:100%;background:#0e1b22;color:var(--text);border:1px solid #39484f;border-radius:9px;min-height:42px;padding:9px 11px;font-size:14px;color-scheme:dark}.field input[type=number]{font-variant-numeric:tabular-nums}.hint{font-size:11px;color:#869ba2;line-height:1.45}.setup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.divider{height:1px;background:var(--stroke);margin:19px 0}.fireline{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:12px 0}.fireline .details{display:flex;align-items:center;gap:10px}.fire-emoji{width:34px;height:34px;border:1px solid #ffffff1c;border-radius:12px;display:grid;place-items:center;background:#ffffff09}.fireline strong{font-size:14px}.fireline small{font-size:12px;color:var(--muted);display:block}.fire-value{font-weight:850;font-size:16px;font-variant-numeric:tabular-nums}.fire-value.big{color:var(--amber)}.fire-value.small{color:var(--green)}.side-note{margin-top:19px;padding:11px 12px;border:1px solid #ffffff1b;border-radius:10px;background:#0002;color:#bcd2c7;font-size:12px}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 30px}.metric{background:#152229;border:1px solid var(--stroke);border-radius:14px;padding:17px 17px 15px}.metric .metric-label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800}.metric .metric-value{font-size:27px;font-weight:850;letter-spacing:-.035em;margin-top:7px;font-variant-numeric:tabular-nums}.metric .metric-foot{font-size:12px;color:var(--muted);margin-top:1px}.metric .metric-value.amber{color:var(--amber)}.metric .metric-value.green{color:var(--green)}.section-header{display:flex;gap:15px;align-items:center;justify-content:space-between;margin:0 0 15px}.section-header h2{font-size:24px;letter-spacing:-.025em;margin:0}.section-header p{font-size:13px;color:var(--muted);margin:3px 0 0}.section-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dish-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dish{background:linear-gradient(145deg,#1b2b31,#142027);border:1px solid var(--stroke);border-radius:16px;padding:17px}.dish-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:15px}.dish-index{display:inline-flex;align-items:center;gap:7px;color:#aec1c4;font-size:12px;font-weight:750}.dot{width:8px;height:8px;background:var(--amber);border-radius:50%;display:inline-block}.dot.sm{background:var(--green)}.dish .grid-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 10px}.dish .span2{grid-column:span 2}.dish .span4{grid-column:span 4}.dish .schedule-note{border-top:1px solid var(--stroke);margin-top:16px;padding-top:12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}.schedule-note .time{font-size:21px;font-weight:850;font-variant-numeric:tabular-nums}.schedule-note small{display:block;color:var(--muted);font-size:11px}.tag{font-size:12px;color:#b7e6d3;background:#2a5b4933;border:1px solid #61b99c3e;padding:4px 9px;border-radius:999px;align-self:center}.tag.warn{color:#ffd1b9;background:#99552c35;border-color:#99552c70}.tag.late{color:#ffb5ad;background:#a5413933;border-color:#c9675e66}.tag.neutral{color:var(--muted);background:#ffffff0c;border-color:#ffffff1b}.card-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}.move-btn{border:none;background:transparent;color:var(--muted);font-size:12px;padding:6px}.move-btn:hover{color:var(--text)}.dish-title{font-size:14px;font-weight:700}.empty{border:1px dashed #627075;border-radius:14px;padding:30px;color:var(--muted);text-align:center}.alerts{display:grid;gap:9px;margin:18px 0}.alert{background:#43312550;border:1px solid #b78a546b;color:#f5d9b6;border-radius:11px;padding:12px 15px;font-size:13px}.alert.urgent{background:#552d2b66;border-color:#ae645d80;color:#ffd2ca}.alert strong{color:#fff3dd}.plan-panel{padding:20px;margin-top:27px}.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.legend span{display:flex;align-items:center;gap:6px}.swatch{display:inline-block;width:14px;height:7px;border-radius:2px;background:var(--amber)}.swatch.green{background:var(--green)}.swatch.rest{background:#74848d}.timeline-scroll{overflow-x:auto;margin:19px 0 0;padding:0 2px 9px}.timeline-inner{min-width:735px}.timeline-row{display:grid;grid-template-columns:170px 1fr;align-items:center;min-height:45px}.timeline-label{font-size:12px;font-weight:730;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.timeline-label small{font-size:11px;display:block;font-weight:500;color:var(--muted)}.timeline-chart{height:40px;position:relative;border-left:1px solid #45515a;background-image:linear-gradient(to right,#ffffff09 1px,transparent 1px);background-size:20% 100%}.timeline-axis .timeline-chart{height:26px;background:none;border-left:0}.axis-tick{position:absolute;top:1px;transform:translateX(-50%);font-size:11px;color:#9eb4b9;font-variant-numeric:tabular-nums;white-space:nowrap}.axis-tick:first-child{transform:translateX(0)}.axis-tick:last-child{transform:translateX(-100%)}.group-head{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:800;margin-top:15px;padding-bottom:7px;border-bottom:1px solid #ffffff12}.group-head strong{color:var(--text)}.pill-dot{height:8px;width:8px;background:var(--amber);border-radius:50%}.pill-dot.small{background:var(--green)}.bar{height:19px;position:absolute;top:10px;border-radius:5px;overflow:hidden;display:flex;align-items:center;padding:0 5px;font-size:10px;font-weight:800;white-space:nowrap;color:#11221b;min-width:3px}.bar.grill-big{background:linear-gradient(90deg,#da8950,#ffc28b)}.bar.grill-small{background:linear-gradient(90deg,#4aab8c,#9ceacb)}.bar.rest{background:#82949f;color:#142229}.line-serve{position:absolute;width:2px;background:#f5f1e8;top:2px;bottom:1px;z-index:3;pointer-events:none}.line-serve:before{content:"";position:absolute;top:-4px;left:-3px;width:8px;height:8px;background:#f5f1e8;border-radius:50%}.timeline-footer{font-size:12px;color:var(--muted);margin-top:9px}.timeline-footer strong{color:var(--text)}.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.step{display:grid;grid-template-columns:65px 1fr;gap:12px;align-items:start;background:#17252b;border:1px solid #2b3b43;border-radius:12px;padding:11px 13px}.step-time{font-size:16px;font-weight:850;font-variant-numeric:tabular-nums;color:var(--amber)}.step-time.sm{color:var(--green)}.step-body strong{display:block;font-size:13px}.step-body p{margin:2px 0 0;color:var(--muted);font-size:12px}.daylabel{font-size:10px;display:block;color:var(--muted);font-weight:500}.footer{border-top:1px solid #ffffff1a;margin-top:29px;padding-top:20px;display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.footer p{margin:0;max-width:740px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:11px 17px;background:#dfaa73;color:#1e1b16;border-radius:12px;font-size:13px;font-weight:750;box-shadow:0 12px 35px #0006;z-index:99;display:none}.toast.on{display:block}.sr-only{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}
+@media(max-width:940px){.layout-top{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}.dish-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.intro{align-items:start;flex-direction:column}.toolbar{width:100%}}
+@media(max-width:540px){.shell{padding:20px 12px 42px}.intro{margin-bottom:18px}.intro h1{font-size:35px}.panel,.dish{border-radius:14px}.setup,.side,.plan-panel{padding:15px}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid>.field:first-child{grid-column:span 2}.setup-grid{grid-template-columns:1fr 1fr}.summary{gap:8px}.metric{padding:13px}.metric .metric-value{font-size:22px}.section-header{align-items:stretch;flex-direction:column}.dish .grid-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.dish .span2{grid-column:span 2}.dish .span4{grid-column:span 2}.dish .field{min-width:0}.toolbar .btn{flex:1}.section-header h2{font-size:21px}}
+@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{background:#fff;color:#17242a}.shell{max-width:none;padding:0}.panel,.metric,.dish,.step{box-shadow:none;background:#fff;color:#17242a;border-color:#ccc}.side{background:#fff}.intro h1 span{color:#a34b15}.sub,.sec-sub,.field label,.hint,.metric .metric-label,.metric .metric-foot,.timeline-footer,.step-body p,.footer,.timeline-label small{color:#505a61}.field input,.field select{background:#fff;color:#17242a;border-color:#aaa}.toolbar,.section-actions,.delete-btn,.move-btn,#add-area,.toast,.footer .print-hide{display:none!important}.layout-top{grid-template-columns:1fr 1fr}.dish-grid{grid-template-columns:repeat(2,1fr)}.dish{break-inside:avoid}.steps{grid-template-columns:repeat(2,1fr)}.timeline-scroll{overflow:visible}.timeline-inner{min-width:0}.timeline-row{grid-template-columns:120px 1fr}.panel{break-inside:avoid}.alert{color:#523814;background:#fff7e7}.intro{margin-bottom:18px}.footer{margin-top:20px}.metric .metric-value{color:#17242a}.setup,.side,.plan-panel{padding:12px}}
+
+/* iPhone: show newly added dishes immediately */
+.interactive-status{margin:1px 0 14px;font-size:12px;color:#f7b59e;padding:10px 12px;border-radius:10px;background:#f2a5610d;border:1px solid #f2a56140}
+.interactive-status.active{color:#a4e8cc;background:#6dd3ad0c;border-color:#6dd3ad43}
+.dish.just-added{border-color:#f2a561;box-shadow:0 0 0 2px #f2a56155,0 15px 32px #0005;animation:highlightnew 2.7s ease-out}
+@keyframes highlightnew{0%{background:#614b33;transform:scale(1.012)}30%{background:#2b342c}100%{background:linear-gradient(145deg,#1b2b31,#142027);transform:none}}
+@media(max-width:540px){#add{min-height:48px;flex:1}#preset{max-width:none!important;flex:1}.section-actions{width:100%}}
+
+/* v3: MEATER live-paneel, werkt ook op de iPhone */
+.live-panel{margin:0 0 22px;padding:19px;background:linear-gradient(150deg,#1b302c,#111f24);border:1px solid #386152;border-radius:18px;box-shadow:var(--shadow)}
+.live-header{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:13px}
+.live-header h2{font-size:20px;letter-spacing:-.02em;margin:0}
+.live-source{font-weight:740;font-size:12px;color:#ffd9a7;background:#5c4b2a60;border:1px solid #997a40;padding:7px 10px;border-radius:999px}
+.live-source.connected{color:#a1f1d4;border-color:#488c72;background:#25554555}
+.live-source.warn{color:#ffc5b7;border-color:#bb645b;background:#69453a55}
+.live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.probe-card{min-width:0;border-radius:14px;border:1px solid #354c51;background:#112129;padding:15px}
+.probe-top{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:11px}
+.probe-name{font-weight:820;font-size:15px}.probe-tag{font-size:11px;color:#b1cad0}.probe-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;align-items:start}
+.probe-number{font-size:clamp(19px,3vw,29px);font-weight:850;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:#fff9f2;white-space:nowrap}
+.probe-number.primary{color:var(--amber)}
+.probe-label{font-size:11px;color:var(--muted)}
+.probe-meta{font-size:12px;color:#bccec9;margin-top:9px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.probe-state{border:1px solid #60736f6a;background:#ffffff09;padding:4px 8px;border-radius:999px}
+.probe-state.active{color:#a0f4d5;border-color:#5da58699;background:#5da58622}
+.probe-progress{height:6px;background:#283943;border-radius:999px;overflow:hidden;margin:11px 0 7px}
+.probe-fill{background:linear-gradient(90deg,#d78340,#ffce9a);height:100%;width:0%;transition:width .4s}
+.probe-chart{margin-top:10px;border-radius:10px;background:#08161b;min-height:71px;padding:7px 6px 2px;overflow:hidden}
+.probe-chart svg{width:100%;height:60px;display:block}
+.probe-chart .chart-empty{font-size:11px;color:#8d9ea4;text-align:center;padding:19px 0}
+.live-help{margin:13px 0 0;color:#adc0be;font-size:12px;line-height:1.55}
+.live-small-strong{color:#fce5c6}
+.linked-info{font-size:12px;flex-basis:100%;color:#b4dcca;padding:5px 0 0}
+.linked-info.offline{color:#a9b0b6}
+@media(max-width:680px){.live-grid{grid-template-columns:1fr}.live-panel{padding:14px}.probe-values{gap:6px}.probe-card{padding:14px}}
+@media print{.live-panel{box-shadow:none;background:#fff;color:#192629}.probe-card{background:#fff;color:#17242a}.probe-number{color:#17242a}.probe-chart{display:none}.live-header h2,.probe-name{color:#17242a}}
+
+
+/* V4 slimme bijsturing — onafhankelijk van de oorspronkelijke planning. */
+.smart-panel{margin:18px 0 21px;padding:19px;background:linear-gradient(145deg,#263029,#17252a);border:1px solid #496552;border-radius:18px;box-shadow:var(--shadow)}
+.smart-head{display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.smart-head h2{font-size:22px;margin:5px 0 2px;letter-spacing:-.025em}.smart-description{color:#b6c6c4;font-size:12px;margin:3px 0 0;line-height:1.55}
+.smart-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:12px 0}
+.smart-controls .field{min-width:210px;max-width:100%}.smart-controls .field select{background:#102128;min-height:43px}
+.smart-check{display:inline-flex;align-items:center;gap:8px;font-size:13px;padding:10px;border-radius:10px;border:1px solid #56736566;background:#ffffff09;cursor:pointer}
+.smart-check input{width:17px;height:17px;accent-color:#6dd3ad}
+.smart-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:15px 0 13px}
+.smart-kpi{background:#101e24;border:1px solid #384d50;border-radius:12px;padding:13px;min-width:0}
+.smart-kpi small{display:block;font-size:11px;color:#acc0bd}.smart-kpi strong{display:block;font-size:23px;line-height:1.2;color:#f2f7f3;font-variant-numeric:tabular-nums;margin:6px 0 4px}
+.smart-kpi strong.changed{color:var(--amber)}.smart-kpi span{font-size:11px;color:#afc0bf;display:block;line-height:1.4}
+.smart-message{font-size:12px;color:#c5d5cf;line-height:1.5;padding:11px 13px;border:1px solid #57726055;border-radius:10px;background:#15282a;margin:8px 0}
+.smart-message.warn{border-color:#b67b5a90;background:#4f372a55;color:#ffe3cf}
+.smart-plan{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.smart-dish{background:#102128;border:1px solid #375156;border-radius:13px;padding:13px;min-width:0}
+.smart-dish h3{font-size:14px;margin:0 0 9px;color:#f7ede1;display:flex;align-items:center;gap:7px;justify-content:space-between;flex-wrap:wrap}
+.smart-dish .smart-label{color:#c6d7db;font-size:11px;font-weight:600}.smart-dish .smart-time{font-weight:800;color:#a0f2d1;font-size:20px;font-variant-numeric:tabular-nums}
+.smart-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0;font-size:12px;color:#bfd0c9}
+.smart-row strong{color:#f1eee8;font-size:13px;text-align:right}
+.smart-origin{font-size:11px;color:#92adaf;border-top:1px solid #395159;margin-top:9px;padding-top:8px;line-height:1.5}
+.smart-status-pill{display:inline-block;font-size:10px;border:1px solid #608777;border-radius:999px;padding:3px 7px;color:#b2e7d2}
+.smart-status-pill.estimate{color:#ffd29e;border-color:#8e774f}
+.smart-advice{font-size:12px;color:#dfebdf;margin:7px 0 0;line-height:1.5}
+.smart-footer{font-size:11px;line-height:1.5;color:#b2c6bd;margin-top:12px}
+.smart-diff{font-size:11px;line-height:1.4;color:#ffcdab;margin-top:7px}
+.smart-stale{color:#f4b6a0}
+@media(max-width:680px){.smart-panel{padding:14px}.smart-strip{grid-template-columns:1fr 1fr}.smart-strip .smart-kpi:last-child{grid-column:1/-1}.smart-plan{grid-template-columns:1fr}.smart-controls{align-items:stretch}.smart-controls .field{width:100%;max-width:none}}
+@media print{.smart-panel{background:#fff;color:#152126;border-color:#999}.smart-dish,.smart-kpi{background:#fff;color:#152126}.smart-controls{display:none}}
+
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="intro">
+ <div>
+  <div class="eyebrow"><span class="brandicon" aria-hidden="true">🔥</span> Kamado command center</div>
+  <h1>BBQ <span>bereidingsplanner.</span></h1>
+  <p class="sub">Grote kamado + kleine kamado. Jij kiest de gerechten en serveertijd; de planner rekent terug zodat alles samen op tafel komt.</p>
+ </div>
+ <div class="toolbar">
+  <button class="btn ghost" id="reset">↺ Voorbeeld herstellen</button>
+  <button class="btn ghost" id="json-export" type="button">↧ Plan bewaren</button>
+  <button class="btn ghost" id="json-import" type="button">↥ Plan laden</button>
+  <input type="file" accept="application/json,.json" id="json-file" style="display:none" aria-label="Laad planning uit JSON-bestand">
+  <button class="btn ghost" id="print">⎙ Print</button>
+  <button class="btn primary" id="export">↓ Draaiboek opslaan</button>
+ </div>
+</header>
+<main>
+
+ <section class="live-panel" id="live-panel" aria-label="MEATER live monitor">
+  <div class="live-header"><div><div class="eyebrow" style="font-size:10px">05 · MEATER MONITOR</div><h2>Live temperaturen</h2></div><span class="live-source" id="meater-source" role="status">Niet gekoppeld · plannermodus</span></div>
+  <div class="live-grid">
+   <article class="probe-card" id="probe-pro"><div class="probe-top"><span class="probe-name">🌡️ MEATER Pro</span><span class="probe-tag">Grote kamado · standaard</span></div><div class="probe-values"><div><div class="probe-label">Kerntemperatuur</div><div class="probe-number primary" data-m="internal">—</div></div><div><div class="probe-label">Omgeving</div><div class="probe-number" data-m="ambient">—</div></div><div><div class="probe-label">Doel MEATER</div><div class="probe-number" data-m="target">—</div></div></div><div class="probe-progress"><div class="probe-fill" data-m="progress"></div></div><div class="probe-meta"><span class="probe-state" data-m="status">Geen actieve meting</span><span data-m="eta">Nog geen MEATER-verwachting</span></div><div class="probe-chart" data-m="chart"><div class="chart-empty">Temperatuurverloop verschijnt zodra metingen binnenkomen.</div></div><div class="probe-meta"><span data-m="updated">Laatste update: —</span></div></article>
+   <article class="probe-card" id="probe-plus"><div class="probe-top"><span class="probe-name">🌡️ MEATER Plus</span><span class="probe-tag">Kleine kamado · standaard</span></div><div class="probe-values"><div><div class="probe-label">Kerntemperatuur</div><div class="probe-number primary" data-m="internal">—</div></div><div><div class="probe-label">Omgeving</div><div class="probe-number" data-m="ambient">—</div></div><div><div class="probe-label">Doel MEATER</div><div class="probe-number" data-m="target">—</div></div></div><div class="probe-progress"><div class="probe-fill" data-m="progress"></div></div><div class="probe-meta"><span class="probe-state" data-m="status">Geen actieve meting</span><span data-m="eta">Nog geen MEATER-verwachting</span></div><div class="probe-chart" data-m="chart"><div class="chart-empty">Temperatuurverloop verschijnt zodra metingen binnenkomen.</div></div><div class="probe-meta"><span data-m="updated">Laatste update: —</span></div></article>
+  </div>
+  <p class="live-help">ⓘ <strong>Live</strong> verschijnt alleen wanneer deze planner als Home Assistant-dashboardkaart is geopend. Zonder koppeling blijft de planner bruikbaar. De grafiek bouwt metingen op terwijl deze pagina openstaat, en is <span class="live-small-strong">geen volledige Home Assistant-historie</span>. Temperatuur en MEATER-tijdschatting kunnen vertraging hebben; slimme adviezen verschijnen apart van de oorspronkelijke planning.</p>
+ </section>
+
+
+ <section class="smart-panel" id="smart-panel" aria-label="Slimme serveer- en starttijdadviezen">
+  <div class="smart-head">
+   <div><div class="eyebrow" style="font-size:10px">06 · SLIMME BIJSTURING</div><h2>Alles tegelijk op tafel</h2>
+    <p class="smart-description">Vergelijk de oorspronkelijke planning met MEATER-verwachtingen. Nieuwe startadviezen worden automatisch herberekend; je ingevoerde serveertijd en vaste starttijden blijven bewaard.</p></div>
+   <span class="live-source" id="smart-indicator" role="status">Advies · wacht op bereiding</span>
+  </div>
+  <div class="smart-controls">
+    <label class="smart-check"><input type="checkbox" id="smart-on" checked> Slimme adviezen tonen</label>
+    <div class="field"><label for="smart-mode">Serveertijd bijsturen</label><select id="smart-mode">
+      <option value="fixed">Vast houden · waarschuw bij vertraging</option>
+      <option value="flex">Flexibel · adviseer later serveren indien nodig</option>
+    </select></div>
+  </div>
+  <div class="smart-strip" id="smart-summary" aria-live="polite"></div>
+  <div id="smart-messages" aria-live="polite"></div>
+  <div id="smart-dishes" class="smart-plan"></div>
+  <p class="smart-footer">MEATER ETA = voorspeld moment waarop de ingestelde <strong>kerntemperatuur</strong> wordt bereikt. De rusttijd uit jouw planner komt daarna. Zonder geldige, recente MEATER-ETA gebruiken we alleen handmatig vastgelegde kookstart + de geschatte bereidingstijd. Niet-gestarte gerechten behouden de ingestelde schatting. Controleer altijd de werkelijke gaarheid; schuif geen voedselveiligheidsgrenzen op.</p>
+ </section>
+
+ <div class="layout-top">
+  <section class="panel setup" aria-label="Instellingen maaltijd">
+   <h2 class="sec-title">01 · Jouw BBQ-avond</h2>
+   <p class="sec-sub">Kies wanneer je wilt eten en wanneer je kunt beginnen.</p>
+   <div class="formgrid">
+    <div class="field"><label for="meal-date">Datum</label><input type="date" id="meal-date" required></div>
+    <div class="field"><label for="meal-time">Alles serveren om</label><input type="time" id="meal-time" required></div>
+    <div class="field"><label for="available-from">Ik kan beginnen vanaf</label><input type="time" id="available-from" required></div>
+   </div>
+   <div class="divider"></div>
+   <h3 class="sec-title" style="font-size:15px">Opwarmtijd per kamado</h3>
+   <p class="sec-sub">Aansteken gebeurt vóór de eerste bereiding op die kamado.</p>
+   <div class="setup-grid">
+    <div class="field"><label for="large-preheat">🔥 Grote kamado · minuten</label><input id="large-preheat" type="number" inputmode="numeric" min="0" max="180" step="5"></div>
+    <div class="field"><label for="small-preheat">🔥 Kleine kamado · minuten</label><input id="small-preheat" type="number" inputmode="numeric" min="0" max="180" step="5"></div>
+   </div>
+  </section>
+  <aside class="panel side">
+   <div class="eyebrow" style="font-size:10px">Jouw planning in het kort</div>
+   <h2 class="sec-title" style="margin-top:10px">Wanneer steek je aan?</h2>
+   <p class="sec-sub">Gebaseerd op het eerste gerecht per kamado en de ingestelde opwarmtijd.</p>
+   <div id="fire-times"></div>
+   <div class="side-note">💡 Bij vlees is de <strong>gemeten kerntemperatuur</strong> belangrijker dan de geschatte bereidingstijd. Bouw waar mogelijk speling in.</div>
+  </aside>
+ </div>
+ <section class="summary" aria-label="Planning in cijfers" id="metrics"></section>
+ <section id="dishes-section">
+  <div class="section-header">
+   <div><h2>02 · Gerechten op de BBQ</h2><p>Voeg gerechten toe, pas tijden aan en kies de juiste kamado. Wij rekenen automatisch terug.</p></div>
+   <div class="section-actions" id="add-area">
+    <label class="sr-only" for="preset">Kies een voorbeeldgerecht</label>
+    <select id="preset" class="btn" style="max-width:180px;min-height:43px;background:#1b2a32;color:#f5f1e8" aria-label="Gerecht uit voorbeelden kiezen"><option value="">Voorbeeld kiezen…</option></select>
+    <button type="button" class="btn primary" id="add">＋ Gerecht toevoegen</button>
+   </div>
+  </div>
+  <p class="interactive-status" id="js-status" role="status">⚠ De interactieve bediening is niet geladen. Open dit bestand in een volledige webbrowser (niet alleen in de Bestanden-voorvertoning).</p>
+  <div class="dish-grid" id="dishes"></div>
+  <div class="alerts" id="alerts" role="status" aria-live="polite"></div>
+ </section>
+ <section class="panel plan-panel" id="timeline-panel">
+  <div class="section-header"><div><h2>03 · Tijdlijn van je kamado's</h2><p>De gekleurde balk is de bereiding op het rooster; grijs is de rusttijd buiten de BBQ.</p></div><div class="legend"><span><i class="swatch"></i> Grote kamado</span><span><i class="swatch green"></i> Kleine kamado</span><span><i class="swatch rest"></i> Rusten</span></div></div>
+  <div class="timeline-scroll"><div id="timeline" class="timeline-inner"></div></div>
+  <div class="timeline-footer" id="timeline-footer"></div>
+ </section>
+ <section style="margin-top:28px">
+  <div class="section-header"><div><h2>04 · Stap-voor-stap draaiboek</h2><p>Alle handelingen in chronologische volgorde. Handig naast je kamado.</p></div></div>
+  <div id="steps" class="steps"></div>
+ </section>
+</main>
+<footer class="footer"><p>Deze planner is bedoeld als hulpmiddel. Bereidingstijden zijn schattingen, afhankelijk van de dikte, starttemperatuur, weersomstandigheden en BBQ-instellingen. Controleer voedselveiligheid en gebruik een kernthermometer, vooral bij gevogelte. Rusttijd vindt buiten de BBQ plaats tenzij je de planning zelf aanpast.</p><p>✔ Planner werkt offline &nbsp; ✔ Plan lokaal opgeslagen &nbsp; ✔ Live meting via je Home Assistant-sessie &nbsp; ✔ Gescheiden slimme adviezen</p></footer>
+</div>
+<div class="toast" role="status" id="toast"></div>
+<script>
+(()=>{'use strict';
+const KEY='kamado-bereidingsplanner-v1';
+const $=id=>document.getElementById(id);
+const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+const examples={
+  'Bavette':{name:'Bavette',kamado:'large',cook:25,rest:10,core:'52',grill:230,notes:'Indicatief; controleer de kern met een thermometer.'},
+  'Picanha':{name:'Picanha',kamado:'large',cook:50,rest:15,core:'52',grill:160,notes:'Tijd hangt sterk af van dikte en gekozen methode.'},
+  'Varkenshaas':{name:'Varkenshaas',kamado:'large',cook:30,rest:10,core:'63',grill:180,notes:'Kerntemperatuur en rusttijd controleren.'},
+  'Kippenpoten':{name:'Kippenpoten',kamado:'large',cook:55,rest:0,core:'75',grill:180,notes:'Controleer in het dikste deel, weg van het bot.'},
+  'Zalm':{name:'Zalm',kamado:'large',cook:20,rest:0,core:'63',grill:160,notes:'Geschatte tijd, afhankelijk van de filet.'},
+  'Spareribs':{name:'Spareribs',kamado:'large',cook:300,rest:10,core:'',grill:110,notes:'Richttijd; gaarheid beoordelen op malsheid.'},
+  'Krieltjes':{name:'Krieltjes',kamado:'small',cook:40,rest:0,core:'',grill:190,notes:'Schep tussendoor om.'},
+  'Maïskolven':{name:'Maïskolven',kamado:'small',cook:20,rest:0,core:'',grill:190,notes:'Draai tussendoor.'},
+  'Groenten':{name:'Gegrilde groenten',kamado:'small',cook:25,rest:0,core:'',grill:190,notes:''},
+  'Pizza':{name:'Pizza',kamado:'large',cook:8,rest:0,core:'',grill:300,notes:'Gebruik hitteschild en pizzasteen; schat tijd per pizza.'},
+  'Cakejes':{name:'Mini-cakejes',kamado:'small',cook:25,rest:10,core:'',grill:175,notes:''}
+};
+let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
+const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
+const initial=()=>({date:today(),mealTime:'18:30',availableFrom:'16:30',preheatLarge:30,preheatSmall:25,smart:{enabled:true,mode:'fixed'},dishes:[makeDish(examples.Bavette),makeDish(examples.Krieltjes),makeDish(examples.Maïskolven)]});
+let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();}catch{state=initial();}
+const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=(value,fallback=0)=>Number.isFinite(Number(value))&&value!==''?Math.max(0,Number(value)):fallback;
+const minutes=v=>Math.min(10000,n(v));
+const dateAt=(date,time)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date??'')||!/^\d{2}:\d{2}$/.test(time??''))return null;const [y,m,d]=date.split('-').map(Number),[h,mi]=time.split(':').map(Number);if(h>23||mi>59||m<1||m>12)return null;const t=new Date(y,m-1,d,h,mi);return Number.isNaN(t.getTime())?null:t.getTime()};
+const addm=(t,x)=>t+x*60000;
+const fmt=t=>t==null?'—':new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+const fmtDate=t=>t==null?'':new Date(t).toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+const dayHint=(t,ref)=>t==null||ref==null?'':(new Date(t).toDateString()===new Date(ref).toDateString()?'':` (${fmtDate(t)})`);
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}};
+let timer;const toast=message=>{const el=$('toast');el.textContent=message;el.classList.add('on');clearTimeout(timer);timer=setTimeout(()=>el.classList.remove('on'),2800)};
+const calc=()=>{
+ const serve=dateAt(state.date,state.mealTime);const ready=serve!=null?serve:null;
+ const dishes=state.dishes.map(d=>{
+   const cook=minutes(d.cook),rest=minutes(d.rest),autostart=ready==null?null:addm(ready,-cook-rest);
+   let start=d.mode==='manual'?dateAt(state.date,d.fixedStart):autostart;
+   let off=start==null||ready==null?0:Math.round((addm(start,cook+rest)-ready)/60000);
+   return {...d,cook,rest,start,cookEnd:start==null?null:addm(start,cook),end:start==null?null:addm(start,cook+rest),offset:off};
+ });
+ const large=dishes.filter(d=>d.kamado==='large'&&d.start!=null),small=dishes.filter(d=>d.kamado==='small'&&d.start!=null);
+ const fires={large:large.length?addm(Math.min(...large.map(d=>d.start)),-minutes(state.preheatLarge)):null,small:small.length?addm(Math.min(...small.map(d=>d.start)),-minutes(state.preheatSmall)):null};
+ const allStarts=[...dishes.map(d=>d.start).filter(v=>v!=null),...Object.values(fires).filter(v=>v!=null)];
+ const first=allStarts.length?Math.min(...allStarts):null;
+ let alerts=[];
+ const available=dateAt(state.date,state.availableFrom);
+ if(first!=null&&available!=null&&first<available){const late=Math.ceil((available-first)/60000);alerts.push({type:'urgent',message:`Om deze planning te halen moet je al om <strong>${fmt(first)}${dayHint(first,ready)}</strong> starten. Dat is ${late} min vóór je opgegeven begintijd (${state.availableFrom}). ${dishes.every(d=>d.mode==='auto')?`Overweeg het eten te verschuiven naar ongeveer <strong>${fmt(addm(ready,late))}</strong>.`:'Pas de serveertijd of vaste starttijden aan.'}`});}
+ for(const d of dishes){if(d.mode==='manual'&&d.offset!==0&&d.start!=null){alerts.push({type:d.offset>0?'urgent':'notice',message:`<strong>${escape(d.name)}</strong> is met de vaste starttijd <strong>${Math.abs(d.offset)} minuten ${d.offset>0?'te laat':'te vroeg'}</strong> klaar t.o.v. ${escape(state.mealTime)}.`});}}
+ for(const group of [large,small])for(let i=0;i<group.length;i++)for(let j=i+1;j<group.length;j++){
+  const a=group[i],b=group[j],overlap=a.start<b.cookEnd&&b.start<a.cookEnd;
+  if(overlap&&Math.abs(n(a.grill)-n(b.grill))>25){alerts.push({type:'urgent',message:`Temperatuurconflict op de <strong>${a.kamado==='large'?'grote':'kleine'} kamado</strong>: <strong>${escape(a.name)}</strong> (${n(a.grill)}°C) en <strong>${escape(b.name)}</strong> (${n(b.grill)}°C) overlappen. Een kamado kan niet tegelijk op beide temperaturen staan.`});}
+ }
+ if(dishes.length>0&&dishes.every(d=>d.mode==='auto')){
+  for(const group of [large,small]){
+   let maxConcurrent=0;const times=group.flatMap(d=>[{t:d.start,a:1},{t:d.cookEnd,a:-1}]).sort((a,b)=>a.t-b.t||a.a-b.a);let c=0;for(const e of times){c+=e.a;maxConcurrent=Math.max(maxConcurrent,c)}
+   if(maxConcurrent>=3){alerts.push({type:'notice',message:`Op de <strong>${group===large?'grote':'kleine'} kamado</strong> liggen mogelijk ${maxConcurrent} gerechten tegelijk. Controleer of alles op het rooster past.`});}
+  }
+ }
+ return{serve,dishes,fires,first,alerts};
+};
+function initControls(){
+ $('meal-date').value=state.date;$('meal-time').value=state.mealTime;$('available-from').value=state.availableFrom;
+ $('large-preheat').value=state.preheatLarge;$('small-preheat').value=state.preheatSmall;
+ const map={'meal-date':'date','meal-time':'mealTime','available-from':'availableFrom','large-preheat':'preheatLarge','small-preheat':'preheatSmall'};
+ Object.entries(map).forEach(([id,key])=>$(id).addEventListener('input',e=>{state[key]=e.target.value;persist();renderOutputs()}));
+ const sel=$('preset');Object.keys(examples).forEach(name=>{const o=document.createElement('option');o.value=name;o.textContent=name;sel.append(o)});
+ sel.addEventListener('change',e=>{const value=e.target.value;if(value){sel.value='';addDish(examples[value],`${value} toegevoegd`);}});
+ $('add').addEventListener('click',()=>addDish({},'Nieuw gerecht toegevoegd! Pas hieronder de naam aan.'));
+ $('reset').addEventListener('click',()=>{if(confirm('Voorbeeld herstellen? Je huidige gerechten en instellingen worden vervangen.')){state=initial();persist();initValuesOnly();renderAll();toast('Voorbeeld hersteld');}});
+ $('json-export').addEventListener('click',downloadPlanJson);$('json-import').addEventListener('click',()=>{const i=$('json-file');i.value='';i.click()});$('json-file').addEventListener('change',uploadPlanJson);
+ $('print').addEventListener('click',()=>window.print());$('export').addEventListener('click',downloadSchedule);
+ $('smart-on').addEventListener('change',ev=>{state.smart={...smartSettings(),enabled:ev.target.checked};persist();renderOutputs()});
+ $('smart-mode').addEventListener('change',ev=>{state.smart={...smartSettings(),mode:ev.target.value==='flex'?'flex':'fixed'};persist();renderOutputs()});
+ $('dishes').addEventListener('input',ev=>{
+  const field=ev.target.closest('[data-field]');if(!field||field.dataset.field==='phase')return;
+  const card=field.closest('[data-id]');const d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
+  d[field.dataset.field]=field.value;persist();renderOutputs();
+ });
+ $('dishes').addEventListener('change',ev=>{
+  const field=ev.target.closest('[data-field]');if(!field)return;const card=field.closest('[data-id]');const d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
+  if(field.dataset.field==='phase'){
+   const old=d.phase||'waiting';const next=['waiting','cooking','resting','done'].includes(field.value)?field.value:'waiting';
+   if(old!==next){const now=Date.now();d.phase=next;
+    if(next==='waiting'){d.startedAt=null;d.restAt=null;d.doneAt=null;}
+    if(next==='cooking'){d.startedAt=now;d.restAt=null;d.doneAt=null;}
+    if(next==='resting'){d.restAt=now;d.doneAt=null;}
+    if(next==='done')d.doneAt=now;
+   }
+   persist();renderOutputs();return;
+  }
+  d[field.dataset.field]=field.value;persist();if(['mode','kamado','meater'].includes(field.dataset.field))renderAll();else renderOutputs();
+ });
+ $('dishes').addEventListener('click',ev=>{
+  const button=ev.target.closest('[data-action]');if(!button)return;const card=button.closest('[data-id]');if(!card)return;const id=card.dataset.id;
+  if(button.dataset.action==='remove'){state.dishes=state.dishes.filter(d=>d.id!==id);persist();renderAll();toast('Gerecht verwijderd')}
+  if(button.dataset.action==='duplicate'){const d=state.dishes.find(d=>d.id===id);if(d)addDish({...d,name:d.name+' (2)'},'Gerecht gekopieerd')}
+ });
+}
+function addDish(data,message){
+ const dish=makeDish(data);
+ // Place it at the top, right below the add button, not beyond existing cards.
+ state.dishes.unshift(dish);
+ persist();renderAll();toast(message);
+ const card=Array.from(document.querySelectorAll('.dish')).find(el=>el.dataset.id===dish.id);
+ if(card){
+   card.classList.add('just-added');
+   // Do not open iOS keyboard automatically: it can hide the new form.
+   try{card.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){card.scrollIntoView();}
+   setTimeout(()=>card.classList.remove('just-added'),2800);
+ }
+}
+function initValuesOnly(){ $('meal-date').value=state.date;$('meal-time').value=state.mealTime;$('available-from').value=state.availableFrom;$('large-preheat').value=state.preheatLarge;$('small-preheat').value=state.preheatSmall; }
+const field=(id,key,label,value,type='text',min='',max='',extra='')=>`<div class="field ${extra}"><label for="${id}-${key}">${label}</label><input id="${id}-${key}" data-field="${key}" type="${type}" value="${escape(value)}" ${min!==''?`min="${min}"`:''} ${max!==''?`max="${max}"`:''} ${type==='number'?'inputmode="numeric"':''}></div>`;
+function renderDishes(){
+ const status=$('js-status');
+ if(status){status.classList.add('active');status.textContent=`✓ Interactieve bediening actief · ${state.dishes.length} ${state.dishes.length===1?'gerecht':'gerechten'}. Tik op + Gerecht toevoegen om een extra gerecht bovenaan te plaatsen.`;}
+ const host=$('dishes');if(!state.dishes.length){host.innerHTML='<div class="empty" style="grid-column:1/-1">Nog geen gerechten. Klik op <strong>＋ Gerecht toevoegen</strong> of kies een voorbeeldgerecht.</div>';return;}
+ host.innerHTML=state.dishes.map((d,i)=>`<article class="dish" data-id="${escape(d.id)}">
+  <div class="dish-top"><div class="dish-index"><span class="dot ${d.kamado==='small'?'sm':''}"></span> GERECHT ${String(i+1).padStart(2,'0')}</div><div class="card-bottom"><button class="move-btn" data-action="duplicate" title="Dupliceer gerecht" aria-label="Dupliceer ${escape(d.name)}">⧉ Kopieer</button><button class="btn small danger delete-btn" data-action="remove" aria-label="Verwijder ${escape(d.name)}">× Verwijder</button></div></div>
+  <div class="grid-fields">
+   ${field(d.id,'name','Gerecht',d.name,'text','','','span2')}
+   <div class="field span2"><label for="${escape(d.id)}-kamado">Kamado</label><select id="${escape(d.id)}-kamado" data-field="kamado"><option value="large" ${d.kamado==='large'?'selected':''}>🔥 Grote kamado</option><option value="small" ${d.kamado==='small'?'selected':''}>🔥 Kleine kamado</option></select></div>
+   ${field(d.id,'cook','BBQ-tijd (min)',d.cook,'number',1,10000)}
+   ${field(d.id,'rest','Rusttijd (min)',d.rest,'number',0,10000)}
+   ${field(d.id,'core','Kern (°C)',d.core,'number',0,100)}
+   ${field(d.id,'grill','BBQ-temp. (°C)',d.grill,'number',0,500)}
+   <div class="field span2"><label for="${escape(d.id)}-mode">Starttijd bepalen</label><select id="${escape(d.id)}-mode" data-field="mode"><option value="auto" ${d.mode!=='manual'?'selected':''}>Automatisch terugrekenen</option><option value="manual" ${d.mode==='manual'?'selected':''}>Zelf starttijd instellen</option></select></div>
+   ${d.mode==='manual'?field(d.id,'fixedStart','Vaste starttijd',d.fixedStart,'time','','','span2'):'<div class="field span2"><label>Start op de BBQ</label><div class="hint" style="padding-top:10px;color:#c5e6d9">Wordt automatisch berekend ↓</div></div>'}
+   <div class="field span2"><label for="${escape(d.id)}-meater">Thermometer voor dit gerecht</label><select id="${escape(d.id)}-meater" data-field="meater"><option value="none" ${d.meater!=='pro'&&d.meater!=='plus'?'selected':''}>Geen (alleen planning)</option><option value="pro" ${d.meater==='pro'?'selected':''}>MEATER Pro</option><option value="plus" ${d.meater==='plus'?'selected':''}>MEATER Plus</option></select></div>
+
+   <div class="field span2"><label for="${escape(d.id)}-phase">Werkelijke voortgang (optioneel)</label>
+    <select id="${escape(d.id)}-phase" data-field="phase">
+     <option value="waiting" ${(d.phase||'waiting')==='waiting'?'selected':''}>Nog niet begonnen</option>
+     <option value="cooking" ${d.phase==='cooking'?'selected':''}>Op de BBQ gelegd</option>
+     <option value="resting" ${d.phase==='resting'?'selected':''}>Van de BBQ · rusten</option>
+     <option value="done" ${d.phase==='done'?'selected':''}>Klaar om te serveren</option>
+    </select><small class="hint">Kies ‘Op de BBQ gelegd’ op het moment dat je begint; de tijd wordt onthouden.</small></div>
+   ${field(d.id,'notes','Notities / bereidingswijze',d.notes,'text','','','span4')}
+  </div>
+  <div class="schedule-note" id="schedule-${escape(d.id)}"></div><div class="linked-info" id="meater-link-${escape(d.id)}" aria-live="polite"></div>
+ </article>`).join('');
+}
+function renderFire(c){$('fire-times').innerHTML=[['large','Grote kamado','big'],['small','Kleine kamado','small']].map(([k,label,cls])=>`<div class="fireline"><div class="details"><div class="fire-emoji">${k==='large'?'🔥':'♨️'}</div><div><strong>${label}</strong><small>${c.fires[k]==null?'Nog geen gerechten':'Aansteken'+dayHint(c.fires[k],c.serve)}</small></div></div><span class="fire-value ${cls}">${fmt(c.fires[k])}</span></div>`).join('')}
+function renderMetrics(c){const count=c.dishes.length,earliest=c.first!=null?fmt(c.first):'—';const last=c.dishes.length?Math.max(...c.dishes.filter(d=>d.end!=null).map(d=>d.end),c.serve??0):null;
+ const conflicts=c.alerts.filter(a=>a.type==='urgent').length;
+ $('metrics').innerHTML=`<div class="metric"><div class="metric-label">Gerechten</div><div class="metric-value">${count}</div><div class="metric-foot">Op ${[...new Set(c.dishes.map(d=>d.kamado))].length} kamado(s)</div></div><div class="metric"><div class="metric-label">Eerste handeling</div><div class="metric-value amber">${earliest}</div><div class="metric-foot">${dayHint(c.first,c.serve)||'Aansteken / starten'}</div></div><div class="metric"><div class="metric-label">Samen eten</div><div class="metric-value green">${escape(state.mealTime||'—')}</div><div class="metric-foot">${c.serve==null?'Kies een geldige datum':escape(new Date(c.serve).toLocaleDateString('nl-NL',{day:'numeric',month:'long'}))}</div></div><div class="metric"><div class="metric-label">Aandachtspunten</div><div class="metric-value" style="${conflicts?'color:var(--red)':''}">${conflicts}</div><div class="metric-foot">${conflicts?'Mogelijke planningsproblemen':'Geen kritieke conflicten'}</div></div>`;
+}
+function renderDishSchedule(c){for(const d of c.dishes){const el=document.getElementById('schedule-'+d.id);if(!el)continue;const off=d.offset;const tag=d.mode==='auto'?'<span class="tag">✓ Klaar op serveertijd</span>':(off===0?'<span class="tag">✓ Precies op tijd</span>':`<span class="tag ${off>0?'late':'warn'}">${Math.abs(off)} min ${off>0?'te laat':'eerder klaar'}</span>`);el.innerHTML=`<div><small>Start op de kamado</small><div class="time">${fmt(d.start)}<span style="font-size:11px;color:var(--muted)">${dayHint(d.start,c.serve)}</span></div></div><div><small>${d.rest>0?'Van rooster / rusten':'Gerecht gereed'}</small><div class="time">${fmt(d.cookEnd)}</div></div>${tag}`;}}
+function renderAlerts(c){const alerts=[...c.alerts];if(c.dishes.length===0)alerts.push({type:'notice',message:'Voeg minimaal één gerecht toe om je planning te zien.'});$('alerts').innerHTML=alerts.map(a=>`<div class="alert ${a.type==='urgent'?'urgent':''}">⚠ ${a.message}</div>`).join('');}
+function renderTimeline(c){const target=$('timeline');const ds=c.dishes.filter(d=>d.start!=null&&d.cookEnd!=null);if(!ds.length){target.innerHTML='<div class="empty">Geen gerechten om weer te geven.</div>';$('timeline-footer').textContent='';return;}
+ let earliest=Math.min(...ds.map(d=>d.start),...Object.values(c.fires).filter(t=>t!=null)),latest=Math.max(c.serve??0,...ds.map(d=>d.end));
+ const start=addm(earliest,-10),end=addm(latest,10),range=Math.max(1,end-start);
+ const pct=t=>Math.max(0,Math.min(100,((t-start)/range)*100));
+ let content='<div class="timeline-row timeline-axis"><div class="timeline-label" style="font-size:11px;color:var(--muted)">TIJD</div><div class="timeline-chart">';for(let i=0;i<=5;i++){const t=start+range*i/5;content+=`<span class="axis-tick" style="left:${i*20}%">${fmt(t)}${i===0?dayHint(t,c.serve):''}</span>`;}content+='</div></div>';
+ for(const [kamado,label] of [['large','GROTE KAMADO'],['small','KLEINE KAMADO']]){
+  const group=ds.filter(d=>d.kamado===kamado);
+  content+=`<div class="group-head"><span class="pill-dot ${kamado==='small'?'small':''}"></span><strong>${label}</strong><span>· ${group.length} ${group.length===1?'gerecht':'gerechten'}</span></div>`;
+  if(!group.length){content+='<div style="font-size:12px;color:var(--muted);padding:13px 0">Geen gerechten op deze kamado</div>';continue;}
+  for(const d of group){
+   const left=pct(d.start),width=Math.max(0,pct(d.cookEnd)-left),rleft=pct(d.cookEnd),rwidth=Math.max(0,pct(d.end)-rleft),serveLeft=c.serve!=null?pct(c.serve):null;
+   content+=`<div class="timeline-row"><div class="timeline-label" title="${escape(d.name)}">${escape(d.name)}<small>${fmt(d.start)} – ${fmt(d.end)}</small></div><div class="timeline-chart">${serveLeft!==null?`<span class="line-serve" style="left:${serveLeft}%" title="Serveertijd ${fmt(c.serve)}"></span>`:''}<div class="bar grill-${kamado==='large'?'big':'small'}" style="left:${left}%;width:${width}%" title="${escape(d.name)}: BBQ ${fmt(d.start)}–${fmt(d.cookEnd)}">${width>13?escape(d.name):''}</div>${d.rest>0?`<div class="bar rest" style="left:${rleft}%;width:${rwidth}%" title="${escape(d.name)} rust ${d.rest} min">${rwidth>9?'Rust':''}</div>`:''}</div></div>`;
+  }
+ }
+ target.innerHTML=content;$('timeline-footer').innerHTML=`Dit is de <strong>oorspronkelijke tijdlijn</strong>. Slimme voorstellen staan erboven apart. De verticale <strong>witte lijn</strong> markeert de gezamenlijke serveertijd (${escape(state.mealTime)}). Overlap op dezelfde kamado kan, zolang temperatuur en roosterruimte dat toelaten.`;
+}
+function renderSteps(c){const stepHost=$('steps');const steps=[];
+ for(const [key,label] of [['large','grote kamado'],['small','kleine kamado']])if(c.fires[key]!=null)steps.push({time:c.fires[key],kamado:key,title:`Steek de ${label} aan`,description:`Reken ${minutes(key==='large'?state.preheatLarge:state.preheatSmall)} minuten om op temperatuur te komen.`});
+ for(const d of c.dishes){if(d.start==null)continue;
+  const kamado=d.kamado==='large'?'grote':'kleine';const core=d.core!==''&&d.core!=null?` · Richtkern ${escape(d.core)}°C`:'';
+  steps.push({time:d.start,kamado:d.kamado,title:`Leg ${escape(d.name)} op de ${kamado} kamado`,description:`BBQ op ongeveer ${n(d.grill)}°C · ${d.cook} min ingeschat${core}. ${d.notes?escape(d.notes):''}`});
+  steps.push({time:d.cookEnd,kamado:d.kamado,title:d.rest>0?`Haal ${escape(d.name)} van de BBQ`:`${escape(d.name)} is klaar`,description:d.rest>0?`Laat ${d.rest} min rusten buiten de BBQ${core}.`:`Direct gereed${core}.`});
+  if(d.rest>0)steps.push({time:d.end,kamado:d.kamado,title:`${escape(d.name)} is klaar om te serveren`,description:d.offset?'Let op: dit is niet precies de gezamenlijke serveertijd.':'Klaar voor het gezamenlijke eetmoment.'});
+ }
+ if(c.serve!=null)steps.push({time:c.serve,kamado:'all',title:'🍽️ Serveer het eten',description:'Controleer de gaarheid en geniet van het diner.'});
+ steps.sort((a,b)=>a.time-b.time||((a.title.startsWith('Steek')?-1:0)-(b.title.startsWith('Steek')?-1:0)));
+ stepHost.innerHTML=steps.length?steps.map(s=>`<div class="step"><div class="step-time ${s.kamado==='small'?'sm':''}">${fmt(s.time)}<span class="daylabel">${dayHint(s.time,c.serve).replace(/[()]/g,'')}</span></div><div class="step-body"><strong>${s.title}</strong><p>${s.description}</p></div></div>`).join(''):'<div class="empty">Voeg gerechten toe om je draaiboek te maken.</div>';
+}
+
+/* SMART V4: adviezen, originele calc() blijft intact. */
+function smartSettings(){const s=state.smart||{};return {enabled:s.enabled!==false,mode:s.mode==='flex'?'flex':'fixed'};}
+function cleanTimestamp(t){const v=Number(t);return Number.isFinite(v)&&v>946684800000&&v<Date.now()+366*86400000?v:null;}
+const SMART_MAX_AGE=20*60000;
+const smartMinutes=t=>Math.max(0,Math.round(t/60000));
+const smartSignedMinutes=(t)=>Math.round(t/60000);
+function probePrediction(d,now,usage){
+ const sensor=d.meater;
+ if(!['pro','plus'].includes(sensor))return {usable:false,reason:'Geen thermometer toegewezen'};
+ if(usage[sensor]!==1)return {usable:false,reason:'Thermometer gekoppeld aan meerdere gerechten · kies één gerecht'};
+ const p=meaterData[sensor];if(!p)return {usable:false,reason:'Nog geen sensorgegevens'};
+ const internal=meaterNum(p.internal);const tempAt=Date.parse(p.internal?.last_updated||'');
+ if(internal==null||!Number.isFinite(tempAt)||tempAt>now+60000||now-tempAt>SMART_MAX_AGE)return {usable:false,reason:'MEATER-meting ontbreekt of is ouder dan 20 min'};
+ const status=meaterStr(p.status),target=meaterNum(p.target);
+ if(d.core!==''&&target!=null&&Math.abs(Number(d.core)-target)>2)return {usable:false,reason:'Plannerdoel en MEATER-doel wijken meer dan 2 °C af'};
+ if(!['started','slightly_underdone'].includes(status))return {usable:false,reason:status==='configured'?'MEATER ingesteld, nog niet gestart':'Geen actieve MEATER-voorspelling'};
+ const etaString=meaterStr(p.remaining),eta=etaString?Date.parse(etaString):NaN;
+ const etaAt=Date.parse(p.remaining?.last_updated||'');
+ if(!Number.isFinite(eta)||!Number.isFinite(etaAt)||etaAt>now+60000||now-etaAt>SMART_MAX_AGE||eta<now-120000||eta>now+24*3600000)return {usable:false,active:true,reason:'MEATER heeft nog geen recente, bruikbare ETA'};
+ return {usable:true,active:true,eta,target,status};
+}
+function smartPlan(base,now=Date.now()){
+ const settings=smartSettings(),serve=base.serve;const usage={pro:0,plus:0};
+ for(const d of base.dishes)if(d.meater==='pro'||d.meater==='plus')usage[d.meater]++;
+ const startsAfter=Math.max(now,dateAt(state.date,state.availableFrom)??now);
+ const rows=base.dishes.map(d=>{
+   const prediction=probePrediction(d,now,usage);const phase=['cooking','resting','done'].includes(d.phase)?d.phase:'waiting';
+   const automatic=phase==='waiting'&&(prediction.usable||prediction.active);
+   let kind=phase==='waiting'&&!automatic?'waiting':(automatic?'cooking':phase),cookEnd=null,ready=null,source='planning';
+   if(kind==='cooking'){
+    if(prediction.usable){cookEnd=prediction.eta;ready=addm(cookEnd,d.rest);source='MEATER ETA';}
+    else if(cleanTimestamp(d.startedAt)){cookEnd=addm(d.startedAt,d.cook);ready=addm(cookEnd,d.rest);source='schatting vanaf geregistreerde start';}
+   }
+   if(kind==='resting'&&cleanTimestamp(d.restAt)){cookEnd=d.restAt;ready=addm(d.restAt,d.rest);source='handmatig rustmoment';}
+   if(kind==='done'){ready=cleanTimestamp(d.doneAt)||now;source='handmatig gereed gemeld';}
+   let earliest=null;
+   if(kind==='waiting'){
+    const start=d.mode==='manual'&&d.start!=null?Math.max(now,d.start):startsAfter;
+    earliest=addm(start,d.cook+d.rest);
+   }else if(ready!=null)earliest=ready;
+   return {d,phase:kind,automatic,prediction,cookEnd,ready,source,earliest};
+ });
+ let adviceServe=serve;
+ if(settings.mode==='flex'&&serve!=null){
+  const bounds=rows.map(r=>r.earliest).filter(x=>x!=null);
+  if(bounds.length)adviceServe=Math.max(serve,Math.ceil(Math.max(...bounds)/300000)*300000);
+ }
+ for(const r of rows){
+  const d=r.d;
+  if(r.phase==='waiting'){
+   const original=d.start;
+   const proposed=d.mode==='manual'?original:(adviceServe!=null?addm(adviceServe,-d.cook-d.rest):null);
+   r.proposed=proposed==null?null:Math.max(now,proposed);
+   r.cookEnd=r.proposed==null?null:addm(r.proposed,d.cook);
+   r.ready=r.proposed==null?null:addm(r.cookEnd,d.rest);
+   r.pastStart=proposed!=null&&proposed<now-60000;
+   r.diff=d.start!=null&&r.proposed!=null?smartSignedMinutes(r.proposed-d.start):null;
+   r.source=d.mode==='manual'?'vaste starttijd uit planning':'berekend uit serveertijd';
+  }else{r.proposed=cleanTimestamp(d.startedAt);r.diff=null;}
+  r.delay=r.ready!=null&&adviceServe!=null?smartSignedMinutes(r.ready-adviceServe):null;
+ }
+ const meaterCount=rows.filter(r=>r.source==='MEATER ETA').length;
+ const manualCount=rows.filter(r=>r.source==='handmatig rustmoment'||r.source==='schatting vanaf geregistreerde start').length;
+ const warnings=[];
+ if(settings.mode==='flex'&&serve!=null&&adviceServe>serve)warnings.push({kind:'warn',text:`Voorgestelde serveertijd schuift ${smartMinutes(adviceServe-serve)} min op: ${fmt(serve)} → ${fmt(adviceServe)}. Dit is een advies, geen wijziging van je ingestelde tijd.`});
+ for(const r of rows){
+  const d=r.d;
+  if(r.phase==='waiting'&&r.pastStart)warnings.push({kind:'warn',text:`${d.name}: de aanbevolen starttijd is al voorbij. Begin zodra de kamado klaar is; de oorspronkelijke bereidingstijd blijft een schatting.`});
+  if(r.phase==='waiting'&&d.mode==='manual'&&r.ready!=null&&adviceServe!=null&&Math.abs(r.delay||0)>5)warnings.push({kind:'warn',text:`${d.name}: vaste starttijd blijft ${fmt(d.start)}; verwachte afronding wijkt ${Math.abs(r.delay)} min af (${r.delay>0?'later':'eerder'} dan de voorgestelde serveertijd).`});
+  if(r.phase==='cooking'&&r.ready!=null&&serve!=null){const delta=smartSignedMinutes(r.ready-serve);if(delta>5)warnings.push({kind:'warn',text:`${d.name}: ${r.source} verwacht gereed om ${fmt(r.ready)} (${delta} min ná je oorspronkelijke serveertijd).`});}
+  if(r.phase==='cooking'&&r.ready==null)warnings.push({kind:'notice',text:`${d.name}: wel als bezig herkend, maar nog geen bruikbare ETA. Geen automatische tijdsbijsturing voor dit gerecht.`});
+  if(r.phase==='waiting'&&r.prediction.reason==='Thermometer gekoppeld aan meerdere gerechten · kies één gerecht')warnings.push({kind:'warn',text:`${d.name}: dezelfde MEATER is aan meer dan één gerecht toegewezen. Slimme uitlezing voor deze probe is uitgeschakeld totdat de toewijzing uniek is.`});
+  if(r.phase==='cooking'&&r.prediction.reason==='Plannerdoel en MEATER-doel wijken meer dan 2 °C af'&&r.source!=='MEATER ETA')warnings.push({kind:'warn',text:`${d.name}: het kerntemperatuurdoel verschilt van MEATER. Controleer beide instellingen.`});
+  if(r.phase==='waiting'&&r.proposed!=null&&r.proposed<=now+60000&&adviceServe!=null)warnings.push({kind:'notice',text:`${d.name}: volgens de berekende planning nu beginnen, mits de kamado op temperatuur is.`});
+  if(r.ready!=null&&adviceServe!=null&&r.ready<adviceServe-30*60000&&r.phase!=='waiting')warnings.push({kind:'warn',text:`${d.name} kan ruim vóór de gezamenlijke serveertijd gereed zijn. Laat bederfelijke gerechten niet langdurig lauw wachten; controleer veilige warmhoudtemperaturen.`});
+ }
+ // Conflicten op dezelfde kamado na eventuele slimme verschuiving (alleen als starttijden bekend zijn).
+ for(const k of ['large','small']){
+  const ds=rows.filter(r=>r.d.kamado===k&&r.proposed!=null&&r.cookEnd!=null&&r.phase==='waiting');
+  for(let i=0;i<ds.length;i++)for(let j=i+1;j<ds.length;j++){
+   const a=ds[i],b=ds[j];if(a.proposed<b.cookEnd&&b.proposed<a.cookEnd&&Math.abs(n(a.d.grill)-n(b.d.grill))>25)
+    warnings.push({kind:'warn',text:`Temperatuurconflict in het slimme startadvies op de ${k==='large'?'grote':'kleine'} kamado: ${a.d.name} (${a.d.grill} °C) en ${b.d.name} (${b.d.grill} °C).`});
+  }
+ }
+ return {settings,baseServe:serve,serve:adviceServe,rows,meaterCount,manualCount,warnings};
+}
+function renderSmart(base){
+ const settings=smartSettings();$('smart-on').checked=settings.enabled;$('smart-mode').value=settings.mode;
+ const summary=$('smart-summary'),messages=$('smart-messages'),dishes=$('smart-dishes'),indicator=$('smart-indicator');
+ if(!settings.enabled){indicator.className='live-source';indicator.textContent='Adviezen gepauzeerd';summary.innerHTML='';messages.innerHTML='<div class="smart-message">De oorspronkelijke planning, tijdlijn en het draaiboek blijven normaal werken. Zet de slimme adviezen aan om verschillen te bekijken.</div>';dishes.innerHTML='';return;}
+ const sm=smartPlan(base);
+ const offset=sm.baseServe!=null&&sm.serve!=null?smartSignedMinutes(sm.serve-sm.baseServe):0;
+ indicator.className='live-source'+(sm.meaterCount?' connected':'');
+ indicator.textContent=sm.meaterCount?`● ${sm.meaterCount} MEATER-voorspelling${sm.meaterCount===1?'':'en'} actief`:'● Planningadvies · geen MEATER ETA';
+ summary.innerHTML=`<div class="smart-kpi"><small>Jouw oorspronkelijke serveertijd</small><strong>${fmt(sm.baseServe)}</strong><span>Blijft ongewijzigd in je instellingen</span></div>
+ <div class="smart-kpi"><small>Geadviseerde gezamenlijke serveertijd</small><strong class="${offset?'changed':''}">${fmt(sm.serve)}</strong><span>${offset?`+ ${offset} minuten · later serveren`:'Op schema / geen vertraging berekend'}</span></div>
+ <div class="smart-kpi"><small>Bronnen voor bijsturing</small><strong>${sm.meaterCount} <span style="display:inline;font-size:14px">MEATER ETA</span></strong><span>${sm.manualCount} handmatige voortgang · rest volgens schatting</span></div>`;
+ const msgs=[];
+ if(!meaterBridgeSeen)msgs.push({kind:'notice',text:'Dit HTML-bestand draait los van de Home Assistant-dashboardkaart. Hier worden geen live gegevens ontvangen; de planning blijft beschikbaar.'});
+ if(sm.meaterCount===0)msgs.push({kind:'notice',text:'Nog geen recente, actieve MEATER-ETA. De adviezen zijn op dit moment gebaseerd op je ingestelde tijden en eventuele handmatig vastgelegde voortgang.'});
+ msgs.push(...sm.warnings);
+ messages.innerHTML=msgs.map(m=>`<div class="smart-message ${m.kind==='warn'?'warn':''}">${escape(m.text)}</div>`).join('');
+ dishes.innerHTML=sm.rows.map(r=>{
+  const d=r.d,when=r.phase==='waiting'?r.proposed:r.cookEnd;
+  const phaseName={waiting:'Nog starten',cooking:'Op de BBQ',resting:'Rusten',done:'Gereed'}[r.phase];
+  const statusName=r.source==='MEATER ETA'?'LIVE · MEATER voorspelling':r.source==='handmatig rustmoment'?'HANDMATIG · rusttijd':r.source==='schatting vanaf geregistreerde start'?'SCHATTING · looptijd':r.source==='vaste starttijd uit planning'?'VASTE START': 'PLANNING · schatting';
+  const diff=r.phase==='waiting'&&d.mode==='auto'&&r.diff!=null&&Math.abs(r.diff)>=1?`<div class="smart-diff">${r.diff>0?'+':''}${r.diff} min vergeleken met oorspronkelijke start (${fmt(d.start)})</div>`:'';
+  const note=r.phase==='waiting'?(d.mode==='manual'?r.pastStart?'Vaste starttijd is voorbij; advies toont de eerstvolgende mogelijkheid, maar verandert je instelling niet.':'Handmatige starttijd wordt niet verplaatst.':r.pastStart?'Aanvang ligt in het verleden · zo snel mogelijk starten als kamado klaar is.':'Startadvies berekend uit bereiding + rusttijd.'):
+    r.source==='MEATER ETA'?'MEATER schat wanneer de kern het ingestelde doel bereikt; rusttijd is toegevoegd.':r.phase==='cooking'&&r.ready==null?`Geen bruikbare voorspelling: ${r.prediction.reason}`:r.phase==='resting'?'Eind rusttijd berekend vanaf jouw gekozen rustmoment.':'Handmatige voortgang; geen live MEATER-schatting.';
+  return `<article class="smart-dish" data-smart-id="${escape(d.id)}"><h3><span>${escape(d.name)}</span><span class="smart-status-pill ${r.source==='MEATER ETA'?'':'estimate'}">${escape(phaseName)}</span></h3>
+  <div class="smart-row"><span class="smart-label">${r.phase==='waiting'?'Advies: op de BBQ':'Verwacht: van de BBQ'}</span><span class="smart-time">${fmt(when)}</span></div>
+  <div class="smart-row"><span>Na rust / klaar</span><strong>${fmt(r.ready)}</strong></div>
+  <div class="smart-row"><span>Oorspronkelijke start</span><strong>${fmt(d.start)}</strong></div>
+  <div class="smart-row"><span>Kamado</span><strong>${d.kamado==='large'?'Groot':'Klein'} · ${escape(String(d.grill))} °C</strong></div>
+  <div class="smart-origin"><strong>${escape(statusName)}</strong> · ${escape(note)}</div>${diff}</article>`;
+ }).join('')||'<div class="smart-message">Voeg een gerecht toe voor startadviezen.</div>';
+}
+
+function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDishSchedule(c);renderAlerts(c);renderTimeline(c);renderSteps(c);renderLinkedDishes();renderSmart(c);}
+function renderAll(){renderDishes();renderOutputs();}
+function downloadSchedule(){const c=calc();const lines=[`BBQ BEREIDINGSPLANNER`,`Datum: ${state.date}`,`Gezamenlijke serveertijd: ${state.mealTime}`,`Beschikbaar vanaf: ${state.availableFrom}`,'',`GROTE KAMADO aansteken: ${fmt(c.fires.large)}${dayHint(c.fires.large,c.serve)}`,`KLEINE KAMADO aansteken: ${fmt(c.fires.small)}${dayHint(c.fires.small,c.serve)}`,'','GERECHTEN'];
+ c.dishes.forEach(d=>lines.push(`${d.name} | ${d.kamado==='large'?'Grote':'Kleine'} kamado | Start ${fmt(d.start)}${dayHint(d.start,c.serve)} | Van BBQ ${fmt(d.cookEnd)} | Klaar ${fmt(d.end)} | BBQ ${d.grill}°C | Kern ${d.core!==''?d.core+'°C':'n.v.t.'} | Bereiding ${d.cook} min | Rust ${d.rest} min${d.notes?' | '+d.notes:''}`));
+ if(c.alerts.length){lines.push('','AANDACHTSPUNTEN');c.alerts.forEach(a=>lines.push(a.message.replace(/<[^>]+>/g,'')))}
+ const dom=$('steps');lines.push('','DRAAIBOEK');dom.querySelectorAll('.step').forEach(step=>lines.push(`${step.querySelector('.step-time')?.textContent.trim()} — ${step.querySelector('strong')?.textContent}: ${step.querySelector('p')?.textContent}`));
+ lines.push('','Tijden zijn indicatief. Controleer altijd kerntemperatuur en gaarheid.');const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`BBQ-draaiboek-${state.date||today()}.txt`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);toast('Draaiboek opgeslagen als tekstbestand');}
+
+/* Deze code gebruikt ALLEEN door het Home Assistant-dashboard aangeleverde sensordata.
+   Geen token, API-key of directe REST-aanroep is nodig. */
+const MEATER_KEYS=['internal','ambient','target','status','cooking','peak','remaining','elapsed'];
+const meaterData={pro:null,plus:null};
+const meaterHistory={pro:[],plus:[]};
+let meaterBridgeSeen=false;
+const meaterNum=raw=>{
+ if(raw==null||raw.state==='unknown'||raw.state==='unavailable'||raw.state==='')return null;
+ const value=Number(raw.state);return Number.isFinite(value)&&value>=-30&&value<=500?value:null;
+};
+const meaterStr=raw=>!raw||raw.state==='unavailable'||raw.state==='unknown'?null:String(raw.state);
+const prettyTemp=n=>n==null?'—':`${n.toLocaleString('nl-NL',{maximumFractionDigits:1})}°`;
+const prettyStatus={not_started:'Niet gestart',configured:'Ingesteld',started:'Bezig',ready_for_resting:'Tijd om te rusten',resting:'Rusten',slightly_underdone:'Bijna klaar',finished:'Gereed',slightly_overdone:'Iets te gaar',overcooked:'Te gaar'};
+const isActive=state=>['started','ready_for_resting','resting','slightly_underdone','finished','slightly_overdone','overcooked'].includes(state);
+function rememberProbe(probe,reading){
+ const internal=meaterNum(reading?.internal);
+ if(internal==null)return;
+ const t=Date.parse(reading?.internal?.last_updated||'');
+ if(!Number.isFinite(t))return;
+ const history=meaterHistory[probe];
+ if(!history.length||history[history.length-1].t!==t){history.push({t,v:internal});if(history.length>120)history.splice(0,history.length-120);}
+}
+function chartHtml(samples){
+ if(samples.length<2)return '<div class="chart-empty">De grafiek groeit zodra nieuwe temperatuurmetingen binnenkomen.</div>';
+ const min=Math.min(...samples.map(p=>p.v))-3,max=Math.max(...samples.map(p=>p.v))+3;
+ const first=samples[0].t,last=samples[samples.length-1].t,dx=Math.max(1,last-first),dy=Math.max(1,max-min);
+ const points=samples.map(p=>`${(p.t-first)/dx*300},${64-(p.v-min)/dy*58}`).join(' ');
+ return `<svg viewBox="0 0 300 68" role="img" aria-label="Temperatuurverloop tijdens deze geopende sessie"><line x1="0" y1="65" x2="300" y2="65" stroke="#3f545b"/><polyline points="${points}" fill="none" stroke="#f5a560" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+function renderProbe(probe){
+ const root=$('probe-'+probe),data=meaterData[probe];
+ if(!root)return;
+ const set=(key,s)=>{const el=root.querySelector(`[data-m="${key}"]`);if(el)el.textContent=s;};
+ const internal=meaterNum(data?.internal),ambient=meaterNum(data?.ambient),target=meaterNum(data?.target);
+ set('internal',prettyTemp(internal));set('ambient',prettyTemp(ambient));set('target',prettyTemp(target));
+ const stat=meaterStr(data?.status);const status=root.querySelector('[data-m="status"]');
+ status.textContent=stat?(prettyStatus[stat]||stat):'Geen actieve bereiding';status.classList.toggle('active',isActive(stat));
+ const fraction=(internal!=null&&target!=null&&target>0)?Math.max(0,Math.min(100,Math.round(internal/target*100))):0;
+ root.querySelector('[data-m="progress"]').style.width=`${fraction}%`;
+ const rawETA=meaterStr(data?.remaining);let eta='ETA: —';
+ if(rawETA){const time=Date.parse(rawETA);if(Number.isFinite(time)){
+  const delta=Math.round((time-Date.now())/60000);
+  eta=delta>=0&&delta<20160?`MEATER verwacht ± ${new Date(time).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})} (nog ± ${delta} min)`:'ETA: verstreken of onbekend';
+ }else{eta='ETA: '+rawETA.slice(0,32);}}
+ set('eta',eta);
+ const timestamps=MEATER_KEYS.map(k=>data?.[k]?.last_updated).filter(Boolean);
+ const t=timestamps.length?Math.max(...timestamps.map(x=>Date.parse(x)||0)):null;
+ set('updated',t?`Laatste HA-wijziging: ${new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})}`:'Laatste update: —');
+ root.querySelector('[data-m="chart"]').innerHTML=chartHtml(meaterHistory[probe]);
+}
+function renderLinkedDishes(){
+ for(const dish of state.dishes){
+  const el=$('meater-link-'+dish.id);if(!el)continue;
+  if(!['pro','plus'].includes(dish.meater)){el.textContent='';continue;}
+  const data=meaterData[dish.meater],internal=meaterNum(data?.internal),target=meaterNum(data?.target);
+  const planTarget=n(dish.core,-1);
+  const matchWarn=target!=null&&dish.core!==''&&Math.abs(target-planTarget)>2;
+  const label=dish.meater==='pro'?'Pro':'Plus';
+  el.classList.toggle('offline',internal==null);
+  el.textContent=internal==null?`🌡️ MEATER ${label}: momenteel geen live kerntemperatuur`:
+   `🌡️ MEATER ${label} gemeten: ${prettyTemp(internal)}${target!=null?` · MEATER-doel: ${prettyTemp(target)}`:''}${matchWarn?` · ⚠ Plannerdoel (${prettyTemp(planTarget)}) verschilt van MEATER-doel`:''}`;
+ }
+}
+function setMeaterConnection(){
+ const label=$('meater-source');if(!label)return;
+ const count=['pro','plus'].filter(key=>meaterNum(meaterData[key]?.internal)!=null).length;
+ if(!meaterBridgeSeen){label.textContent='Niet gekoppeld · plannermodus';label.className='live-source';}
+ else if(count===2){label.textContent='● Live via Home Assistant · 2 sensoren';label.className='live-source connected';}
+ else if(count===1){label.textContent='● Live via Home Assistant · 1 sensor actief';label.className='live-source connected';}
+ else{label.textContent='Home Assistant verbonden · metingen ontbreken';label.className='live-source warn';}
+}
+window.addEventListener('message',ev=>{
+ // Accepteer uitsluitend de dashboardkaart die deze pagina heeft geopend, op dezelfde origin.
+ if(window.parent===window||ev.source!==window.parent||ev.origin!==location.origin)return;
+ if(!ev.data||ev.data.__bbq!=='bbq-ha-sensors-v1'||!ev.data.probes)return;
+ meaterBridgeSeen=true;
+ for(const probe of ['pro','plus']){
+  const data=ev.data.probes[probe];if(!data||typeof data!=='object')continue;
+  const filtered={};for(const key of MEATER_KEYS){const val=data[key];if(val&&typeof val==='object')filtered[key]={state:String(val.state??'unavailable'),last_updated:typeof val.last_updated==='string'?val.last_updated:''};}
+  meaterData[probe]=filtered;rememberProbe(probe,filtered);renderProbe(probe);
+ }
+ setMeaterConnection();renderLinkedDishes();renderSmart(calc());
+});
+function reportIframeSize(){
+ if(window.parent===window||location.protocol==='file:')return;
+ const height=Math.ceil(document.documentElement.scrollHeight||document.body.scrollHeight)+16;
+ window.parent.postMessage({__bbq:'bbq-child-height-v1',height},location.origin);
+}
+function downloadPlanJson(){
+ const data=JSON.stringify({format:'bbq-planner-v4',savedAt:new Date().toISOString(),plan:state},null,2);
+ const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download=`BBQ-plan-${state.date||today()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ toast('Plan opgeslagen; je kunt dit later weer laden.');
+}
+async function uploadPlanJson(ev){
+ const file=ev.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>1000000)throw new Error('Bestand is te groot');
+  const parsed=JSON.parse(await file.text());const plan=parsed.plan??parsed;
+  if(!plan||!Array.isArray(plan.dishes)||plan.dishes.length>150||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(plan.date||''))throw new Error('Onbekend bestandsformaat');
+  if(!confirm(`Planning met ${plan.dishes.length} gerechten laden? Dit vervangt de planning in deze browser.`))return;
+  const clean=initial();
+  for(const k of ['date','mealTime','availableFrom','preheatLarge','preheatSmall'])if(plan[k]!=null)clean[k]=plan[k];
+  if(plan.smart&&typeof plan.smart==='object')clean.smart={enabled:plan.smart.enabled!==false,mode:plan.smart.mode==='flex'?'flex':'fixed'};
+  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
+  state=clean;persist();initValuesOnly();renderAll();toast('Planning geladen');
+ }catch(e){alert('Kan planning niet laden: '+e.message);}
+}
+if(typeof ResizeObserver==='function'){
+ const ro=new ResizeObserver(()=>{requestAnimationFrame(reportIframeSize)});ro.observe(document.body);
+}
+window.addEventListener('load',()=>{setMeaterConnection();reportIframeSize();if(window.parent!==window&&location.protocol!=='file:')window.parent.postMessage({__bbq:'bbq-child-ready-v1'},location.origin);});
+setInterval(()=>{if(meaterBridgeSeen){renderProbe('pro');renderProbe('plus');}renderSmart(calc());},60000);
+
+initControls();renderAll();
+})();
+</script>
+</body>
+</html>

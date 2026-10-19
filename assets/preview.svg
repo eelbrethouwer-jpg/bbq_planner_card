@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420">
+<rect width="960" height="420" rx="20" fill="#091a1b"/>
+<rect x="28" y="28" width="904" height="364" rx="20" fill="#132b2a" stroke="#386a5c" stroke-width="2"/>
+<text x="58" y="72" fill="#ffbd72" font-family="sans-serif" font-weight="bold" font-size="19">BBQ BEREIDINGSPLANNER</text>
+<text x="58" y="112" fill="white" font-family="sans-serif" font-size="32" font-weight="bold">MEATER Live Monitor</text>
+<rect x="57" y="137" width="403" height="215" rx="16" fill="#101e29" stroke="#385363"/>
+<rect x="480" y="137" width="403" height="215" rx="16" fill="#101e29" stroke="#385363"/>
+<text x="80" y="174" fill="white" font-family="sans-serif" font-size="23" font-weight="bold">MEATER Pro</text>
+<text x="502" y="174" fill="white" font-family="sans-serif" font-size="23" font-weight="bold">MEATER Plus</text>
+<text x="80" y="218" fill="#a9c6d0" font-family="sans-serif" font-size="17">Kerntemperatuur</text>
+<text x="502" y="218" fill="#a9c6d0" font-family="sans-serif" font-size="17">Kerntemperatuur</text>
+<text x="80" y="274" fill="#ffb16a" font-family="sans-serif" font-size="43" font-weight="bold">— °C</text>
+<text x="502" y="274" fill="#ffb16a" font-family="sans-serif" font-size="43" font-weight="bold">— °C</text>
+<text x="80" y="316" fill="#b8d1cc" font-family="sans-serif" font-size="16">Grote kamado</text>
+<text x="502" y="316" fill="#b8d1cc" font-family="sans-serif" font-size="16">Kleine kamado</text>
+</svg>

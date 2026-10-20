@@ -17,3 +17,17 @@ jobs:
         uses: hacs/action@main
         with:
           category: plugin
+
+  html-javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Controleer JavaScript-syntax in zelfstandige planner
+        run: |
+          sed -n '/^<script>$/,/^<\/script>$/p' dist/BBQ_bereidingsplanner_MEATER_v4.html | sed '1d;$d' > /tmp/bbq-planner.js
+          node --check /tmp/bbq-planner.js
+      - name: Controleer releasefuncties
+        run: |
+          grep -q 'renderRecipeSteps(c)' dist/BBQ_bereidingsplanner_MEATER_v4.html
+          grep -q 'saveReview(id,card)' dist/BBQ_bereidingsplanner_MEATER_v4.html
+          grep -q 'lines(\x27ambient\x27)' dist/BBQ_bereidingsplanner_MEATER_v4.html || grep -q "lines('ambient')" dist/BBQ_bereidingsplanner_MEATER_v4.html

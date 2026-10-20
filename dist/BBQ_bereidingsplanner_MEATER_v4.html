@@ -98,6 +98,11 @@
 .step-summary-text{min-width:0;flex:1}
 @media(max-width:680px){.recipe-import-grid,.recipe-edit-grid{grid-template-columns:1fr}.recipe-import-grid .wide{grid-column:auto}}
 @media print{.recipe-importer,.recipe-editor,.review-editor{display:none}.steps details.step .step-detail{display:block}}
+
+.probe-chart svg{width:100%;height:139px;display:block;overflow:visible}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;color:#c5d3d5;font-size:11px;padding:3px 5px 0}
+.chart-dot{width:9px;height:9px;display:inline-block;margin-right:5px;border-radius:50%}
+.chart-readout{color:#b6c5c9;font-size:11px;padding:3px 5px}
 </style>
 </head>
 <body>
@@ -536,20 +541,56 @@ const meaterStr=raw=>!raw||raw.state==='unavailable'||raw.state==='unknown'?null
 const prettyTemp=n=>n==null?'—':`${n.toLocaleString('nl-NL',{maximumFractionDigits:1})}°`;
 const prettyStatus={not_started:'Niet gestart',configured:'Ingesteld',started:'Bezig',ready_for_resting:'Tijd om te rusten',resting:'Rusten',slightly_underdone:'Bijna klaar',finished:'Gereed',slightly_overdone:'Iets te gaar',overcooked:'Te gaar'};
 const isActive=state=>['started','ready_for_resting','resting','slightly_underdone','finished','slightly_overdone','overcooked'].includes(state);
+
 function rememberProbe(probe,reading){
- const internal=meaterNum(reading?.internal);
- if(internal==null)return;
- const t=Date.parse(reading?.internal?.last_updated||'');
- if(!Number.isFinite(t))return;
- const history=meaterHistory[probe];
- if(!history.length||history[history.length-1].t!==t){history.push({t,v:internal});if(history.length>120)history.splice(0,history.length-120);}
+ const core=meaterNum(reading?.internal),ambient=meaterNum(reading?.ambient);
+ if(core==null&&ambient==null)return;
+ const timeCore=Date.parse(reading?.internal?.last_updated||'');
+ const timeAmbient=Date.parse(reading?.ambient?.last_updated||'');
+ const times=[timeCore,timeAmbient].filter(Number.isFinite);
+ if(!times.length)return;
+ const t=Math.max(...times);
+ if(t>Date.now()+300000)return;
+ const list=meaterHistory[probe],last=list[list.length-1];
+ if(last&&t<last.t)return;
+ if(last&&t===last.t){last.core=core;last.ambient=ambient;return}
+ list.push({t,core,ambient});
+ if(list.length>240)list.splice(0,list.length-240);
 }
 function chartHtml(samples){
- if(samples.length<2)return '<div class="chart-empty">De grafiek groeit zodra nieuwe temperatuurmetingen binnenkomen.</div>';
- const min=Math.min(...samples.map(p=>p.v))-3,max=Math.max(...samples.map(p=>p.v))+3;
- const first=samples[0].t,last=samples[samples.length-1].t,dx=Math.max(1,last-first),dy=Math.max(1,max-min);
- const points=samples.map(p=>`${(p.t-first)/dx*300},${64-(p.v-min)/dy*58}`).join(' ');
- return `<svg viewBox="0 0 300 68" role="img" aria-label="Temperatuurverloop tijdens deze geopende sessie"><line x1="0" y1="65" x2="300" y2="65" stroke="#3f545b"/><polyline points="${points}" fill="none" stroke="#f5a560" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+ const records=samples.filter(p=>Number.isFinite(p.t)&&(Number.isFinite(p.core)||Number.isFinite(p.ambient)));
+ if(records.length<2)return '<div class="chart-empty">Kern- en omgevingsgrafiek verschijnt na twee live meetmomenten. Er worden geen voorbeeldmetingen getoond.</div>';
+ const values=records.flatMap(p=>[p.core,p.ambient].filter(Number.isFinite));
+ let min=Math.floor((Math.min(...values)-5)/10)*10,max=Math.ceil((Math.max(...values)+5)/10)*10;
+ if(max-min<20){const center=(max+min)/2;min=Math.floor((center-10)/10)*10;max=Math.ceil((center+10)/10)*10}
+ const width=380,left=43,right=371,top=14,bottom=128;
+ const start=records[0].t,end=records[records.length-1].t;
+ const x=t=>left+(t-start)/Math.max(1,end-start)*(right-left);
+ const y=v=>bottom-(v-min)/Math.max(1,max-min)*(bottom-top);
+ const grid=[0,1,2,3,4].map(i=>{const val=min+(max-min)*i/4,yy=y(val);
+  return '<line x1="'+left+'" y1="'+yy.toFixed(1)+'" x2="'+right+'" y2="'+yy.toFixed(1)+'" stroke="#2e4850" stroke-dasharray="3 4"/>'+
+   '<text x="37" y="'+(yy+3).toFixed(1)+'" fill="#bdcdd0" font-size="10" text-anchor="end">'+val.toFixed(0)+'°</text>';
+ }).join('');
+ const lines=field=>{let segments=[],points=[];
+  for(const p of records){if(!Number.isFinite(p[field])){if(points.length)segments.push(points);points=[];continue}
+   points.push(x(p.t).toFixed(1)+','+y(p[field]).toFixed(1));
+  }if(points.length)segments.push(points);
+  const color=field==='core'?'#f2a561':'#71d5bf';
+  return segments.map(seg=>seg.length>1?'<polyline points="'+seg.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>':
+   '<circle cx="'+seg[0].split(',')[0]+'" cy="'+seg[0].split(',')[1]+'" r="2.7" fill="'+color+'"/>').join('');
+ };
+ const timeLabel=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+ const middle=(start+end)/2;
+ const lastCore=[...records].reverse().find(p=>Number.isFinite(p.core));
+ const lastAmbient=[...records].reverse().find(p=>Number.isFinite(p.ambient));
+ const legend='<div class="chart-legend"><span><i class="chart-dot" style="background:#f2a561"></i>Kern'+(lastCore?' '+prettyTemp(lastCore.core):' —')+'</span><span><i class="chart-dot" style="background:#71d5bf"></i>Omgeving'+(lastAmbient?' '+prettyTemp(lastAmbient.ambient):' —')+'</span></div>';
+ const svg='<svg viewBox="0 0 380 155" role="img" aria-label="Live verloop kerntemperatuur en omgevingstemperatuur in graden Celsius; start '+escape(timeLabel(start))+' einde '+escape(timeLabel(end))+'">'+
+  grid+'<line x1="'+left+'" y1="'+bottom+'" x2="'+right+'" y2="'+bottom+'" stroke="#739098"/>'+
+  lines('ambient')+lines('core')+
+  '<text x="'+left+'" y="148" fill="#9db5bb" font-size="10">'+escape(timeLabel(start))+'</text>'+
+  '<text x="'+((left+right)/2)+'" y="148" text-anchor="middle" fill="#9db5bb" font-size="10">'+escape(timeLabel(middle))+'</text>'+
+  '<text x="'+right+'" y="148" text-anchor="end" fill="#9db5bb" font-size="10">'+escape(timeLabel(end))+'</text></svg>';
+ return legend+svg+'<div class="chart-readout">Schaal: '+min+'–'+max+'°C · '+records.length+' live meetpunten sinds openen</div>';
 }
 function renderProbe(probe){
  const root=$('probe-'+probe),data=meaterData[probe];

@@ -51,7 +51,7 @@ try{
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).some(r=>r.name==='BBQ proefgerecht'),'recipe persisted');
 
   const card=doc.querySelector('#dishes article.dish');
-  assert.ok(card.textContent.includes('BBQ proefgerecht'));
+  assert.equal(card.querySelector('[data-field="name"]').value,'BBQ proefgerecht');
   card.querySelector('[data-review="finalCore"]').value='63';
   card.querySelector('[data-review="comment"]').value='Volgende keer korter op de BBQ';
   click(card.querySelector('[data-action="review"]'));

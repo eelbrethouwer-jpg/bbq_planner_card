@@ -14,6 +14,10 @@ Een mobiele BBQ-bereidingsplanner voor **één grote en één kleine kamado**, m
 - MEATER Pro en MEATER Plus: kerntemperatuur, omgeving, doeltemperatuur, kookstatus, resterende tijd en meetverloop.
 - Slimme bijsturing: vaste of flexibele serveertijd met adviezen op basis van geldige MEATER-ETA's.
 - Werkt als Home Assistant-dashboardkaart en behoudt de afzonderlijke zelfstandige HTML-planner.
+- Klikbare stappen in **04 Draaiboek** met voorbereiden, garen, rusten en aansnijden, inclusief een uitgewerkt **Ribeye 500 g**-recept.
+- Een recept toevoegen via internetlink (alleen als de bron CORS-toegang toestaat) of door de recepttekst te plakken. Eigen recepten blijven lokaal beschikbaar als voorbeeldgerecht.
+- Bewaar een beoordeling na iedere bereiding, met je uiteindelijke kern, instellingen en optioneel de recente MEATER-kern/omgeving. Eerdere beoordelingen zijn zichtbaar als je hetzelfde gerecht opnieuw bereidt.
+- MEATER-grafieken tonen nu **kern én omgeving** in °C, op een gezamenlijke schaal en met tijden.
 
 **Let op:** handmatige bereidingstijden zijn schattingen; MEATER-waarden zijn echte metingen uit Home Assistant met mogelijke vertraging. De planner is geen vervanging voor voedselveiligheidscontroles. Live-informatie verschijnt alleen in de Home Assistant-dashboardkaart.
 
@@ -45,9 +49,17 @@ Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_c
 
 ## Versies
 
-Huidige eerste GitHub/HACS-release: **v4.0.0** (gebaseerd op de werkende BBQ-planner v4).
+Gepubliceerde versie: **v4.0.0**. **v4.1.0** is voorbereid in een aparte releasebranch en wordt pas actief na samenvoegen, taggen en het publiceren van een nieuwe GitHub Release.
 
 Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub Release met een versietag als je een versie wilt uitbrengen. De HACS-workflow controleert de repository automatisch op iedere push, pull request en via een geplande controle.
+
+## Recepten en evaluaties (v4.1.0)
+
+De receptenbibliotheek en bereidingsevaluaties staan in de **browseropslag (localStorage)** van het apparaat waarop de planner geopend is. Ze zijn niet automatisch gedeeld tussen iPhone, Safari of het Home Assistant-dashboard op een ander apparaat. Het laden van een planning in JSON bevat de receptvelden van de gerechten; de los opgeslagen reviewhistorie en receptenbibliotheek worden niet mee geëxporteerd. Wis de browseropslag niet zonder een aparte back-up van je gegevens. Het resetten van de voorbeeldplanning wist de bibliotheek en reviews niet.
+
+Een gewone receptlink wordt alleen automatisch gelezen als de website toegang via de browser toestaat én gestructureerde Recipe-gegevens aanbiedt. Anders kun je de tekst plakken. Dit programma omzeilt geen CORS-beveiliging en maakt geen gebruik van externe scraping- of AI-services. Controleer de geïmporteerde bereidingsinstructies, allergenen en voedselveiligheid.
+
+De gecombineerde MEATER-grafiek toont uitsluitend meetpunten die zijn binnengekomen **terwijl de planner openstaat**. Er is geen volledige Home Assistant-historie opgehaald; er worden geen voorbeeldcurves gegenereerd.
 
 ## Veiligheid
 

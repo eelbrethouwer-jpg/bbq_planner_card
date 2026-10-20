@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101a20">
-<title>Kamado Command Center · BBQ bereidingsplanner + MEATER v4</title>
+<title>Kamado Command Center · BBQ bereidingsplanner + MEATER v4.1.0</title>
 <style>
 :root{--bg:#0c1318;--panel:#142129;--panel2:#1b2a32;--stroke:#304049;--text:#f5f1e8;--muted:#a5b4b8;--amber:#f2a561;--amber2:#b96b31;--green:#6dd3ad;--red:#f39489;--shadow:0 18px 50px #0003;--radius:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 90% 600px at 86% -10%,#2c3c31 0,transparent 75%),var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:3px}a{color:var(--amber)}.shell{max-width:1230px;margin:0 auto;padding:30px 22px 60px}.eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--amber);font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}.brandicon{display:inline-grid;place-items:center;border:1px solid #f2a56158;background:#f2a56110;width:36px;height:36px;border-radius:12px;font-size:19px}.intro{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:12px 0 28px}.intro h1{margin:7px 0;font-size:clamp(30px,5vw,52px);line-height:1.08;letter-spacing:-.043em;font-weight:800}.intro h1 span{color:var(--amber)}.sub{max-width:600px;color:var(--muted);font-size:15px;margin:0}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;gap:8px;align-items:center;justify-content:center;border-radius:11px;padding:11px 14px;font-weight:730;border:1px solid var(--stroke);background:var(--panel2);color:var(--text);white-space:nowrap;transition:transform .12s,background .12s}.btn:hover{background:#283a43;transform:translateY(-1px)}.btn.primary{background:var(--amber);color:#201a14;border-color:var(--amber)}.btn.primary:hover{background:#ffd1a7}.btn.ghost{background:transparent}.btn.small{font-size:13px;padding:9px 11px}.btn.danger{border-color:#ce6e634a;color:#ffc3bc;background:#5a302c33}.layout-top{display:grid;grid-template-columns:1.55fr 1fr;gap:16px}.panel{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(154deg,#17262c,#111e25);box-shadow:var(--shadow)}.setup{padding:22px}.side{padding:20px;background:radial-gradient(ellipse at 110% -10%,#39523b99,transparent 85%),linear-gradient(150deg,#1b302b,#142128)}.sec-title{font-size:18px;font-weight:820;margin:0 0 5px;letter-spacing:-.015em}.sec-sub{margin:0 0 18px;color:var(--muted);font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px;min-width:0}.field>label{font-size:12px;color:var(--muted);font-weight:650}.field input,.field select,.field textarea{width:100%;background:#0e1b22;color:var(--text);border:1px solid #39484f;border-radius:9px;min-height:42px;padding:9px 11px;font-size:14px;color-scheme:dark}.field input[type=number]{font-variant-numeric:tabular-nums}.hint{font-size:11px;color:#869ba2;line-height:1.45}.setup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.divider{height:1px;background:var(--stroke);margin:19px 0}.fireline{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:12px 0}.fireline .details{display:flex;align-items:center;gap:10px}.fire-emoji{width:34px;height:34px;border:1px solid #ffffff1c;border-radius:12px;display:grid;place-items:center;background:#ffffff09}.fireline strong{font-size:14px}.fireline small{font-size:12px;color:var(--muted);display:block}.fire-value{font-weight:850;font-size:16px;font-variant-numeric:tabular-nums}.fire-value.big{color:var(--amber)}.fire-value.small{color:var(--green)}.side-note{margin-top:19px;padding:11px 12px;border:1px solid #ffffff1b;border-radius:10px;background:#0002;color:#bcd2c7;font-size:12px}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 30px}.metric{background:#152229;border:1px solid var(--stroke);border-radius:14px;padding:17px 17px 15px}.metric .metric-label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800}.metric .metric-value{font-size:27px;font-weight:850;letter-spacing:-.035em;margin-top:7px;font-variant-numeric:tabular-nums}.metric .metric-foot{font-size:12px;color:var(--muted);margin-top:1px}.metric .metric-value.amber{color:var(--amber)}.metric .metric-value.green{color:var(--green)}.section-header{display:flex;gap:15px;align-items:center;justify-content:space-between;margin:0 0 15px}.section-header h2{font-size:24px;letter-spacing:-.025em;margin:0}.section-header p{font-size:13px;color:var(--muted);margin:3px 0 0}.section-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dish-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dish{background:linear-gradient(145deg,#1b2b31,#142027);border:1px solid var(--stroke);border-radius:16px;padding:17px}.dish-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:15px}.dish-index{display:inline-flex;align-items:center;gap:7px;color:#aec1c4;font-size:12px;font-weight:750}.dot{width:8px;height:8px;background:var(--amber);border-radius:50%;display:inline-block}.dot.sm{background:var(--green)}.dish .grid-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 10px}.dish .span2{grid-column:span 2}.dish .span4{grid-column:span 4}.dish .schedule-note{border-top:1px solid var(--stroke);margin-top:16px;padding-top:12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}.schedule-note .time{font-size:21px;font-weight:850;font-variant-numeric:tabular-nums}.schedule-note small{display:block;color:var(--muted);font-size:11px}.tag{font-size:12px;color:#b7e6d3;background:#2a5b4933;border:1px solid #61b99c3e;padding:4px 9px;border-radius:999px;align-self:center}.tag.warn{color:#ffd1b9;background:#99552c35;border-color:#99552c70}.tag.late{color:#ffb5ad;background:#a5413933;border-color:#c9675e66}.tag.neutral{color:var(--muted);background:#ffffff0c;border-color:#ffffff1b}.card-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}.move-btn{border:none;background:transparent;color:var(--muted);font-size:12px;padding:6px}.move-btn:hover{color:var(--text)}.dish-title{font-size:14px;font-weight:700}.empty{border:1px dashed #627075;border-radius:14px;padding:30px;color:var(--muted);text-align:center}.alerts{display:grid;gap:9px;margin:18px 0}.alert{background:#43312550;border:1px solid #b78a546b;color:#f5d9b6;border-radius:11px;padding:12px 15px;font-size:13px}.alert.urgent{background:#552d2b66;border-color:#ae645d80;color:#ffd2ca}.alert strong{color:#fff3dd}.plan-panel{padding:20px;margin-top:27px}.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.legend span{display:flex;align-items:center;gap:6px}.swatch{display:inline-block;width:14px;height:7px;border-radius:2px;background:var(--amber)}.swatch.green{background:var(--green)}.swatch.rest{background:#74848d}.timeline-scroll{overflow-x:auto;margin:19px 0 0;padding:0 2px 9px}.timeline-inner{min-width:735px}.timeline-row{display:grid;grid-template-columns:170px 1fr;align-items:center;min-height:45px}.timeline-label{font-size:12px;font-weight:730;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.timeline-label small{font-size:11px;display:block;font-weight:500;color:var(--muted)}.timeline-chart{height:40px;position:relative;border-left:1px solid #45515a;background-image:linear-gradient(to right,#ffffff09 1px,transparent 1px);background-size:20% 100%}.timeline-axis .timeline-chart{height:26px;background:none;border-left:0}.axis-tick{position:absolute;top:1px;transform:translateX(-50%);font-size:11px;color:#9eb4b9;font-variant-numeric:tabular-nums;white-space:nowrap}.axis-tick:first-child{transform:translateX(0)}.axis-tick:last-child{transform:translateX(-100%)}.group-head{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:800;margin-top:15px;padding-bottom:7px;border-bottom:1px solid #ffffff12}.group-head strong{color:var(--text)}.pill-dot{height:8px;width:8px;background:var(--amber);border-radius:50%}.pill-dot.small{background:var(--green)}.bar{height:19px;position:absolute;top:10px;border-radius:5px;overflow:hidden;display:flex;align-items:center;padding:0 5px;font-size:10px;font-weight:800;white-space:nowrap;color:#11221b;min-width:3px}.bar.grill-big{background:linear-gradient(90deg,#da8950,#ffc28b)}.bar.grill-small{background:linear-gradient(90deg,#4aab8c,#9ceacb)}.bar.rest{background:#82949f;color:#142229}.line-serve{position:absolute;width:2px;background:#f5f1e8;top:2px;bottom:1px;z-index:3;pointer-events:none}.line-serve:before{content:"";position:absolute;top:-4px;left:-3px;width:8px;height:8px;background:#f5f1e8;border-radius:50%}.timeline-footer{font-size:12px;color:var(--muted);margin-top:9px}.timeline-footer strong{color:var(--text)}.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.step{display:grid;grid-template-columns:65px 1fr;gap:12px;align-items:start;background:#17252b;border:1px solid #2b3b43;border-radius:12px;padding:11px 13px}.step-time{font-size:16px;font-weight:850;font-variant-numeric:tabular-nums;color:var(--amber)}.step-time.sm{color:var(--green)}.step-body strong{display:block;font-size:13px}.step-body p{margin:2px 0 0;color:var(--muted);font-size:12px}.daylabel{font-size:10px;display:block;color:var(--muted);font-weight:500}.footer{border-top:1px solid #ffffff1a;margin-top:29px;padding-top:20px;display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.footer p{margin:0;max-width:740px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:11px 17px;background:#dfaa73;color:#1e1b16;border-radius:12px;font-size:13px;font-weight:750;box-shadow:0 12px 35px #0006;z-index:99;display:none}.toast.on{display:block}.sr-only{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}
@@ -79,6 +79,30 @@
 @media(max-width:680px){.smart-panel{padding:14px}.smart-strip{grid-template-columns:1fr 1fr}.smart-strip .smart-kpi:last-child{grid-column:1/-1}.smart-plan{grid-template-columns:1fr}.smart-controls{align-items:stretch}.smart-controls .field{width:100%;max-width:none}}
 @media print{.smart-panel{background:#fff;color:#152126;border-color:#999}.smart-dish,.smart-kpi{background:#fff;color:#152126}.smart-controls{display:none}}
 
+
+/* v4.1 recipe & feedback UI */
+.recipe-importer,.recipe-editor,.review-editor{margin:12px 0;padding:13px;border:1px solid #38565b;border-radius:13px;background:#102129}
+.recipe-importer>summary,.recipe-editor>summary,.review-editor>summary{cursor:pointer;color:#ffcf9c;font-weight:750;padding:5px}
+.recipe-import-grid,.recipe-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:11px 0}
+.recipe-import-grid .wide{grid-column:1/-1}
+.recipe-import-grid input,.recipe-import-grid textarea,.recipe-edit-grid input,.recipe-edit-grid select,.recipe-edit-grid textarea{width:100%;background:#0c1a20;color:#f5f1e8;border:1px solid #415760;border-radius:9px;padding:10px;min-height:42px}
+.recipe-edit-grid textarea,.recipe-import-grid textarea{min-height:95px;resize:vertical}
+.recipe-import-actions{display:flex;gap:8px;flex-wrap:wrap}
+.recipe-message,.recipe-past{font-size:12px;color:#b4c9cc;margin:8px 0}
+.step-detail{background:#0e2429;border-left:2px solid #f2a561;border-radius:8px;padding:11px;margin:9px 0}
+.step-detail h4{margin:8px 0 3px;color:#ffcea0;font-size:13px}.step-detail p{margin:0 0 10px;color:#d0dbd8;font-size:13px;line-height:1.6}
+.steps details.step>summary{cursor:pointer;display:flex;gap:9px;align-items:center;list-style:none}
+.steps details.step>summary::-webkit-details-marker{display:none}
+.steps details.step>summary::after{content:'＋';font-size:20px;color:#f2a561;margin-left:auto}
+.steps details.step[open]>summary::after{content:'−'}
+.step-summary-text{min-width:0;flex:1}
+@media(max-width:680px){.recipe-import-grid,.recipe-edit-grid{grid-template-columns:1fr}.recipe-import-grid .wide{grid-column:auto}}
+@media print{.recipe-importer,.recipe-editor,.review-editor{display:none}.steps details.step .step-detail{display:block}}
+
+.probe-chart svg{width:100%;height:139px;display:block;overflow:visible}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;color:#c5d3d5;font-size:11px;padding:3px 5px 0}
+.chart-dot{width:9px;height:9px;display:inline-block;margin-right:5px;border-radius:50%}
+.chart-readout{color:#b6c5c9;font-size:11px;padding:3px 5px}
 </style>
 </head>
 <body>
@@ -165,7 +189,22 @@
    </div>
   </div>
   <p class="interactive-status" id="js-status" role="status">⚠ De interactieve bediening is niet geladen. Open dit bestand in een volledige webbrowser (niet alleen in de Bestanden-voorvertoning).</p>
-  <div class="dish-grid" id="dishes"></div>
+  
+ <details id="recipe-importer" class="recipe-importer">
+ <summary>📥 Recept van internet toevoegen</summary>
+ <p class="sec-sub">Plak de receptlink en probeer hem uit te lezen. Blokkeert de website dit, plak dan zelf de recepttekst.</p>
+ <div class="recipe-import-grid">
+  <div class="field wide"><label for="recipe-url">Receptlink (optioneel)</label><input type="url" id="recipe-url" placeholder="https://..."></div>
+  <div class="field wide"><label for="recipe-text">Ingrediënten en bereidingswijze</label><textarea id="recipe-text" placeholder="Ingrediënten&#10;…&#10;Bereiding&#10;…"></textarea></div>
+  <div class="field"><label for="recipe-name">Naam</label><input id="recipe-name" type="text" placeholder="Naam gerecht"></div>
+  <div class="field"><label for="recipe-temp">BBQ-temperatuur °C</label><input id="recipe-temp" type="number" min="50" max="450" value="180"></div>
+  <div class="field"><label for="recipe-core">Kerntemperatuur °C (optioneel)</label><input id="recipe-core" type="number" min="0" max="100"></div>
+  <div class="field"><label for="recipe-duration">Bereiding in minuten</label><input id="recipe-duration" type="number" min="1" max="10000" value="40"></div>
+ </div>
+ <div class="recipe-import-actions"><button type="button" id="recipe-read" class="btn small">↧ Link uitlezen</button><button type="button" id="recipe-add" class="btn primary small">＋ Recept toevoegen en bewaren</button></div>
+ <p class="recipe-message" id="recipe-message" role="status">Bestaande planning en bereidingsevaluaties blijven behouden.</p>
+ </details>
+<div class="dish-grid" id="dishes"></div>
   <div class="alerts" id="alerts" role="status" aria-live="polite"></div>
  </section>
  <section class="panel plan-panel" id="timeline-panel">
@@ -187,6 +226,7 @@ const KEY='kamado-bereidingsplanner-v1';
 const $=id=>document.getElementById(id);
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const examples={
+  'Ribeye 500 g':{name:'Ribeye 500 g',kamado:'large',cook:55,rest:8,core:'54',grill:120,notes:'Reverse sear: 110–120°C indirect en kort 230–260°C direct. Controleer de kern.'},
   'Bavette':{name:'Bavette',kamado:'large',cook:25,rest:10,core:'52',grill:230,notes:'Indicatief; controleer de kern met een thermometer.'},
   'Picanha':{name:'Picanha',kamado:'large',cook:50,rest:15,core:'52',grill:160,notes:'Tijd hangt sterk af van dikte en gekozen methode.'},
   'Varkenshaas':{name:'Varkenshaas',kamado:'large',cook:30,rest:10,core:'63',grill:180,notes:'Kerntemperatuur en rusttijd controleren.'},
@@ -200,7 +240,7 @@ const examples={
   'Cakejes':{name:'Mini-cakejes',kamado:'small',cook:25,rest:10,core:'',grill:175,notes:''}
 };
 let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
-const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
+const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSource:data.recipeSource??'',meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
 const initial=()=>({date:today(),mealTime:'18:30',availableFrom:'16:30',preheatLarge:30,preheatSmall:25,smart:{enabled:true,mode:'fixed'},dishes:[makeDish(examples.Bavette),makeDish(examples.Krieltjes),makeDish(examples.Maïskolven)]});
 let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();}catch{state=initial();}
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -277,6 +317,7 @@ function initControls(){
   const button=ev.target.closest('[data-action]');if(!button)return;const card=button.closest('[data-id]');if(!card)return;const id=card.dataset.id;
   if(button.dataset.action==='remove'){state.dishes=state.dishes.filter(d=>d.id!==id);persist();renderAll();toast('Gerecht verwijderd')}
   if(button.dataset.action==='duplicate'){const d=state.dishes.find(d=>d.id===id);if(d)addDish({...d,name:d.name+' (2)'},'Gerecht gekopieerd')}
+   if(button.dataset.action==='review')saveReview(id,card);
  });
 }
 function addDish(data,message){
@@ -321,6 +362,7 @@ function renderDishes(){
    ${field(d.id,'notes','Notities / bereidingswijze',d.notes,'text','','','span4')}
   </div>
   <div class="schedule-note" id="schedule-${escape(d.id)}"></div><div class="linked-info" id="meater-link-${escape(d.id)}" aria-live="polite"></div>
+ ${renderRecipeEditor(d)}${renderReviewEditor(d)}
  </article>`).join('');
 }
 function renderFire(c){$('fire-times').innerHTML=[['large','Grote kamado','big'],['small','Kleine kamado','small']].map(([k,label,cls])=>`<div class="fireline"><div class="details"><div class="fire-emoji">${k==='large'?'🔥':'♨️'}</div><div><strong>${label}</strong><small>${c.fires[k]==null?'Nog geen gerechten':'Aansteken'+dayHint(c.fires[k],c.serve)}</small></div></div><span class="fire-value ${cls}">${fmt(c.fires[k])}</span></div>`).join('')}
@@ -477,7 +519,7 @@ function renderSmart(base){
  }).join('')||'<div class="smart-message">Voeg een gerecht toe voor startadviezen.</div>';
 }
 
-function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDishSchedule(c);renderAlerts(c);renderTimeline(c);renderSteps(c);renderLinkedDishes();renderSmart(c);}
+function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDishSchedule(c);renderAlerts(c);renderTimeline(c);renderRecipeSteps(c);renderLinkedDishes();renderSmart(c);}
 function renderAll(){renderDishes();renderOutputs();}
 function downloadSchedule(){const c=calc();const lines=[`BBQ BEREIDINGSPLANNER`,`Datum: ${state.date}`,`Gezamenlijke serveertijd: ${state.mealTime}`,`Beschikbaar vanaf: ${state.availableFrom}`,'',`GROTE KAMADO aansteken: ${fmt(c.fires.large)}${dayHint(c.fires.large,c.serve)}`,`KLEINE KAMADO aansteken: ${fmt(c.fires.small)}${dayHint(c.fires.small,c.serve)}`,'','GERECHTEN'];
  c.dishes.forEach(d=>lines.push(`${d.name} | ${d.kamado==='large'?'Grote':'Kleine'} kamado | Start ${fmt(d.start)}${dayHint(d.start,c.serve)} | Van BBQ ${fmt(d.cookEnd)} | Klaar ${fmt(d.end)} | BBQ ${d.grill}°C | Kern ${d.core!==''?d.core+'°C':'n.v.t.'} | Bereiding ${d.cook} min | Rust ${d.rest} min${d.notes?' | '+d.notes:''}`));
@@ -499,20 +541,56 @@ const meaterStr=raw=>!raw||raw.state==='unavailable'||raw.state==='unknown'?null
 const prettyTemp=n=>n==null?'—':`${n.toLocaleString('nl-NL',{maximumFractionDigits:1})}°`;
 const prettyStatus={not_started:'Niet gestart',configured:'Ingesteld',started:'Bezig',ready_for_resting:'Tijd om te rusten',resting:'Rusten',slightly_underdone:'Bijna klaar',finished:'Gereed',slightly_overdone:'Iets te gaar',overcooked:'Te gaar'};
 const isActive=state=>['started','ready_for_resting','resting','slightly_underdone','finished','slightly_overdone','overcooked'].includes(state);
+
 function rememberProbe(probe,reading){
- const internal=meaterNum(reading?.internal);
- if(internal==null)return;
- const t=Date.parse(reading?.internal?.last_updated||'');
- if(!Number.isFinite(t))return;
- const history=meaterHistory[probe];
- if(!history.length||history[history.length-1].t!==t){history.push({t,v:internal});if(history.length>120)history.splice(0,history.length-120);}
+ const core=meaterNum(reading?.internal),ambient=meaterNum(reading?.ambient);
+ if(core==null&&ambient==null)return;
+ const timeCore=Date.parse(reading?.internal?.last_updated||'');
+ const timeAmbient=Date.parse(reading?.ambient?.last_updated||'');
+ const times=[timeCore,timeAmbient].filter(Number.isFinite);
+ if(!times.length)return;
+ const t=Math.max(...times);
+ if(t>Date.now()+300000)return;
+ const list=meaterHistory[probe],last=list[list.length-1];
+ if(last&&t<last.t)return;
+ if(last&&t===last.t){last.core=core;last.ambient=ambient;return}
+ list.push({t,core,ambient});
+ if(list.length>240)list.splice(0,list.length-240);
 }
 function chartHtml(samples){
- if(samples.length<2)return '<div class="chart-empty">De grafiek groeit zodra nieuwe temperatuurmetingen binnenkomen.</div>';
- const min=Math.min(...samples.map(p=>p.v))-3,max=Math.max(...samples.map(p=>p.v))+3;
- const first=samples[0].t,last=samples[samples.length-1].t,dx=Math.max(1,last-first),dy=Math.max(1,max-min);
- const points=samples.map(p=>`${(p.t-first)/dx*300},${64-(p.v-min)/dy*58}`).join(' ');
- return `<svg viewBox="0 0 300 68" role="img" aria-label="Temperatuurverloop tijdens deze geopende sessie"><line x1="0" y1="65" x2="300" y2="65" stroke="#3f545b"/><polyline points="${points}" fill="none" stroke="#f5a560" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+ const records=samples.filter(p=>Number.isFinite(p.t)&&(Number.isFinite(p.core)||Number.isFinite(p.ambient)));
+ if(records.length<2)return '<div class="chart-empty">Kern- en omgevingsgrafiek verschijnt na twee live meetmomenten. Er worden geen voorbeeldmetingen getoond.</div>';
+ const values=records.flatMap(p=>[p.core,p.ambient].filter(Number.isFinite));
+ let min=Math.floor((Math.min(...values)-5)/10)*10,max=Math.ceil((Math.max(...values)+5)/10)*10;
+ if(max-min<20){const center=(max+min)/2;min=Math.floor((center-10)/10)*10;max=Math.ceil((center+10)/10)*10}
+ const width=380,left=43,right=371,top=14,bottom=128;
+ const start=records[0].t,end=records[records.length-1].t;
+ const x=t=>left+(t-start)/Math.max(1,end-start)*(right-left);
+ const y=v=>bottom-(v-min)/Math.max(1,max-min)*(bottom-top);
+ const grid=[0,1,2,3,4].map(i=>{const val=min+(max-min)*i/4,yy=y(val);
+  return '<line x1="'+left+'" y1="'+yy.toFixed(1)+'" x2="'+right+'" y2="'+yy.toFixed(1)+'" stroke="#2e4850" stroke-dasharray="3 4"/>'+
+   '<text x="37" y="'+(yy+3).toFixed(1)+'" fill="#bdcdd0" font-size="10" text-anchor="end">'+val.toFixed(0)+'°</text>';
+ }).join('');
+ const lines=field=>{let segments=[],points=[];
+  for(const p of records){if(!Number.isFinite(p[field])){if(points.length)segments.push(points);points=[];continue}
+   points.push(x(p.t).toFixed(1)+','+y(p[field]).toFixed(1));
+  }if(points.length)segments.push(points);
+  const color=field==='core'?'#f2a561':'#71d5bf';
+  return segments.map(seg=>seg.length>1?'<polyline points="'+seg.join(' ')+'" fill="none" stroke="'+color+'" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>':
+   '<circle cx="'+seg[0].split(',')[0]+'" cy="'+seg[0].split(',')[1]+'" r="2.7" fill="'+color+'"/>').join('');
+ };
+ const timeLabel=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+ const middle=(start+end)/2;
+ const lastCore=[...records].reverse().find(p=>Number.isFinite(p.core));
+ const lastAmbient=[...records].reverse().find(p=>Number.isFinite(p.ambient));
+ const legend='<div class="chart-legend"><span><i class="chart-dot" style="background:#f2a561"></i>Kern'+(lastCore?' '+prettyTemp(lastCore.core):' —')+'</span><span><i class="chart-dot" style="background:#71d5bf"></i>Omgeving'+(lastAmbient?' '+prettyTemp(lastAmbient.ambient):' —')+'</span></div>';
+ const svg='<svg viewBox="0 0 380 155" role="img" aria-label="Live verloop kerntemperatuur en omgevingstemperatuur in graden Celsius; start '+escape(timeLabel(start))+' einde '+escape(timeLabel(end))+'">'+
+  grid+'<line x1="'+left+'" y1="'+bottom+'" x2="'+right+'" y2="'+bottom+'" stroke="#739098"/>'+
+  lines('ambient')+lines('core')+
+  '<text x="'+left+'" y="148" fill="#9db5bb" font-size="10">'+escape(timeLabel(start))+'</text>'+
+  '<text x="'+((left+right)/2)+'" y="148" text-anchor="middle" fill="#9db5bb" font-size="10">'+escape(timeLabel(middle))+'</text>'+
+  '<text x="'+right+'" y="148" text-anchor="end" fill="#9db5bb" font-size="10">'+escape(timeLabel(end))+'</text></svg>';
+ return legend+svg+'<div class="chart-readout">Schaal: '+min+'–'+max+'°C · '+records.length+' live meetpunten sinds openen</div>';
 }
 function renderProbe(probe){
  const root=$('probe-'+probe),data=meaterData[probe];
@@ -589,7 +667,7 @@ async function uploadPlanJson(ev){
   const clean=initial();
   for(const k of ['date','mealTime','availableFrom','preheatLarge','preheatSmall'])if(plan[k]!=null)clean[k]=plan[k];
   if(plan.smart&&typeof plan.smart==='object')clean.smart={enabled:plan.smart.enabled!==false,mode:plan.smart.mode==='flex'?'flex':'fixed'};
-  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
+  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),recipeIngredients:String(x.recipeIngredients??'').slice(0,6000),recipePrep:String(x.recipePrep??'').slice(0,6000),recipeCook:String(x.recipeCook??'').slice(0,10000),recipeRest:String(x.recipeRest??'').slice(0,4000),recipeSlice:String(x.recipeSlice??'').slice(0,4000),recipeSource:String(x.recipeSource??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
   state=clean;persist();initValuesOnly();renderAll();toast('Planning geladen');
  }catch(e){alert('Kan planning niet laden: '+e.message);}
 }
@@ -598,6 +676,141 @@ if(typeof ResizeObserver==='function'){
 }
 window.addEventListener('load',()=>{setMeaterConnection();reportIframeSize();if(window.parent!==window&&location.protocol!=='file:')window.parent.postMessage({__bbq:'bbq-child-ready-v1'},location.origin);});
 setInterval(()=>{if(meaterBridgeSeen){renderProbe('pro');renderProbe('plus');}renderSmart(calc());},60000);
+
+
+/* v4.1.0: local cookbook and independent reviews */
+const RECIPE_KEY='kamado-recipe-book-v1',REVIEWS_KEY='kamado-reviews-v1';
+function loadArray(key){try{const a=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(a)?a:[]}catch(e){return []}}
+const localRecipes=loadArray(RECIPE_KEY).filter(x=>x&&typeof x.name==='string').slice(-80);
+const savedReviews=loadArray(REVIEWS_KEY).filter(x=>x&&typeof x.name==='string').slice(-250);
+function store(key,a){try{localStorage.setItem(key,JSON.stringify(a));return true}catch(e){return false}}
+function dishKey(name){return String(name||'').toLocaleLowerCase('nl-NL').trim()}
+const recipeExamples={
+ 'ribeye 500 g':{
+ recipeIngredients:'500 g ribeye (3–4 cm dik)\nZout en peper\nOptioneel olie, rozemarijn, boter',
+ recipePrep:'Dep droog en zout. Leg de ribeye circa 20 minuten voor het bakken uit de koelkast (niet langdurig ongekoeld laten). Maak de grote kamado indirect op 110–120°C met hitteschild. Plaats de MEATER Pro in het dikste midden van het vlees, niet in een vetlaag.',
+ recipeCook:'Reverse sear: gaar indirect op 110–120°C tot circa 46–48°C kern. Haal van het rooster en stook op naar 230–260°C direct. Schroei vervolgens ongeveer 45–75 seconden per zijde (en desgewenst de vetrand) tot circa 52–54°C eindkern voor medium-rare. Werkelijke tijd hangt af van de dikte; volg de kern.',
+ recipeRest:'Laat 5–8 minuten losjes rusten. De kerntemperatuur kan nog een paar graden stijgen. Voor kwetsbare groepen en niet-intact vlees is verder doorgaren veiliger.',
+ recipeSlice:'Zoek de draad van het vlees. Snijd dwars op de vezels in plakken van ongeveer 0,5–1 cm met een scherp mes. Bestrooi naar wens met wat zout en serveer meteen.'},
+ 'bavette':{recipePrep:'Dep droog en kruid kort voor het grillen. Verhit de kamado direct tot circa 220–240°C.',recipeCook:'Grill heet en kort, keer indien nodig en bewaak de kern met een thermometer.',recipeRest:'Laat 8–10 minuten losjes rusten.',recipeSlice:'Snijd altijd dwars op de grove vezelrichting en bij voorkeur schuin in dunne plakken, zodat de bavette mals blijft.'},
+ 'picanha':{recipePrep:'Laat de vetkap zitten. Kerf de vetlaag oppervlakkig in, zonder het vlees te raken. Zout en bereid indirect.',recipeCook:'Gaar indirect op circa 140–160°C en grill daarna eventueel kort op hoge directe hitte af.',recipeRest:'Laat 10–15 minuten rusten.',recipeSlice:'Bepaal eerst de vezelrichting. Snijd de uiteindelijke plakken steeds dwars op de draad.'},
+ 'kippenpoten':{recipePrep:'Kruid zonder ui, maak de kamado indirect klaar op 175–185°C. Houd rauwe kip gescheiden van andere ingrediënten.',recipeCook:'Gaar indirect en meet in het dikste deel weg van het bot. Bereik minstens 75°C in het vlees; controleer op meerdere plekken.',recipeRest:'Laat een paar minuten staan en controleer de kern.',recipeSlice:'Serveer heel of haal vlees van het bot met schoon gereedschap; voorkom kruisbesmetting.'},
+ 'zalm':{recipePrep:'Controleer op graten en leg bij voorkeur op de huid op een licht ingevet rooster.',recipeCook:'Bereid indirect rond 150–160°C en controleer de kern. Een conservatieve veilige richtlijn is 63°C.',recipeRest:'Laat kort staan, zodat de filet makkelijker heel blijft.',recipeSlice:'Verdeel met een schone spatel langs de natuurlijke lamellen.'}
+};
+function recipeDetails(d){
+ const r=recipeExamples[dishKey(d.name)]||{};
+ return {
+  ingredients:d.recipeIngredients||r.recipeIngredients||'',
+  prep:d.recipePrep||r.recipePrep||'Leg ingrediënten en gereedschap klaar. Bereid het gerecht voor, kruid en snijd waar nodig. Verwarm de juiste kamado voor.',
+  cook:d.recipeCook||r.recipeCook||'Controleer de BBQ-temperatuur en gaarheid regelmatig. Gebruik bij vlees de kernthermometer en beschouw bereidingstijd alleen als schatting.',
+  rest:d.recipeRest||r.recipeRest||'Controleer de gaarheid en laat eventueel rusten voor het serveren.',
+  slice:d.recipeSlice||r.recipeSlice||'Snijd vlees waar van toepassing dwars op de draad met een schoon, scherp mes. Serveer overige gerechten met passend bestek.'
+ };
+}
+function renderRecipeEditor(d){
+ const r=recipeDetails(d),pairs=[['recipeIngredients','Ingrediënten','ingredients'],['recipePrep','Voorbereiding','prep'],['recipeCook','Bereiding','cook'],['recipeRest','Rusten','rest'],['recipeSlice','Aansnijden / serveren','slice']];
+ const fields=pairs.map(x=>'<div class="field"><label>'+x[1]+'</label><textarea data-field="'+x[0]+'" rows="3" maxlength="10000">'+escape(r[x[2]])+'</textarea></div>').join('');
+ const url=/^https?:\/\//i.test(d.recipeSource||'')?'<p class="recipe-message">Bron: <a rel="noopener noreferrer" target="_blank" href="'+escape(d.recipeSource)+'">'+escape(d.recipeSource)+'</a></p>':'';
+ return '<details class="recipe-editor"><summary>📖 Uitgebreid recept bewerken</summary>'+url+'<p class="hint">De teksten verschijnen bij stap 04 in het draaiboek. Wijzigingen worden lokaal bewaard.</p><div class="recipe-edit-grid">'+fields+'</div></details>';
+}
+function renderReviewEditor(d){
+ const rs=savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)).slice(-3).reverse();
+ const history=rs.length?'<ul class="recipe-past">'+rs.map(r=>'<li>'+escape(r.date)+' · '+escape(r.rating)+'/5 · eindkern '+(r.finalCore==null?'onbekend':escape(r.finalCore)+'°C')+(r.lastMeasured==null?'':' · MEATER '+escape(r.lastMeasured)+'°C')+' · '+escape(r.comment||'')+'</li>').join('')+'</ul>':'<p class="recipe-past">Nog geen eerdere bereiding geëvalueerd.</p>';
+ return '<details class="review-editor"><summary>⭐ Bereiding beoordelen ('+savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)).length+')</summary>'+history+
+ '<div class="recipe-edit-grid"><div class="field"><label>Beoordeling</label><select data-review="rating"><option value="5">5 · geweldig</option><option value="4">4 · goed</option><option value="3">3 · redelijk</option><option value="2">2 · kan beter</option><option value="1">1 · mislukt</option></select></div>'+
+ '<div class="field"><label>Werkelijk gemeten eindkern (°C)</label><input data-review="finalCore" type="number" step="0.1" min="-10" max="120" placeholder="Bijv. 54"></div>'+
+ '<div class="field" style="grid-column:1/-1"><label>Opmerkingen voor volgende keer</label><textarea data-review="comment" maxlength="2000" placeholder="Wat ga je aanpassen?"></textarea></div></div>'+
+ '<p class="hint">Datum, ingestelde temperaturen en eventuele recente MEATER-waarde worden bewaard. Dit is geen automatische meting van de eindkern.</p>'+
+ '<button type="button" data-action="review" class="btn primary small">✓ Review bewaren</button></details>';
+}
+function saveReview(id,card){
+ const d=state.dishes.find(x=>x.id===id);if(!d)return;
+ const get=k=>card.querySelector('[data-review="'+k+'"]')?.value||'';
+ const f=get('finalCore').trim(),v=f===''?null:Number(f);
+ if(v!==null&&(!Number.isFinite(v)||v < -10||v>120)){alert('Controleer de eindkerntemperatuur.');return}
+ const data=meaterData[d.meater],ts=Date.parse(data?.internal?.last_updated||'');
+ const fresh=Number.isFinite(ts)&&ts<=Date.now()&&Date.now()-ts<1200000;
+ savedReviews.push({name:d.name.slice(0,150),date:new Date().toLocaleDateString('nl-NL'),createdAt:new Date().toISOString(),
+  rating:Number(get('rating'))||5,finalCore:v,grill:n(d.grill),targetCore:d.core||null,
+  thermometer:d.meater,lastMeasured:fresh?meaterNum(data?.internal):null,ambient:fresh?meaterNum(data?.ambient):null,
+  comment:get('comment').slice(0,2000)});
+ if(savedReviews.length>250)savedReviews.shift();
+ if(store(REVIEWS_KEY,savedReviews)){renderAll();toast('Review bewaard voor toekomstige bereidingen')}else toast('Review niet bewaard: opslag niet beschikbaar');
+}
+function richText(value){return escape(value).replace(/\r?\n/g,'<br>')}
+function renderRecipeSteps(c){
+ const steps=[],push=(time,kamado,title,short,parts)=>{if(Number.isFinite(time))steps.push({time,kamado,title,short,parts})};
+ for(const k of ['large','small'])if(c.fires[k]!=null)push(c.fires[k],k,'Steek de '+(k==='large'?'grote':'kleine')+' kamado aan','Aansteken en op temperatuur komen',[['Opwarmen','Gebruik geschikte kolen, regel de luchttoevoer en laat de BBQ stabiel worden. Reken circa '+minutes(k==='large'?state.preheatLarge:state.preheatSmall)+' minuten opwarming.']]);
+ for(const d of c.dishes){if(d.start==null)continue;
+  const r=recipeDetails(d),kamado=d.kamado==='large'?'grote':'kleine';
+  push(addm(d.start,-20),d.kamado,'Bereid '+d.name+' voor','20 minuten voor de start',[['Ingrediënten',r.ingredients||'Zie je eigen ingrediëntenlijst.'],['Voorbereiden en snijden',r.prep],['Hygiëne','Gebruik schoon gereedschap en voorkom kruisbesmetting.']]);
+  push(d.start,d.kamado,'Leg '+d.name+' op de '+kamado+' kamado','BBQ '+d.grill+'°C · '+d.cook+' min indicatie',[['Bereidingswijze',r.cook],['Temperatuur','Geplande BBQ '+d.grill+'°C'+(d.core!==''?' · kerntemperatuur '+d.core+'°C':'')+'. Gebruik bij vlees altijd een thermometer.'],['Eigen notities',d.notes||'Geen extra notities.']]);
+  push(d.cookEnd,d.kamado,d.rest>0?'Haal '+d.name+' van de BBQ':d.name+' is klaar','Controleer de gaarheid',[['Rust / gaarheid',r.rest],['Controle',d.core!==''?'Controleer de gemeten kern rond de ingestelde richtwaarde '+d.core+'°C; voedselveiligheid blijft leidend.':'Beoordeel gaarheid en veilige bereiding.']]);
+  if(d.rest>0)push(d.end,d.kamado,'Snijd en serveer '+d.name,'Klaar om te serveren',[['Aansnijden en opdienen',r.slice]]);
+ }
+ if(c.serve!=null)push(c.serve,'all','🍽️ Serveer het eten','Alle gerechten samen',[['Eetmoment','Controleer dat ieder gerecht werkelijk gaar is en serveer met schoon bestek.']]);
+ steps.sort((a,b)=>a.time-b.time);
+ $('steps').innerHTML=steps.length?steps.map(s=>'<details class="step"><summary><span class="step-time '+(s.kamado==='small'?'sm':'')+'">'+fmt(s.time)+'</span><span class="step-summary-text"><strong>'+escape(s.title)+'</strong><span class="hint" style="display:block">'+escape(s.short)+'</span></span></summary><div class="step-detail">'+s.parts.map(p=>'<h4>'+escape(p[0])+'</h4><p>'+richText(p[1])+'</p>').join('')+'</div></details>').join(''):'<div class="empty">Voeg gerechten toe om je draaiboek te maken.</div>';
+}
+function presetOption(name){const sel=$('preset');if(!sel||[...sel.options].some(o=>o.value===name))return;const o=document.createElement('option');o.value=name;o.textContent='Eigen · '+name;sel.append(o)}
+function textRecipe(text){
+ const fields={ingredients:[],prep:[],cook:[],rest:[],slice:[]};let key='prep';
+ for(const line of String(text).slice(0,25000).split(/\r?\n/)){
+  const x=line.trim().toLowerCase();
+  if(/^(ingrediënten|ingredienten|ingredients)\b/.test(x)){key='ingredients';continue}
+  if(/^(bereiding|werkwijze|instructies|bereidingswijze|stappen|instructions)\b/.test(x)){key='cook';continue}
+  if(/^(voorbereiding|voorbereiden)\b/.test(x)){key='prep';continue}
+  if(/^(rusten|rusttijd)\b/.test(x)){key='rest';continue}
+  if(/^(serveren|aansnijden|snijden)\b/.test(x)){key='slice';continue}
+  fields[key].push(line);
+ }
+ const o={};for(const k of Object.keys(fields))o[k]=fields[k].join('\n').trim();
+ if(!o.cook)o.cook=String(text).slice(0,10000);
+ return o;
+}
+function schemaRecipe(obj){
+ if(Array.isArray(obj))return obj.map(schemaRecipe).find(Boolean)||null;
+ if(!obj||typeof obj!=='object')return null;
+ const types=obj['@type'],is=Array.isArray(types)?types.includes('Recipe'):types==='Recipe';
+ if(is){
+  const flat=v=>typeof v==='string'?v:Array.isArray(v)?v.map(flat).join('\n'):v&&typeof v==='object'?flat(v.text||v.itemListElement||''):'';
+  return {name:String(obj.name||'').slice(0,150),ingredients:Array.isArray(obj.recipeIngredient)?obj.recipeIngredient.join('\n'):'',cook:flat(obj.recipeInstructions).slice(0,10000)};
+ }
+ return schemaRecipe(obj['@graph']||obj.mainEntity);
+}
+async function tryImportURL(){
+ const message=$('recipe-message'),raw=$('recipe-url').value.trim();let u;
+ try{u=new URL(raw);if(!/^https?:$/.test(u.protocol))throw Error()}catch(e){message.textContent='Vul een geldige http(s)-receptlink in.';return}
+ const ac=new AbortController(),timeout=setTimeout(()=>ac.abort(),10000);message.textContent='Receptgegevens worden ingelezen…';
+ try{
+  const response=await fetch(u.href,{mode:'cors',credentials:'omit',signal:ac.signal});if(!response.ok)throw Error();
+  const doc=new DOMParser().parseFromString((await response.text()).slice(0,1000000),'text/html');
+  let recipe=null;for(const el of doc.querySelectorAll('script[type="application/ld+json"]')){try{recipe=schemaRecipe(JSON.parse(el.textContent));if(recipe)break}catch(e){}}
+  if(!recipe)throw Error();
+  if(recipe.name)$('recipe-name').value=recipe.name;
+  $('recipe-text').value=(recipe.ingredients?'Ingrediënten\n'+recipe.ingredients+'\n\n':'')+'Bereiding\n'+recipe.cook;
+  message.textContent='Recept gelezen. Controleer temperatuur en tijd voordat je het toevoegt.';
+ }catch(e){message.textContent='Deze website staat automatisch uitlezen mogelijk niet toe (CORS), of bevat geen leesbare receptdata. Kopieer de recepttekst en plak die in het tekstvak.'}
+ finally{clearTimeout(timeout)}
+}
+function importRecipe(){
+ const message=$('recipe-message'),body=$('recipe-text').value.trim(),name=$('recipe-name').value.trim().slice(0,150)||(body.split(/\r?\n/)[0]||'').slice(0,150);
+ if(!name||!body){message.textContent='Vul een naam en recepttekst in.';return}
+ const raw=$('recipe-url').value.trim();let source='';
+ if(raw){try{const u=new URL(raw);if(!/^https?:$/.test(u.protocol))throw Error();source=u.href.slice(0,500)}catch(e){message.textContent='Gebruik een geldige http(s)-receptlink.';return}}
+ const r=textRecipe(body),dish={name,kamado:'large',cook:Math.max(1,minutes($('recipe-duration').value)),rest:10,
+ grill:Math.min(450,Math.max(50,n($('recipe-temp').value,180))),core:$('recipe-core').value,
+ notes:'Geïmporteerd recept. Controleer gaarheid en instellingen.',recipeSource:source,
+ recipeIngredients:r.ingredients,recipePrep:r.prep,recipeCook:r.cook,recipeRest:r.rest,recipeSlice:r.slice};
+ const i=localRecipes.findIndex(x=>dishKey(x.name)===dishKey(name));if(i>=0)localRecipes.splice(i,1);
+ localRecipes.push(dish);if(localRecipes.length>80)localRecipes.shift();
+ examples[name]=dish;presetOption(name);store(RECIPE_KEY,localRecipes);
+ addDish(dish,'Recept toegevoegd en lokaal bewaard');
+ message.textContent='Recept toegevoegd! De bereidingsstappen staan onder 04 en zijn te wijzigen op de gerechtkaart.';
+}
+localRecipes.forEach(d=>{examples[d.name]=d});
+$('recipe-read').addEventListener('click',tryImportURL);
+$('recipe-add').addEventListener('click',importRecipe);
 
 initControls();renderAll();
 })();

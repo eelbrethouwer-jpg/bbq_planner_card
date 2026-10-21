@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v4.5.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v4.6.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=4.4.0', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=4.6.0', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'
@@ -210,6 +210,23 @@
         this._sendReviews({__bbq:'bbq-reviews-snapshot-v1',reviews:merged});
       }).catch(e=>this._sendReviewsError(e));
     }
+    async _sendNotification(payload){
+      const service=String(payload.service||'').trim();
+      const message=String(payload.message||'').slice(0,230);
+      const key=String(payload.key||'').slice(0,220);
+      let ok=false,error='';
+      try{
+        if(!/^notify\.mobile_app_[a-z0-9_]{1,70}$/.test(service)||!message||!key)throw Error('Ongeldige meldingsinstellingen');
+        if(typeof this._hass?.callService!=='function')throw Error('Geen Home Assistant meldingsverbinding');
+        if(!this._notifyKeys)this._notifyKeys=new Set();
+        if(this._notifyKeys.has(key))return;
+        await this._hass.callService('notify',service.slice(7),{title:'BBQ Regisseur',message});
+        this._notifyKeys.add(key);
+        if(this._notifyKeys.size>200)this._notifyKeys.clear();
+        ok=true;
+      }catch(e){error=String(e?.message||'Verzenden mislukt').slice(0,130);}
+      if(this._iframe?.contentWindow)this._iframe.contentWindow.postMessage({__bbq:'bbq-notify-result-v1',ok,error},location.origin);
+    }
     _onMsg(event){
       if(event.origin!==location.origin||event.source!==this._iframe?.contentWindow||!event.data)return;
       if(event.data.__bbq==='bbq-child-ready-v1'){this._lastPayload='';this._send();this._loadCookbook();this._loadReviews();}
@@ -217,6 +234,7 @@
       if(event.data.__bbq==='bbq-library-write-v1'&&event.data.library&&typeof event.data.library==='object')this._saveCookbook(event.data.library);
       if(event.data.__bbq==='bbq-reviews-request-v1')this._loadReviews();
       if(event.data.__bbq==='bbq-reviews-write-v1'&&event.data.reviews&&typeof event.data.reviews==='object')this._saveReviews(event.data.reviews);
+      if(event.data.__bbq==='bbq-notify-request-v1')this._sendNotification(event.data);
       if(event.data.__bbq==='bbq-child-height-v1'){
         const h=Number(event.data.height);
         if(Number.isFinite(h)&&h>250&&h<30000)this._iframe.style.height=Math.ceil(h)+'px';

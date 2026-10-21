@@ -1,5 +1,20 @@
 # Changelog
 
+## v4.6.0 — BBQ Regisseur (releasekandidaat)
+
+- **Meerdere serveermomenten:** optioneel voorgerecht, hoofdgerecht en dessert met eigen gangtoewijzing per gerecht; bestaande enkele serveertijd blijft standaard.
+- **Interactief draaiboek:** handelingen per kamado afvinken, timers per gerecht en bewaarde voortgang.
+- **MEATER-voorspelling:** recente HA/MEATER ETA of voorzichtig gelabelde trendextrapolatie, duidelijke afwijking ten opzichte van serveertijd.
+- **iPhone-meldingen via Home Assistant:** opt-in, gevalideerde mobiele notify-service, unieke waarschuwingen bij doelkern en aflopende timers; nooit directe bediening van BBQ.
+- **Recepten schalen:** bronporties per gerecht; boodschappenlijst gebruikt de instelbare verhoudingen.
+- **Reviewhistorie:** aantallen, werkelijke bereidingstijden, mediaan/bereik, beoordelingen en geregistreerde eindkern.
+- **Voorraadkast:** lokale voorraad per ingrediënt en eenheid; aftrek op boodschappenlijst.
+- **Offline publieke website:** PWA manifest, service worker en geïsoleerde publieke cache, zonder live HA-gegevens.
+- **Kwaliteit:** dezelfde recepten, reviews, HACS, MEATER-grafieken en kamado-adviezen blijven behouden. Beperking: handmatige Safari- en hardwaretest vereist.
+
+Zie [RELEASE_v4.6.0.md](RELEASE_v4.6.0.md) voor acceptatiepunten. Nog niet publiceren voordat handmatige controles zijn voltooid.
+
+
 ## v4.5.0 — releasekandidaat (PR, nog niet gepubliceerd)
 
 - **Slimme BBQ-coach** met heldere waarschuwingen bij recente, unieke MEATER-kernmetingen, approaching core target en reverse-sear-omschakeling. Geen gesimuleerde live metingen of automatische wijziging van BBQ-hardware.

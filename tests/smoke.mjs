@@ -31,6 +31,42 @@ try{
   assert.equal(errors.length,0,'startup JavaScript errors');
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
+
+  // v4.6: multiple courses, task board, timers, pantry and strict opt-in notifications.
+  assert.ok($('v46-control'),'BBQ Regisseur is present');
+  assert.match($('v46-board').textContent,/Steek|Leg/,'generated schedule tasks appear');
+  assert.ok(!$('v46-multi').checked,'legacy single serve time stays default');
+  assert.ok(!$('v46-notify').checked,'mobile notifications require explicit opt-in');
+  assert.equal(doc.querySelector('#dishes article.dish [data-v46-course]').value,'main','existing dishes start as main course');
+  $('v46-multi').checked=true;$('v46-multi').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46MultiServe,true);
+  let course=doc.querySelector('#dishes article.dish [data-v46-course]');
+  assert.ok(course,'dish offers course selection');
+  course.value='starter';course.dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].serveSlot,'starter');
+  assert.match($('steps').textContent,/Serveer voorgerecht/,'new course appears on schedule');
+  $('v46-multi').checked=false;$('v46-multi').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.match($('v46-course-status').textContent,/gezamenlijke/,'single serve behavior restored');
+  const task=doc.querySelector('#v46-board [data-v46-check]');
+  assert.ok(task,'task checkbox available');
+  const taskId=task.dataset.v46Check;task.checked=true;task.dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Done[taskId],true,'task completion persists');
+  $('v46-pantry-name').value='krieltjes';$('v46-pantry-qty').value='250';$('v46-pantry-unit').value='g';
+  click($('v46-pantry-add'));
+  assert.match($('v46-pantry-list').textContent,/krieltjes/i,'pantry add works');
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Pantry[0].qty,250);
+  click($('v46-pantry-list').querySelector('[data-v46-stock-remove]'));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Pantry.length,0,'pantry deletion works');
+  const recipeBox=doc.querySelector('#dishes article.dish .v46-recipes');
+  assert.ok(recipeBox,'recipe scaling and timer controls available');
+  recipeBox.open=true;
+  click(recipeBox.querySelector('[data-v46-timer-start]'));
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].v46TimerEndsAt>Date.now(),'timer starts and persists');
+  const stop=doc.querySelector('#dishes article.dish [data-v46-timer-stop]');
+  click(stop);
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].v46TimerEndsAt,0,'timer stops');
+  assert.ok(fs.existsSync('sw.js')&&fs.existsSync('manifest.webmanifest'),'public PWA offline assets exist');
+
   // v4.5: mobile cooking panel and practical preparation tools.
   assert.ok($('v45-coach-content').textContent,'coaching UI is rendered without falsely claiming live readings');
   assert.ok($('v45-shopping'),'shopping UI exists');
@@ -139,6 +175,10 @@ try{
   assert.equal(pulled.cook,540);
   assert.equal(pulled.rest,60);
   assert.equal(pulled.recipeSteps.length,9,'nine structured recipe stages saved');
+  assert.equal(pulled.prepTasks.length,1,'built-in pulled pork includes the night-before preparation');
+  assert.equal(pulled.prepTasks[0].daysBefore,1);
+  assert.equal(pulled.prepTasks[0].time,'','no invented evening clock time in built-in preset');
+  assert.match(doc.getElementById('v46-prep-timeline').textContent,/Procureur schoonmaken en kruiden/,'night-before pulled pork prep appears in separate timeline');
   assert.match(pulled.recipeIngredients,/2 kg procureur/);
   assert.match(pulled.recipeIngredients,/12 zachte witte bolletjes/);
   assert.match(pulled.recipePrep,/hitteschild/);
@@ -174,6 +214,52 @@ try{
   assert.equal($('generator-fields').querySelector('[data-gfield="core"]').value,'92');
   assert.equal($('generator-fields').querySelector('[data-gfield="cook"]').value,'540');
   assert.equal($('generator-fields').querySelector('[data-gfield="rest"]').value,'60');
+
+  // v4.6: generator should recognize explicit before-the-event cues, but never invent an exact hour.
+  $('recipe-text').value='Pulled pork met voorbereiding\nIngrediënten\n2 kg procureur\n\nVoorbereiding\nDe avond ervoor:\nDep procureur droog, snijd overtollig vet weg en wrijf het vlees in met rub. Pak goed in en bewaar in de koelkast.\n\nBereiding\nBBQ temperatuur 120 °C indirect. Bereidingstijd 9 uur. Rusttijd 1 uur.';
+  click($('recipe-analyze'));
+  let inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'night before section is recognized as advance preparation');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'1');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="time"]').value,'','unknown clock time remains blank');
+  assert.match(inferred[0].querySelector('[data-gprep-field="notes"]').value,/procureur droog/i,'recipe detail preserved');
+  const clock=inferred[0].querySelector('[data-gprep-field="time"]');
+  clock.value='20:15';clock.dispatchEvent(new window.Event('input',{bubbles:true}));
+  assert.equal(clock.value,'20:15','manual exact time is editable');
+  click($('generator-save'));
+  const newRecipe=JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).find(x=>x.name==='Pulled pork met voorbereiding');
+  assert.equal(newRecipe.prepTasks.length,1,'generated prep saved to cookbook');
+  assert.equal(newRecipe.prepTasks[0].time,'20:15','edited time persisted');
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes.some(x=>x.name==='Pulled pork met voorbereiding'&&x.prepTasks[0].daysBefore===1),'generated prep also saved with planned dish');
+  assert.match($('v46-prep-timeline').textContent,/Kruiden of marineren/,'generated day-before prep appears in schedule');
+
+  $('recipe-text').value='Gemarineerde zalm\nIngrediënten\n400 g zalm\n\nVoorbereiding\nLaat vis 24 uur marineren in de koelkast en dek af.\n\nBereiding\nGrill de vis bij 160 °C.';
+  click($('recipe-analyze'));
+  inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'24h marinating is recognized');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'1');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="time"]').value,'');
+  const remove=inferred[0].querySelector('[data-gprep-remove]');
+  click(remove);assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,0,'detected prep can be removed');
+  click($('generator-prep-add'));assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,1,'manual prep can be added');
+
+
+  $('recipe-text').value='Pizzadeeg met lange rijs\n\nVoorbereiding\nÉén dag van te voren: kneed het deeg en laat het afgedekt in de koelkast rijzen.\n\nBereiding\nBak op de kamado.';
+  click($('recipe-analyze'));
+  inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'Één dag van te voren is recognized regardless of accent and spacing');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'1');
+
+  $('recipe-text').value='Bavette met marinade\nTwee dagen vooraf: marineer het vlees afgedekt in de koelkast.\nBereiding\nGrill direct.';
+  click($('recipe-analyze'));
+  inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'two days beforehand is recognized');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'2');
+
+  $('recipe-text').value='Pizza recept\nBereiding\nKneed 12 uur van tevoren het deeg niet, maar meng bloem met water.';
+  click($('recipe-analyze'));
+  assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,0,'12h cue does not invent a specific previous calendar day');
+
   $('recipe-text').value='Zonder temperaturen\nIngrediënten\n2 kg procureur\nBereiding\nKruid het vlees en gaar langzaam.';
   click($('recipe-analyze'));
   assert.equal($('generator-fields').querySelector('[data-gfield="grill"]').value,'','missing BBQ temp stays blank');
@@ -234,11 +320,11 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route+'?v=4.5.0'),'HTML redirect points at versioned planner');
-  assert.ok(entry.includes('href="'+route+'?v=4.5.0"'),'accessible versioned fallback link');
+  assert.ok(entry.includes('url='+route+'?v=4.6.0'),'HTML redirect points at versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v=4.6.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('OK v4.5: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');
+  console.log('OK v4.6: planning, courses, tasks, pantry, timers, recipes, reviews, MEATER graphs, offline and Pages');
 }finally{
   window.close();
 }
@@ -284,6 +370,51 @@ try{
  const updated=JSON.parse(distribution.window.localStorage.getItem('kamado-bereidingsplanner-v1'));
  assert.notEqual(updated.dishes[0].kamado,updated.dishes[1].kamado,'explicit applying optimizer separates conflicting dishes');
 }finally{distribution.window.close();}
+
+/* v4.6 — planned tomorrow/future is not 'already too late'; food preparation may be a day earlier. */
+const preparedPlan=launchWithPlan({
+ date:future,dateMode:'manual',mealTime:'18:30',availableFrom:'17:45',
+ preheatLarge:30,preheatSmall:25,dishes:[{
+  id:'prepared-fish',name:'Gerookte zalm',category:'vis',kamado:'large',method:'indirect',
+  grill:120,cook:120,rest:10,core:'63',mode:'auto',
+  prepTasks:[{id:'brine',title:'Vis pekelen',daysBefore:1,time:'19:00',duration:15,notes:'Koelkast maximaal 4 °C en receptduur controleren'}]
+ }]
+});
+try{
+ const w=preparedPlan.window,d=w.document;
+ const all=()=>JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1'));
+ const alert=d.querySelector('#alerts .alert');
+ assert.ok(alert,'availability gap on a future date is still a planning consideration');
+ assert.match(alert.textContent,/Vooruitblik op de BBQ-dag/,'future gap is named correctly');
+ assert.match(alert.textContent,/gekozen toekomstige datum/,'future planned actions are not already overdue');
+ assert.ok(!alert.classList.contains('urgent'),'future availability gap does not become an overdue warning');
+ assert.match(d.getElementById('v46-prep-timeline').textContent,/Vis pekelen/,'prep timeline contains day-before action');
+ assert.match(d.getElementById('steps').textContent,/Vis pekelen/,'detailed recipe schedule shows prep');
+ assert.match(d.getElementById('v46-board').textContent,/Voorbereiden op eerdere dagen/,'interactive board separates previous-day prep');
+ assert.equal(d.querySelector('#dishes .v46-prep-row [data-v46-prep-field="daysBefore"]').value,'1');
+ const editor=d.querySelector('#dishes .v46-prep-editor');editor.open=true;
+ const days=editor.querySelector('[data-v46-prep-field="daysBefore"]');
+ days.value='2';days.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.equal(all().dishes[0].prepTasks[0].daysBefore,2,'prep offset persists to plan storage');
+ const template=editor.querySelector('[data-v46-prep-template]');template.value='meat';
+ editor.querySelector('[data-v46-prep-add]').click();
+ assert.equal(all().dishes[0].prepTasks.length,2,'prep template adds another editable task');
+ assert.match(d.getElementById('v46-prep-timeline').textContent,/Vlees marineren/,'second task is visible on prep timeline');
+ const updatedEditor=d.querySelector('#dishes .v46-prep-editor');
+ updatedEditor.querySelector('[data-v46-prep-save]').click();
+ const saved=JSON.parse(w.localStorage.getItem('kamado-recipe-book-v1'));
+ assert.ok(saved.some(x=>x.name==='Gerookte zalm'&&x.prepTasks.length===2),'prep persists in local recipe library');
+ const remove=updatedEditor.querySelector('[data-v46-prep-remove]');
+ remove.click();
+ assert.equal(all().dishes[0].prepTasks.length,1,'remove prep task works');
+ const prepCheck=d.querySelector('#v46-board [data-v46-check*=":prep:"]');
+ assert.ok(prepCheck,'prep task can be checked off');
+ prepCheck.checked=true;prepCheck.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.ok(Object.values(all().v46Done).some(Boolean),'checked prep survives rerender');
+ assert.equal(all().dishes[0].cook,120,'prep offsets never change cooking time');
+}finally{preparedPlan.window.close();}
+console.log('OK v4.6: multi-day preparations, future-only warnings and recipe persistence');
+
 console.log('OK: optimizer is opt-in and preserves legacy plan support');
 
 /* Independent HA bridge tests with a mocked authenticated WebSocket connection.
@@ -341,7 +472,19 @@ try {
   assert.ok(card._cookbookUnsub,'HA cookbook subscription connected');
   assert.ok(card._reviewsUnsub,'HA review-history subscription connected');
 
+  const services=[];
+  card.hass={states:{},connection,callService:async (domain,service,data)=>{services.push({domain,service,data});}};
+  await card._sendNotification({service:'notify.mobile_app_bbq_iphone',message:'Kern bereikt',key:'notify-test-1'});
+  assert.equal(services.length,1,'valid opted-in notification can reach HA mobile notify service');
+  assert.equal(services[0].domain,'notify');
+  assert.equal(services[0].service,'mobile_app_bbq_iphone');
+  await card._sendNotification({service:'notify.mobile_app_bbq_iphone',message:'Kern bereikt',key:'notify-test-1'});
+  assert.equal(services.length,1,'duplicate notifications are suppressed by bridge');
+  await card._sendNotification({service:'switch.turn_on',message:'Do not send',key:'notify-test-2'});
+  assert.equal(services.length,1,'bridge cannot call other domains or switch the kamado');
+
+
   card.remove();
   assert.equal(subscriptions.size,0,'all HA user-storage subscriptions cleaned up');
 }finally{parentDom.window.close();}
-console.log('OK v4.5: secure HA user-storage photos and review duration bridge');
+console.log('OK v4.6: HA user data and opt-in notification bridge');

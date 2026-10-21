@@ -26,6 +26,9 @@ jobs:
         run: |
           sed -n '/^<script>$/,/^<\/script>$/p' dist/BBQ_bereidingsplanner_MEATER_v4.html | sed '1d;$d' > /tmp/bbq-planner.js
           node --check /tmp/bbq-planner.js
+          cp dist/bbq_planner_card.js /tmp/bbq-planner-bridge.mjs
+          node --check /tmp/bbq-planner-bridge.mjs
+          node --check sw.js
       - name: Controleer releasefuncties
         run: |
           grep -q 'renderRecipeSteps(c)' dist/BBQ_bereidingsplanner_MEATER_v4.html

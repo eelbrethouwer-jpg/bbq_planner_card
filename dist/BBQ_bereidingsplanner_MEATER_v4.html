@@ -175,6 +175,14 @@
 #v46-board{scroll-margin-top:25px}.v46-accent{color:#edbc8f;font-weight:700}
 @media(max-width:700px){.v46-grid{grid-template-columns:1fr}.v46-panel{padding:12px}.v46-area{padding:10px}.v46-row .btn{min-height:44px}}
 @media print{.v46-panel button,.v46-panel input,.v46-recipes button{display:none!important}}
+
+.v46-prep-editor{border:1px solid #4d6864;border-radius:11px;padding:12px;margin:10px 0;background:#11292c}
+.v46-prep-editor summary{cursor:pointer;color:#f2b578;font-weight:700}
+.v46-prep-editor .v46-prep-row{border:1px solid #3b5b61;border-radius:9px;padding:10px;margin:10px 0}
+.v46-prep-editor .v46-prep-row textarea{width:100%;min-height:65px;color:#fff;background:#0b1e25;border:1px solid #627a7b;border-radius:9px;padding:9px}
+.v46-prep-timeline{display:grid;gap:10px;margin-top:12px}
+.v46-prep-day{background:#132a2e;border:1px solid #48605e;border-radius:10px;padding:11px}
+.v46-prep-day strong{color:#f3b881}.v46-prep-day p{margin:6px 0;font-size:12px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -356,7 +364,7 @@
 <section class="panel plan-panel" id="timeline-panel">
   <div class="section-header"><div><h2>03 · Tijdlijn van je kamado's</h2><p>De gekleurde balk is de bereiding op het rooster; grijs is de rusttijd buiten de BBQ.</p></div><div class="legend"><span><i class="swatch"></i> Grote kamado</span><span><i class="swatch green"></i> Kleine kamado</span><span><i class="swatch rest"></i> Rusten</span></div></div>
   <div class="timeline-scroll"><div id="timeline" class="timeline-inner"></div></div>
-  <div class="timeline-footer" id="timeline-footer"></div>
+  <div class="timeline-footer" id="timeline-footer"></div><div id="v46-prep-timeline" class="v46-prep-timeline" aria-live="polite"></div>
  </section>
  <section style="margin-top:28px">
   <div class="section-header"><div><h2>04 · Stap-voor-stap draaiboek</h2><p>Alle handelingen in chronologische volgorde. Handig naast je kamado.</p></div></div>
@@ -687,7 +695,7 @@ function cleanLibraryRecipe(obj){
  if(!obj||typeof obj!=='object'||Array.isArray(obj)||typeof obj.name!=='string'||!obj.name.trim())return null;
  const name=obj.name.trim().slice(0,150),dish=makeDish({...obj,name});
  delete dish.id;delete dish.phase;delete dish.startedAt;delete dish.restAt;delete dish.doneAt;
- const permitted=['name','category','method','grate','grate2','phase2Temp','phase2Minutes','transitionMins','kamado','cook','rest','core','grill','notes','recipeSource','recipeIngredients','recipePrep','recipeCook','recipeRest','recipeSlice','recipeSteps','photo','updatedAt'];
+ const permitted=['name','category','method','grate','grate2','phase2Temp','phase2Minutes','transitionMins','kamado','cook','rest','core','grill','notes','recipeSource','recipeIngredients','recipePrep','recipeCook','recipeRest','recipeSlice','recipeSteps','prepTasks','photo','updatedAt'];
  const result={};
  for(const k of permitted)if(k in dish)result[k]=dish[k];
  result.name=name;result.category=CATEGORIES[obj.category]?obj.category:categoryGuess(name);
@@ -704,6 +712,7 @@ function cleanLibraryRecipe(obj){
  result.transitionMins=Math.max(0,Math.min(180,Number(obj.transitionMins)||0));
  for(const [k,max] of [['notes',2000],['recipeIngredients',6000],['recipePrep',6000],['recipeCook',10000],['recipeRest',4000],['recipeSlice',4000],['recipeSource',500]])result[k]=String(obj[k]??'').slice(0,max);
  result.recipeSteps=Array.isArray(obj.recipeSteps)?obj.recipeSteps.slice(0,30).map(x=>({title:String(x?.title??'').slice(0,180),trigger:String(x?.trigger??'').slice(0,200),detail:String(x?.detail??'').slice(0,2500)})):[];
+ result.prepTasks=v46PrepClean(obj.prepTasks);
  result.photo=validV45Photo(obj.photo)?obj.photo:'';
  result.updatedAt=Number.isFinite(Date.parse(obj.updatedAt))?new Date(obj.updatedAt).toISOString():'1970-01-01T00:00:00.000Z';
  return result;
@@ -906,7 +915,7 @@ function renderDishes(){
   </div>
   <div class="schedule-note" id="schedule-${escape(d.id)}"></div><div class="linked-info" id="meater-link-${escape(d.id)}" aria-live="polite"></div>
  <div class="advice" id="advice-${escape(d.id)}">${equipmentAdvice(d)}</div>
- ${renderRecipeEditor(d)}${renderReviewEditor(d)}${v45PhotoEditor(d)}${v46DishPanel(d)}
+ ${renderRecipeEditor(d)}${renderReviewEditor(d)}${v45PhotoEditor(d)}${v46DishPanel(d)}${v46PrepEditor(d)}
  </article>`).join('');
 }
 function renderFire(c){$('fire-times').innerHTML=[['large','Grote kamado','big'],['small','Kleine kamado','small']].map(([k,label,cls])=>`<div class="fireline"><div class="details"><div class="fire-emoji">${k==='large'?'🔥':'♨️'}</div><div><strong>${label}</strong><small>${c.fires[k]==null?'Nog geen gerechten':'Aansteken'+dayHint(c.fires[k],c.serve)}</small></div></div><span class="fire-value ${cls}">${fmt(c.fires[k])}</span></div>`).join('')}
@@ -1066,8 +1075,9 @@ function renderSmart(base){
 
 function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDishSchedule(c);renderAlerts(c);renderTimeline(c);renderRecipeSteps(c);renderLinkedDishes();renderSmart(c);v45Render(c);v46Render(c);}
 function renderAll(){renderDishes();renderOutputs();}
-function downloadSchedule(){const c=calc();const lines=[`BBQ BEREIDINGSPLANNER`,`Datum: ${state.date}`,`Gezamenlijke serveertijd: ${state.mealTime}`,`Beschikbaar vanaf: ${state.availableFrom}`,'',`GROTE KAMADO aansteken: ${fmt(c.fires.large)}${dayHint(c.fires.large,c.serve)}`,`KLEINE KAMADO aansteken: ${fmt(c.fires.small)}${dayHint(c.fires.small,c.serve)}`,'','GERECHTEN'];
+function downloadSchedule(){const c=calc();const lines=[`BBQ BEREIDINGSPLANNER`,`Datum: ${state.date}`,`Gezamenlijke serveertijd: ${state.mealTime}`,`Beschikbaar op BBQ-dag vanaf: ${state.availableFrom}`,'',`GROTE KAMADO aansteken: ${fmt(c.fires.large)}${dayHint(c.fires.large,c.serve)}`,`KLEINE KAMADO aansteken: ${fmt(c.fires.small)}${dayHint(c.fires.small,c.serve)}`,'','GERECHTEN'];
  c.dishes.forEach(d=>lines.push(`${d.name} | ${d.kamado==='large'?'Grote':'Kleine'} kamado | Start ${fmt(d.start)}${dayHint(d.start,c.serve)} | Van BBQ ${fmt(d.cookEnd)} | Klaar ${fmt(d.end)} | BBQ ${d.grill}°C | Kern ${d.core!==''?d.core+'°C':'n.v.t.'} | Bereiding ${d.cook} min | Rust ${d.rest} min${d.notes?' | '+d.notes:''}`));
+ const prep=v46PrepTasks(c);if(prep.length){lines.push('','VOORBEREIDINGEN (ook eerdere dagen)');prep.forEach(p=>lines.push(v46When(p.timeAt)+' | '+p.titleFull+(p.duration?' | Handeling '+p.duration+' min':'')+' | '+p.notes));}
  if(c.alerts.length){lines.push('','AANDACHTSPUNTEN');c.alerts.forEach(a=>lines.push(a.message.replace(/<[^>]+>/g,'')))}
  const dom=$('steps');lines.push('','DRAAIBOEK');dom.querySelectorAll('.step').forEach(step=>lines.push(`${step.querySelector('.step-time')?.textContent.trim()} — ${step.querySelector('strong')?.textContent}: ${step.querySelector('p')?.textContent}`));
  lines.push('','Tijden zijn indicatief. Controleer altijd kerntemperatuur en gaarheid.');const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`BBQ-draaiboek-${state.date||today()}.txt`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);toast('Draaiboek opgeslagen als tekstbestand');}
@@ -1228,7 +1238,7 @@ async function uploadPlanJson(ev){
   if(clean.dateMode==='auto')clean.date=today();
   clean.equipment={large:Array.isArray(plan.equipment?.large)?plan.equipment.large.filter(g=>GRATES[g]||g==='deflector'):[],small:Array.isArray(plan.equipment?.small)?plan.equipment.small.filter(g=>GRATES[g]||g==='deflector'):[]};
   if(plan.smart&&typeof plan.smart==='object')clean.smart={enabled:plan.smart.enabled!==false,mode:plan.smart.mode==='flex'?'flex':'fixed'};
-  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),category:CATEGORIES[x.category]?x.category:categoryGuess(x.name),method:METHODS[x.method]?x.method:methodGuess(x.name),grate:GRATES[x.grate]?x.grate:grateGuess(x.name,x.method),grate2:GRATES[x.grate2]?x.grate2:'cast',phase2Temp:n(x.phase2Temp,180),phase2Minutes:minutes(x.phase2Minutes??6),transitionMins:minutes(x.transitionMins??0),recipeSteps:Array.isArray(x.recipeSteps)?x.recipeSteps.slice(0,30):[],photo:validV45Photo(x.photo)?x.photo:'',serveSlot:['starter','main','dessert'].includes(x.serveSlot)?x.serveSlot:'main',v46BasePeople:Math.max(1,Math.min(50,Number(x.v46BasePeople)||4)),recipeIngredients:String(x.recipeIngredients??'').slice(0,6000),recipePrep:String(x.recipePrep??'').slice(0,6000),recipeCook:String(x.recipeCook??'').slice(0,10000),recipeRest:String(x.recipeRest??'').slice(0,4000),recipeSlice:String(x.recipeSlice??'').slice(0,4000),recipeSource:String(x.recipeSource??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
+  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),category:CATEGORIES[x.category]?x.category:categoryGuess(x.name),method:METHODS[x.method]?x.method:methodGuess(x.name),grate:GRATES[x.grate]?x.grate:grateGuess(x.name,x.method),grate2:GRATES[x.grate2]?x.grate2:'cast',phase2Temp:n(x.phase2Temp,180),phase2Minutes:minutes(x.phase2Minutes??6),transitionMins:minutes(x.transitionMins??0),recipeSteps:Array.isArray(x.recipeSteps)?x.recipeSteps.slice(0,30):[],prepTasks:v46PrepClean(x.prepTasks),photo:validV45Photo(x.photo)?x.photo:'',serveSlot:['starter','main','dessert'].includes(x.serveSlot)?x.serveSlot:'main',v46BasePeople:Math.max(1,Math.min(50,Number(x.v46BasePeople)||4)),recipeIngredients:String(x.recipeIngredients??'').slice(0,6000),recipePrep:String(x.recipePrep??'').slice(0,6000),recipeCook:String(x.recipeCook??'').slice(0,10000),recipeRest:String(x.recipeRest??'').slice(0,4000),recipeSlice:String(x.recipeSlice??'').slice(0,4000),recipeSource:String(x.recipeSource??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
   clean.v46MultiServe=plan.v46MultiServe===true;clean.v46Starter=/^\d{2}:\d{2}$/.test(plan.v46Starter||'')?plan.v46Starter:'17:30';clean.v46Dessert=/^\d{2}:\d{2}$/.test(plan.v46Dessert||'')?plan.v46Dessert:'19:15';clean.v46Pantry=Array.isArray(plan.v46Pantry)?plan.v46Pantry.slice(0,120).filter(x=>x&&typeof x.name==='string'):v46PantryClean();state=clean;persist();initValuesOnly();renderAll();toast('Planning geladen');
  }catch(e){alert('Kan planning niet laden: '+e.message);}
 }
@@ -1366,6 +1376,7 @@ function saveReview(id,card){
 function richText(value){return escape(value).replace(/\r?\n/g,'<br>')}
 function renderRecipeSteps(c){
  const steps=[],push=(time,kamado,title,short,parts)=>{if(Number.isFinite(time))steps.push({time,kamado,title,short,parts})};
+ for(const prep of v46PrepTasks(c))push(prep.timeAt,prep.kamado,prep.titleFull,'Voorbereiden · '+(prep.daysBefore===0?'BBQ-dag':prep.daysBefore+' dag(en) eerder')+(prep.duration?' · '+prep.duration+' min':'')+' · '+v46When(prep.timeAt),[['Voorbereiding',prep.notes||'Volg het originele recept en werk hygiënisch.'],['Planning','Gepland op '+v46When(prep.timeAt)+'. De BBQ-tijden blijven ongewijzigd.']]);
  for(const k of ['large','small'])if(c.fires[k]!=null)push(c.fires[k],k,'Steek de '+(k==='large'?'grote':'kleine')+' kamado aan','Aansteken en op temperatuur komen',[['Opwarmen','Gebruik geschikte kolen, regel de luchttoevoer en laat de BBQ stabiel worden. Reken circa '+minutes(k==='large'?state.preheatLarge:state.preheatSmall)+' minuten opwarming.']]);
  for(const d of c.dishes){if(d.start==null)continue;
   const r=recipeDetails(d),kamado=d.kamado==='large'?'grote':'kleine';
@@ -1381,7 +1392,7 @@ function renderRecipeSteps(c){
  }
  if(state.v46MultiServe){for(const [key,label] of [['starter','voorgerecht'],['main','hoofdgerecht'],['dessert','dessert']]){if(!c.dishes.some(d=>(d.serveSlot||'main')===key))continue;const t=v46DishServe({serveSlot:key},c.serve);if(t!=null)push(t,'all','🍽️ Serveer '+label,'Afzonderlijk serveermoment',[['Eetmoment','Controleer dat ieder gerecht werkelijk gaar is en serveer met schoon bestek.']]);}}else if(c.serve!=null)push(c.serve,'all','🍽️ Serveer het eten','Alle gerechten samen',[['Eetmoment','Controleer dat ieder gerecht werkelijk gaar is en serveer met schoon bestek.']]);
  steps.sort((a,b)=>a.time-b.time);
- const timedHtml=steps.length?steps.map(s=>'<details class="step"><summary><span class="step-time '+(s.kamado==='small'?'sm':'')+'">'+fmt(s.time)+'</span><span class="step-summary-text"><strong>'+escape(s.title)+'</strong><span class="hint" style="display:block">'+escape(s.short)+'</span></span></summary><div class="step-detail">'+s.parts.map(p=>'<h4>'+escape(p[0])+'</h4><p>'+richText(p[1])+'</p>').join('')+'</div></details>').join(''):'<div class="empty">Voeg gerechten toe om je draaiboek te maken.</div>';
+ const timedHtml=steps.length?steps.map(s=>'<details class="step"><summary><span class="step-time '+(s.kamado==='small'?'sm':'')+'">'+fmt(s.time)+'<span class="daylabel">'+escape(fmtDate(s.time))+'</span></span><span class="step-summary-text"><strong>'+escape(s.title)+'</strong><span class="hint" style="display:block">'+escape(s.short)+'</span></span></summary><div class="step-detail">'+s.parts.map(p=>'<h4>'+escape(p[0])+'</h4><p>'+richText(p[1])+'</p>').join('')+'</div></details>').join(''):'<div class="empty">Voeg gerechten toe om je draaiboek te maken.</div>';
  const detailedHtml=c.dishes.filter(d=>Array.isArray(d.recipeSteps)&&d.recipeSteps.length).map(d=>{
   const parts=d.recipeSteps.slice(0,30).map((s,i)=>'<details class="step recipe-stage"><summary><span class="step-time">Stap '+(i+1)+'</span><span class="step-summary-text"><strong>'+escape(s.title||'Bereidingsstap')+'</strong><span class="hint" style="display:block">'+escape(s.trigger||'Volg de gaarheid')+' · geen vaste kloktijd</span></span></summary><div class="step-detail"><h4>Zo pak je dit aan</h4><p>'+richText(s.detail||'')+'</p></div></details>').join('');
   return '<div style="grid-column:1/-1;margin-top:14px;border-top:1px solid #526167;padding-top:14px"><strong>📖 Uitgebreide receptstappen: '+escape(d.name)+'</strong><p class="hint">Deze stappen volgen de kerntemperatuur en handelingen, niet een geschatte kloktijd. Controleer het vlees tijdens de bereiding.</p></div>'+parts;
@@ -1792,6 +1803,48 @@ function v46DishServe(d,fallback){
  if(slot==='main')return fallback;
  return dateAt(state.date,slot==='starter'?(state.v46Starter||'17:30'):(state.v46Dessert||'19:15'))??fallback;
 }
+
+/* Voorbereidingen worden pas ingepland als de gebruiker een voorbeeld kiest of een eigen stap maakt. */
+const V46_PREP_TEMPLATES={
+ fish:{title:'Vis (droog) pekelen',daysBefore:1,time:'19:00',duration:15,notes:'Voorbereidingstijd is geen pekelduur. Volg de pekelsterkte en duur uit jouw visrecept. Bewaar rauwe vis goed afgedekt in de koelkast bij maximaal 4 °C en voorkom kruisbesmetting.'},
+ meat:{title:'Vlees marineren',daysBefore:1,time:'19:00',duration:15,notes:'Gebruik een schone afgesloten bak in de koelkast (maximaal 4 °C). Marinade die rauw vlees heeft geraakt niet koud opnieuw gebruiken als saus.'},
+ dough:{title:'Deeg voorbereiden / koude rijs',daysBefore:1,time:'18:00',duration:30,notes:'Volg het recept voor de rijstijd en bewaar het deeg volgens de opgegeven koeltemperatuur. De tijd hier is alleen voor het werk.'},
+ custom:{title:'Voorbereiding',daysBefore:1,time:'19:00',duration:15,notes:'Beschrijf wat je wilt doen en hoe je het veilig bewaart tot de BBQ-dag.'}
+};
+function v46PrepEditor(d){
+ const list=v46PrepClean(d.prepTasks);
+ return '<details class="v46-prep-editor"><summary>🧂 Voorbereiding vooraf ('+list.length+') · eerdere dagen mogelijk</summary>'+
+  '<p class="v46-muted">Maak per gerecht één of meer voorbereidingen. Het aantal dagen wordt teruggerekend vanaf '+escape(state.date)+'. De gekozen begintijd onder 01 blijft alleen voor de BBQ-dag gelden.</p>'+
+  '<div class="v46-row"><label class="v46-field">Toevoegen als <select data-v46-prep-template><option value="fish">Vis pekelen</option><option value="meat">Vlees marineren</option><option value="dough">Deeg maken/rijzen</option><option value="custom">Eigen voorbereiding</option></select></label>'+
+  '<button class="btn small primary" type="button" data-v46-prep-add>＋ Voorbereiding toevoegen</button></div>'+
+  (list.length?list.map(t=>'<div class="v46-prep-row" data-v46-prep-id="'+escape(t.id)+'">'+
+    '<div class="v46-row"><label class="v46-field">Handeling<input data-v46-prep-field="title" maxlength="120" value="'+escape(t.title)+'"></label>'+
+    '<label class="v46-field">Dagen vóór BBQ-datum<input data-v46-prep-field="daysBefore" type="number" min="0" max="14" step="1" value="'+t.daysBefore+'"></label>'+
+    '<label class="v46-field">Tijdstip<input data-v46-prep-field="time" type="time" value="'+escape(t.time)+'"></label>'+
+    '<label class="v46-field">Werktijd (min)<input data-v46-prep-field="duration" type="number" min="0" max="600" value="'+t.duration+'"></label></div>'+
+    '<label class="v46-field">Aanpak / bewaaradvies<textarea data-v46-prep-field="notes" maxlength="1500">'+escape(t.notes)+'</textarea></label>'+
+    '<p class="v46-muted">🗓️ '+escape(v46When(v46PrepDate(t)))+' · werkmoment '+t.duration+' min (niet automatisch de pekel- of wachttijd)</p>'+
+    '<button class="btn small danger" type="button" data-v46-prep-remove>× Verwijder voorbereiding</button></div>').join(''):
+    '<p class="v46-muted">Nog geen voorbereidingen ingesteld.</p>')+
+  '<button class="btn small" type="button" data-v46-prep-save>✓ Ook bewaren in mijn receptenbibliotheek</button>'+
+  '<p class="v46-muted">Bij vis is één dag vooraf voorbereiden niet automatisch 24 uur pekelen. Controleer altijd de daadwerkelijke pekelduur van je recept.</p></details>';
+}
+function v46PrepTimeline(base){
+ const target=$('v46-prep-timeline');if(!target)return;
+ const rows=v46PrepTasks(base);
+ if(!rows.length){target.innerHTML='';return;}
+ const groups=new Map();
+ for(const p of rows){
+  const date=new Date(p.timeAt).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(!groups.has(date))groups.set(date,[]);
+  groups.get(date).push(p);
+ }
+ target.innerHTML='<h3>🧂 Voorbereidingstijdlijn · vóór het grillen</h3>'+
+ [...groups.entries()].map(([date,tasks])=>'<div class="v46-prep-day"><strong>'+escape(date)+'</strong>'+
+ tasks.map(t=>'<p><b>'+fmt(t.timeAt)+'</b> · '+escape(t.titleFull)+(t.duration?' · '+t.duration+' min werktijd':'')+
+ '<br><span class="v46-muted">'+escape(t.notes||'Volg het recept.')+'</span></p>').join('')+'</div>').join('');
+}
+
 function v46DishPanel(d){
  const count=Math.max(1,Math.min(50,Number(state.v45People)||4));
  const basis=Math.max(1,Math.min(50,Number(d.v46BasePeople)||Number(state.v45Base)||4));
@@ -1905,6 +1958,7 @@ function v46PantryRender(){
  '<button class="btn small" type="button" data-v46-stock-remove="'+i+'" aria-label="Verwijder '+escape(x.name)+'">✕</button></div>').join(''):'<p class="v46-muted">Je voorraadkast is nog leeg.</p>';
 }
 function v46Render(base){
+ v46PrepTimeline(base);
  const multi=$('v46-multi');if(!multi)return;
  multi.checked=state.v46MultiServe===true;
  const fill=(id,value)=>{const el=$(id);if(document.activeElement!==el)el.value=value;};

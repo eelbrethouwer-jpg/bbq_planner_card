@@ -483,6 +483,48 @@ const builtInRecipeNames=new Set(Object.keys(examples));
 let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
 const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category:CATEGORIES[data.category]?data.category:categoryGuess(data.name),method:METHODS[data.method]?data.method:methodGuess(data.name),grate:GRATES[data.grate]?data.grate:grateGuess(data.name,data.method||methodGuess(data.name)),grate2:GRATES[data.grate2]?data.grate2:'cast',phase2Temp:data.phase2Temp??(data.method==='combo'||methodGuess(data.name)==='combo'?250:180),phase2Minutes:data.phase2Minutes??6,transitionMins:data.transitionMins??(data.method==='combo'||methodGuess(data.name)==='combo'?15:0),kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',photo:validV45Photo(data.photo)?data.photo:'',coachStep:Number.isInteger(Number(data.coachStep))?Math.max(0,Math.min(29,Number(data.coachStep))):0,serveSlot:['starter','main','dessert'].includes(data.serveSlot)?data.serveSlot:'main',v46BasePeople:Number(data.v46BasePeople)||0,v46TimerEndsAt:Math.max(0,Number(data.v46TimerEndsAt)||0),prepTasks:v46PrepClean(data.prepTasks),meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
 
+
+/* V4.6: expliciete tijdsaanduidingen uit recepten herkennen; nooit een kloktijd verzinnen. */
+function v46InferPrepFromText(raw){
+ const text=String(raw||'').slice(0,35000).replace(/\r/g,''),lines=text.split('\n'),found=[];
+ const relative=/(?:\b(?:de\s+)?(?:avond|dag)\s+(?:er\s*voor|ervoor|tevoren|van\s+tevoren|vooraf|voordien|vóór\s+de\s+bereiding)\b|\b(?:een|1|twee|2|drie|3)\s+dagen?\s+(?:er\s*voor|ervoor|tevoren|van\s+tevoren|vooraf)\b|\b(?:24|48|72)\s*uur\s+(?:van\s+tevoren|vooraf|ervoor)\b)/i;
+ const duration=/(?:\b(24|48|72)\s*uur\b.{0,85}\b(marineren|pekelen|rijzen|koel|rusten)\b|\b(marineer|marineren|pekel|pekelen|laat|rust|rijs|rijzen)\b.{0,85}\b(24|48|72)\s*uur\b)/i;
+ const heading=/^(?:#{1,4}\s*)?(?:voorbereiding|bereiding(?:sdag|swijze)?|ingrediënten|ingredienten|rusten|serveren|stap\s+\d+|dag\s+zelf|op\s+de\s+dag\s+zelf)\s*:?\s*$/i;
+ const clean=s=>s.replace(/^\s*(?:#{1,4}\s*|[-*•]\s*|\d+[.)]\s*)/,'').trim();
+ for(let index=0;index<lines.length;index++){
+  const line=clean(lines[index]);if(!line)continue;
+  const match=line.match(relative),hours=line.match(duration);
+  if(!match&&!hours)continue;
+  let daysBefore=1;
+  const nums=line.match(/\b(een|1|twee|2|drie|3)\s+dagen?\s+(?:ervoor|er\s*voor|van\s+tevoren|tevoren|vooraf)\b/i);
+  if(nums)daysBefore=({een:1,twee:2,drie:3})[nums[1].toLowerCase()]||Number(nums[1])||1;
+  else{const explicit=line.match(/\b(24|48|72)\s*uur\b/i);if(explicit)daysBefore=Number(explicit[1])/24;}
+  const suffix=clean(match?line.replace(relative,'').replace(/^[\s:;,–-]+/,''):line);
+  const fragments=[suffix].filter(Boolean);
+  if((!suffix||suffix.length<38)&&index+1<lines.length){
+   for(let j=index+1;j<Math.min(index+5,lines.length);j++){
+    const next=clean(lines[j]);if(!next||heading.test(next)||relative.test(next)||duration.test(next))break;
+    if(/^(stap\s+\d+|bbq\s+temperatuur|kerntemperatuur)\b/i.test(next))break;
+    fragments.push(next);
+    if(fragments.join(' ').length>=470||j>=index+2)break;
+   }
+  }
+  const detail=fragments.join(' ').replace(/\s+/g,' ').trim().slice(0,1250);
+  const lower=(line+' '+detail).toLowerCase();
+  const title=/pekel|pekelzout|brin/i.test(lower)?'Pekelen en gekoeld bewaren':
+   /marin|rub|inwrij|wrijf|kruid/i.test(lower)?'Kruiden of marineren':
+   /deeg|rijs|rijzen|kned/i.test(lower)?'Deeg voorbereiden':
+   /injecteer/i.test(lower)?'Vlees voorbereiden en injecteren':
+   /dep|snijd|maak|meng|bereid|prep/i.test(lower)?'Ingrediënten voorbereiden':'Voorbereiding uit recept';
+  const fingerprint=daysBefore+'|'+title+'|'+detail.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,65);
+  if(found.some(x=>x.fingerprint===fingerprint))continue;
+  found.push({id:'herkend-'+(index+1),title,daysBefore,time:'',duration:0,
+   notes:(detail||line).slice(0,1250),fingerprint});
+  if(found.length>=12)break;
+ }
+ return found.map(({fingerprint,...item})=>item);
+}
+
 /* Voorbereidingen volgen kalenderdagen, ook rond winter-/zomertijd. */
 function v46PrepClean(input){
  if(!Array.isArray(input))return [];
@@ -493,11 +535,11 @@ function v46PrepClean(input){
   const rawTime=String(x.time||''),valid=/^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime);
   const days=Math.max(0,Math.min(14,Math.round(Number(x.daysBefore)||0)));
   const duration=Math.max(0,Math.min(600,Math.round(Number(x.duration)||0)));
-  return {id:String(x.id||'prep-'+i).slice(0,90),title,daysBefore:days,time:valid?rawTime:'19:00',duration,notes:String(x.notes||'').slice(0,1500)};
+  return {id:String(x.id||'prep-'+i).slice(0,90),title,daysBefore:days,time:rawTime===''?'':valid?rawTime:'19:00',duration,notes:String(x.notes||'').slice(0,1500)};
  }).filter(Boolean);
 }
 function v46PrepDate(task,date=state.date){
- const value=dateAt(date,task.time);
+ const value=dateAt(date,task.time||'12:00');
  if(value===null)return null;
  const d=new Date(value);d.setDate(d.getDate()-task.daysBefore);
  return d.getTime();
@@ -505,6 +547,11 @@ function v46PrepDate(task,date=state.date){
 function v46When(value){
  if(!Number.isFinite(value))return 'onbekende datum';
  return new Date(value).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' om '+fmt(value);
+}
+function v46PrepWhen(task){
+ const value=v46PrepDate(task);if(value===null)return 'Onbekende datum';
+ if(task.time)return v46When(value);
+ return new Date(value).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · tijdstip nog kiezen';
 }
 function v46PrepTasks(base){
  return base.dishes.flatMap(d=>v46PrepClean(d.prepTasks).map(t=>({...t,dishId:d.id,dishName:d.name,kamado:d.kamado,timeAt:v46PrepDate(t),titleFull:t.title+' · '+d.name}))).filter(t=>Number.isFinite(t.timeAt)).sort((a,b)=>a.timeAt-b.timeAt);
@@ -574,7 +621,7 @@ const calc=()=>{
   const prepDone=state.v46Done||{};
   for(const p of v46PrepTasks({dishes})){
    if(p.timeAt<Date.now()&&p.timeAt>=Date.now()-14*86400000&&!prepDone[state.date+'|'+p.dishId+':prep:'+p.id])
-    alerts.push({type:'notice',message:'<strong>Voorbereiding niet afgevinkt:</strong> '+escape(p.titleFull)+' stond gepland op '+escape(v46When(p.timeAt))+'. Controleer of deze stap nog veilig en haalbaar is.'});
+    alerts.push({type:'notice',message:'<strong>Voorbereiding niet afgevinkt:</strong> '+escape(p.titleFull)+' stond gepland op '+escape(v46PrepWhen(p))+'. Controleer of deze stap nog veilig en haalbaar is.'});
   }
  for(const d of dishes){if(d.mode==='manual'&&d.offset!==0&&d.start!=null){alerts.push({type:d.offset>0?'urgent':'notice',message:`<strong>${escape(d.name)}</strong> is met de vaste starttijd <strong>${Math.abs(d.offset)} minuten ${d.offset>0?'te laat':'te vroeg'}</strong> klaar t.o.v. ${fmt(d.serveAt)}.`});}}
  for(const group of [large,small]){
@@ -1077,7 +1124,7 @@ function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDis
 function renderAll(){renderDishes();renderOutputs();}
 function downloadSchedule(){const c=calc();const lines=[`BBQ BEREIDINGSPLANNER`,`Datum: ${state.date}`,`Gezamenlijke serveertijd: ${state.mealTime}`,`Beschikbaar op BBQ-dag vanaf: ${state.availableFrom}`,'',`GROTE KAMADO aansteken: ${fmt(c.fires.large)}${dayHint(c.fires.large,c.serve)}`,`KLEINE KAMADO aansteken: ${fmt(c.fires.small)}${dayHint(c.fires.small,c.serve)}`,'','GERECHTEN'];
  c.dishes.forEach(d=>lines.push(`${d.name} | ${d.kamado==='large'?'Grote':'Kleine'} kamado | Start ${fmt(d.start)}${dayHint(d.start,c.serve)} | Van BBQ ${fmt(d.cookEnd)} | Klaar ${fmt(d.end)} | BBQ ${d.grill}°C | Kern ${d.core!==''?d.core+'°C':'n.v.t.'} | Bereiding ${d.cook} min | Rust ${d.rest} min${d.notes?' | '+d.notes:''}`));
- const prep=v46PrepTasks(c);if(prep.length){lines.push('','VOORBEREIDINGEN (ook eerdere dagen)');prep.forEach(p=>lines.push(v46When(p.timeAt)+' | '+p.titleFull+(p.duration?' | Handeling '+p.duration+' min':'')+' | '+p.notes));}
+ const prep=v46PrepTasks(c);if(prep.length){lines.push('','VOORBEREIDINGEN (ook eerdere dagen)');prep.forEach(p=>lines.push(v46PrepWhen(p)+' | '+p.titleFull+(p.duration?' | Handeling '+p.duration+' min':'')+' | '+p.notes));}
  if(c.alerts.length){lines.push('','AANDACHTSPUNTEN');c.alerts.forEach(a=>lines.push(a.message.replace(/<[^>]+>/g,'')))}
  const dom=$('steps');lines.push('','DRAAIBOEK');dom.querySelectorAll('.step').forEach(step=>lines.push(`${step.querySelector('.step-time')?.textContent.trim()} — ${step.querySelector('strong')?.textContent}: ${step.querySelector('p')?.textContent}`));
  lines.push('','Tijden zijn indicatief. Controleer altijd kerntemperatuur en gaarheid.');const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`BBQ-draaiboek-${state.date||today()}.txt`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);toast('Draaiboek opgeslagen als tekstbestand');}
@@ -1376,7 +1423,7 @@ function saveReview(id,card){
 function richText(value){return escape(value).replace(/\r?\n/g,'<br>')}
 function renderRecipeSteps(c){
  const steps=[],push=(time,kamado,title,short,parts)=>{if(Number.isFinite(time))steps.push({time,kamado,title,short,parts})};
- for(const prep of v46PrepTasks(c))push(prep.timeAt,prep.kamado,prep.titleFull,'Voorbereiden · '+(prep.daysBefore===0?'BBQ-dag':prep.daysBefore+' dag(en) eerder')+(prep.duration?' · '+prep.duration+' min':'')+' · '+v46When(prep.timeAt),[['Voorbereiding',prep.notes||'Volg het originele recept en werk hygiënisch.'],['Planning','Gepland op '+v46When(prep.timeAt)+'. De BBQ-tijden blijven ongewijzigd.']]);
+ for(const prep of v46PrepTasks(c))push(prep.timeAt,prep.kamado,prep.titleFull,'Voorbereiden · '+(prep.daysBefore===0?'BBQ-dag':prep.daysBefore+' dag(en) eerder')+(prep.duration?' · '+prep.duration+' min':'')+' · '+v46PrepWhen(prep),[['Voorbereiding',prep.notes||'Volg het originele recept en werk hygiënisch.'],['Planning','Gepland op '+v46PrepWhen(prep)+'. De BBQ-tijden blijven ongewijzigd.']]);
  for(const k of ['large','small'])if(c.fires[k]!=null)push(c.fires[k],k,'Steek de '+(k==='large'?'grote':'kleine')+' kamado aan','Aansteken en op temperatuur komen',[['Opwarmen','Gebruik geschikte kolen, regel de luchttoevoer en laat de BBQ stabiel worden. Reken circa '+minutes(k==='large'?state.preheatLarge:state.preheatSmall)+' minuten opwarming.']]);
  for(const d of c.dishes){if(d.start==null)continue;
   const r=recipeDetails(d),kamado=d.kamado==='large'?'grote':'kleine';
@@ -1823,7 +1870,7 @@ function v46PrepEditor(d){
     '<label class="v46-field">Tijdstip<input data-v46-prep-field="time" type="time" value="'+escape(t.time)+'"></label>'+
     '<label class="v46-field">Werktijd (min)<input data-v46-prep-field="duration" type="number" min="0" max="600" value="'+t.duration+'"></label></div>'+
     '<label class="v46-field">Aanpak / bewaaradvies<textarea data-v46-prep-field="notes" maxlength="1500">'+escape(t.notes)+'</textarea></label>'+
-    '<p class="v46-muted">🗓️ '+escape(v46When(v46PrepDate(t)))+' · werkmoment '+t.duration+' min (niet automatisch de pekel- of wachttijd)</p>'+
+    '<p class="v46-muted">🗓️ '+escape(v46PrepWhen(t))+' · werkmoment '+t.duration+' min (niet automatisch de pekel- of wachttijd)</p>'+
     '<button class="btn small danger" type="button" data-v46-prep-remove>× Verwijder voorbereiding</button></div>').join(''):
     '<p class="v46-muted">Nog geen voorbereidingen ingesteld.</p>')+
   '<button class="btn small" type="button" data-v46-prep-save>✓ Ook bewaren in mijn receptenbibliotheek</button>'+
@@ -1841,7 +1888,7 @@ function v46PrepTimeline(base){
  }
  target.innerHTML='<h3>🧂 Voorbereidingstijdlijn · vóór het grillen</h3>'+
  [...groups.entries()].map(([date,tasks])=>'<div class="v46-prep-day"><strong>'+escape(date)+'</strong>'+
- tasks.map(t=>'<p><b>'+fmt(t.timeAt)+'</b> · '+escape(t.titleFull)+(t.duration?' · '+t.duration+' min werktijd':'')+
+ tasks.map(t=>'<p><b>'+(t.time?fmt(t.timeAt):'Tijdstip nog kiezen')+'</b> · '+escape(t.titleFull)+(t.duration?' · '+t.duration+' min werktijd':'')+
  '<br><span class="v46-muted">'+escape(t.notes||'Volg het recept.')+'</span></p>').join('')+'</div>').join('');
 }
 
@@ -1902,8 +1949,8 @@ function v46Prediction(d,now=Date.now()){
 }
 function v46Tasks(base){
  const tasks=[];
- const add=(id,time,title,k)=>{if(Number.isFinite(time))tasks.push({id:state.date+'|'+id,time,title,k})};
- for(const prep of v46PrepTasks(base))add(prep.dishId+':prep:'+prep.id,prep.timeAt,prep.titleFull+' · voorbereiding',prep.kamado);
+ const add=(id,time,title,k,timeLabel)=>{if(Number.isFinite(time))tasks.push({id:state.date+'|'+id,time,title,k,timeLabel})};
+ for(const prep of v46PrepTasks(base))add(prep.dishId+':prep:'+prep.id,prep.timeAt,prep.titleFull+' · voorbereiding',prep.kamado,v46PrepWhen(prep));
  for(const k of ['large','small'])add(k+':fire',base.fires[k],'Steek '+(k==='large'?'grote':'kleine')+' kamado aan',k);
  for(const d of base.dishes){
   add(d.id+':on',d.start,'Leg '+d.name+' op de '+(d.kamado==='large'?'grote':'kleine')+' kamado',d.kamado);
@@ -1925,7 +1972,7 @@ function v46Board(base){
  ];
  $('v46-board').innerHTML=group.map(([label,ts])=>'<div class="v46-task-group"><h4>'+label+' ('+ts.length+')</h4>'+
   (ts.length?ts.slice(0,16).map(t=>'<label class="v46-task '+(done[t.id]?'done':'')+'"><input type="checkbox" data-v46-check="'+escape(t.id)+'" '+(done[t.id]?'checked':'')+'>'+
-    '<span><strong>'+escape(t.title)+'</strong><small>'+escape(v46When(t.time))+' · '+(t.k==='large'?'grote kamado':'kleine kamado')+'</small></span></label>').join(''):
+    '<span><strong>'+escape(t.title)+'</strong><small>'+escape(t.timeLabel||v46When(t.time))+' · '+(t.k==='large'?'grote kamado':'kleine kamado')+'</small></span></label>').join(''):
     '<p class="v46-muted">Geen handelingen.</p>')+'</div>').join('');
 }
 function v46LiveRender(base){

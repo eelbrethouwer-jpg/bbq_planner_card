@@ -63,9 +63,20 @@ Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_c
 
 ## Versies
 
-De huidige `main`-code bevat **v4.3.0** met de receptenbibliotheek en Home Assistant-receptensynchronisatie. **v4.4.0** is als releasekandidaat voorbereid met gesynchroniseerde bereidingshistorie. HACS ziet v4.4.0 pas na merge en de officiële GitHub Release met tag `v4.4.0`.
+**v4.4.0** is officieel gepubliceerd. **v4.5.0** wordt als releasekandidaat ontwikkeld op een aparte branch. HACS toont v4.5.0 pas na merge naar `main` en een officiële GitHub Release met tag `v4.5.0`.
 
 Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub Release met een versietag als je een versie wilt uitbrengen. De HACS-workflow controleert de repository automatisch op iedere push, pull request en via een geplande controle.
+
+## Nieuw in de releasekandidaat v4.5.0
+
+- **Slimme BBQ-coach:** concrete, veilige aanwijzingen bij actuele MEATER-kernwaarden en het kerndoel. Metingen gelden alleen als live bij recente berichten via Home Assistant (maximaal vijf minuten oud). De coach waarschuwt onder andere bij aflopende kern en overgang naar directe grillfase; hij bestuurt de kamado niet.
+- **Live kookmodus voor iPhone:** schermvullend en mobielvriendelijk met grote kern- en omgevingstemperaturen, gerechtkeuze, uitgeschreven receptstappen en handmatige faseknoppen. Zonder HA toont hij streepjes, nooit gefingeerde temperaturen.
+- **Leren van eerdere bereidingen:** registreert werkelijke BBQ-minuten tussen handmatig opgegeven start en rustmoment, of vul minuten zelf in de review in. Vanaf twee reviews berekent de planner een mediane tijd en kun je deze **zelf toepassen** op de planning. Hij wijzigt tijden nooit ongemerkt.
+- **Foto's bij recepten en reviews:** upload eigen foto's vanaf de telefoon, automatisch als kleine JPEG-miniatuur verkleind. Receptfoto's volgen eigen recepten in de HA-gebruikerssynchronisatie en in bibliotheek-JSON; recente reviewfoto's volgen HA-review-sync. Maximaal 30 bewaarde reviewminiaturen binnen maximaal 250 tekstreviews. Lokale browseropslag blijft een praktische beperking.
+- **Boodschappenlijst:** combineert herkende hoeveelheden en eenheden uit ingrediënten van de geplande recepten, met aantal personen, handmatig ingestelde receptbasis, keuze per gerecht, afvinken en kopiëren. Ingrediënten zonder numerieke hoeveelheid worden niet geraamd. Controleer zelf de receptbasis.
+- **Slimme kamadoverdeling:** verkent mogelijke toewijzingen voor beide kamado's en minimaliseert overlappende temperatuur-, rooster- en opstellingsconflicten met een conflictscore. Voorstellen toepassen is expliciet; gerechten die al bezig zijn worden niet verplaatst. Het systeem kent geen fysieke roostercapaciteit of gewicht van de gerechten.
+
+Deze versie behoudt alle bestaande functies van v4.4.0: planning, recipesync, reviewsync, JSON-receptenback-up, direct/indirect, MEATER-grafieken, food safety-notities en de publieke standalone HTML. De nieuwe functies zijn nog geen officiële HACS-release. Tests in GitHub Actions zijn geautomatiseerd; een echte iPhone Safari- en live-Home-Assistant-apparaattest blijft na installatie noodzakelijk.
 
 ## Nieuw in de voorbereide v4.2.0
 
@@ -77,7 +88,7 @@ Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub R
 - **Stappen individueel bewerken:** gerechten kunnen uitgebreide instructies met eigen triggers bewaren. Receptbibliotheek, reviews en tijdlijnen van v4.1.0 blijven bestaan.
 - **Pulled pork op brood:** standaardrecept met 2 kg procureur, indirect 120 °C, 7–11 uur als bereik, minimaal 1 uur rust en negen uitklapbare stappen. Het instelbare richtpunt 92 °C is een `priktest`-herinnering, geen automatisch gaarverklaring.
 
-Deze nieuwe functies zijn in de releasebranch beschikbaar voor test; ze zijn **nog niet** opgenomen in de gepubliceerde HACS-release.
+De genoemde v4.2.0-functies zijn inmiddels opgenomen in de gepubliceerde eerdere releases.
 
 ## Bereidingshistorie synchroniseren (v4.4.0)
 

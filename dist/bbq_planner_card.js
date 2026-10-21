@@ -1,4 +1,4 @@
-/* BBQ-bereidingsplanner v4.4.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v4.5.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
@@ -52,7 +52,9 @@
       thermometer:['pro','plus'].includes(item.thermometer)?item.thermometer:'none',
       lastMeasured:num(item.lastMeasured,-30,500),
       ambient:num(item.ambient,-30,500),
-      comment:String(item.comment||'').slice(0,2000)
+      comment:String(item.comment||'').slice(0,2000),
+      actualMinutes:item.actualMinutes==null||item.actualMinutes===''?null:num(item.actualMinutes,1,10000),
+      photo:typeof item.photo==='string'&&item.photo.length<=30000&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(item.photo)?item.photo:''
     };
   }
   function cleanReviews(raw){
@@ -62,12 +64,14 @@
       const item=cleanReview(rawItem);if(!item)continue;
       map.set(reviewKey(item),item);
     }
-    return {version:1,reviews:[...map.values()].sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt)).slice(-250)};
+    const sorted=[...map.values()].sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt)).slice(-250);
+    let pictures=0;for(let i=sorted.length-1;i>=0;i--)if(sorted[i].photo&&++pictures>30)sorted[i].photo='';
+    return {version:1,reviews:sorted};
   }
   function mergeReviews(remote,incoming){
     const map=new Map();
     for(const group of [cleanReviews(remote),cleanReviews(incoming)]){
-      for(const item of group.reviews)map.set(reviewKey(item),item);
+      for(const item of group.reviews){const key=reviewKey(item),old=map.get(key);map.set(key,old?.photo&&!item.photo?{...item,photo:old.photo}:item);}
     }
     return {version:1,reviews:[...map.values()].sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt)).slice(-250)};
   }

@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.5.0 — releasekandidaat (PR, nog niet gepubliceerd)
+
+- **Slimme BBQ-coach** met heldere waarschuwingen bij recente, unieke MEATER-kernmetingen, approaching core target en reverse-sear-omschakeling. Geen gesimuleerde live metingen of automatische wijziging van BBQ-hardware.
+- **Mobiele live kookmodus:** schermvullende iPhone-weergave met grote kern-/omgevingstemperaturen, receptstappen, vorige/volgende en handmatige faseovergangen.
+- **Leren van werkelijke BBQ-tijden:** review met automatisch vastgelegde of handmatig ingevulde kookduur; vanaf twee bereidingen verschijnt de historische mediaan als optioneel tijdsvoorstel.
+- **Receptfoto's en reviewfoto's:** lokale iPhone-upload, compacte JPEG-miniatuur, receptenbibliotheek-/reviewhistorie-weergave en synchronisatie via de bestaande HA user storage. Maximaal dertig meest recente reviewminiaturen binnen tweehonderdvijftig reviews.
+- **Boodschappenlijst:** ingrediënten bundelen, eenheden omrekenen, schaalfactor personen/receptbasis, gerechten selecteren, afvinken en kopiëren.
+- **Slimme kamadoverdeling:** heuristisch verdelingsvoorstel voor grote en kleine kamado met score voor overlappende fasen, verschillen in rooster en BBQ-temperatuur, expliciete bevestiging en bescherming van reeds gestarte gerechten.
+- **Compatibiliteit:** eerdere lokale planningen, reviews, recepten, gebruikerssynchronisatie, instellingen, draaiboek, kern-/omgevingsgrafieken en HACS blijven behouden.
+- **Beperkingen:** kookduur blijft een schatting en voedselveiligheid moet fysiek worden gecontroleerd. Foto's zijn miniaturen, geen originele fotoarchieven. Alleen HA-context toont live sensormetingen. Geen fysieke iPhone Safari- of MEATER-hardwaretest via geautomatiseerde CI.
+
+**Status:** maak na goedkeuring van de PR een GitHub Release `v4.5.0` vanaf `main`.
+
+
 ## v4.4.0 — releasekandidaat (nog niet gepubliceerd)
 
 - **Bereidingshistorie per Home Assistant-gebruiker:** reviews synchroniseren tussen bijvoorbeeld iPhone en computer wanneer hetzelfde Home Assistant-account wordt gebruikt.

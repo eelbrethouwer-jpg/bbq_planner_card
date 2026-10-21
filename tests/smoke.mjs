@@ -234,8 +234,8 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route),'HTML redirect points at actual planner');
-  assert.ok(entry.includes('href="'+route+'"'),'accessible fallback link');
+  assert.ok(entry.includes('url='+route+'?v=4.5.0'),'HTML redirect points at versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v=4.5.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('OK v4.5: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');

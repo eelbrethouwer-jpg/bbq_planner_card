@@ -18,6 +18,15 @@
 - **Beschikbare begintijd:** is uitdrukkelijk alleen voor de dag van het diner bedoeld. Dag-ervoor-taken hebben eigen tijden.
 - **Voedselveiligheid:** voorinstellingen zetten niet automatisch de pekelduur op 24 uur; bewaartemperatuur en werkelijke pekeltijd moeten volgens het betreffende recept worden gecontroleerd.
 
+## Nieuw: receptgenerator herkent voorbereidingen op eerdere dagen
+- De generator analyseert expliciete uitspraken zoals **“de avond ervoor”**, **“avond tevoren”**, **“een dag van tevoren”**, **“twee dagen vooraf”** en **“24 uur marineren”**.
+- Een aparte sectie **“Voorbereidingen vóór de BBQ”** toont de herkende handelingen in het bewerkbare receptconcept. Hier kun je titel, dag-offset, datum-afgeleid van de gekozen serveerdatum, tijdstip, beschrijving en eventuele werktijd aanpassen of verwijderen, of zelf een nieuwe taak toevoegen.
+- **Geen gefingeerde kloktijden:** alleen “de avond ervoor” geeft wel de vorige kalenderdag maar **geen 19:00**. Het exacte tijdstip blijft leeg tot je het zelf kiest. Zonder opgegeven werktijd wordt ook geen werkduur verzonnen.
+- Bij goedkeuren worden de taken opgeslagen in de gerechtenplanning en receptenbibliotheek. De oude snelle import herkent dezelfde aanwijzingen.
+- Het ingebouwde recept **Pulled pork op brood** heeft nu een expliciete voorbereiding op de avond ervoor voor het bijsnijden, kruiden en gekoeld wegzetten van de procureur.
+- Dit is tekstherkenning, geen garantie dat een recept correct of voedselveilig is geïnterpreteerd. **24 uur marineren** moet ook echt voldoende tijd tussen de gekozen start en het garen opleveren; controleer dat zelf. Bij rauw vlees en vis gekoeld bewaren volgens recept en voedselveiligheidsrichtlijnen.
+- Teksten met kortere wachttijd, zoals **12 uur marineren**, worden niet automatisch op een specifieke kalenderdag gezet als de dag niet eenduidig is.
+
 ## Compatibiliteit & veiligheid
 - Zelfstandige HTML blijft: \`dist/BBQ_bereidingsplanner_MEATER_v4.html\`.
 - Receptenbibliotheek, HA per-gebruiker reviewsync, MEATER Pro/Plus-grafieken, foto's, bestaande planning en flexibele adviezen blijven intact.
@@ -34,5 +43,6 @@
 - [ ] Handmatig: 3 gangen en beide kamado's; controleer alle start- en opwarmtijden
 - [ ] Test morgen gepland diner: toekomstig starttijdconflict is advies, niet een melding dat vandaag al te laat is
 - [ ] Test vis een dag eerder pekelen en beide dagen afzonderlijk in het draaiboek, bewaren, heropenen en afvinken
+- [ ] Receptgenerator: 'de avond ervoor' en '24 uur marineren' -> bewerkbare voorbereiding zonder verzonnen tijd, bewaren in bibliotheek en planning
 
 **Nog niet mergen of taggen tot CI en handmatige controles klaar zijn.**

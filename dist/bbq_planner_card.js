@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v4.6.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v4.7.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=4.6.0', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=4.7.0', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'
@@ -237,7 +237,10 @@
       if(event.data.__bbq==='bbq-notify-request-v1')this._sendNotification(event.data);
       if(event.data.__bbq==='bbq-child-height-v1'){
         const h=Number(event.data.height);
-        if(Number.isFinite(h)&&h>250&&h<30000)this._iframe.style.height=Math.ceil(h)+'px';
+        if(event.data.mode==='viewport'){
+          // v4.7: constrain iframe to visible phone viewport so fixed navigation stays on screen.
+          this._iframe.style.cssText='width:100%;height:calc(100dvh - 118px);min-height:460px;max-height:94dvh;display:block;border:0;background:#0c1318;overflow:auto;';
+        }else if(Number.isFinite(h)&&h>250&&h<30000)this._iframe.style.height=Math.ceil(h)+'px';
       }
     }
   }

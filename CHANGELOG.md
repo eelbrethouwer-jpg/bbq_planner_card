@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.3.0 — releasekandidaat (nog niet gepubliceerd)
+
+- Eigen **Mijn receptenbibliotheek** met recepten zoeken, bekijken, opnieuw bewerken, gebruiken en verwijderen.
+- **Complete JSON-receptenback-up** exporteren en importeren, samenvoegen of met bevestiging vervangen.
+- **Receptensynchronisatie per Home Assistant-gebruikersaccount** op iPhone en computer via bestaande beveiligde WebSocket-user-storage.
+- Bij gebrek aan HA-sessie blijft de bibliotheek lokaal werken; de publieke GitHub Pages-planner heeft geen toegang tot persoonlijke HA-data.
+- Data uit v4.1/v4.2 wordt gemigreerd zonder bestaande reviews of geplande gerechten te wissen.
+- De Home Assistant-bridge krijgt cacheversie `v4.3.0`.
+- De interface meldt of Home Assistant-synchronisatie beschikbaar is. Bij gedeelde accounts verschijnen dezelfde recepten; andere accounts blijven gescheiden.
+
+**Status:** nog geen officiële HACS-release; zie [RELEASE_v4.3.0.md](RELEASE_v4.3.0.md). 
+
+
 ## v4.2.0 — voorbereide release (nog niet gepubliceerd)
 
 - **Datum:** standaard automatisch de lokale dag van vandaag; zelfgekozen datum blijft bewaard, met knop ‘Vandaag gebruiken’. Bestaande plannen worden voorzichtig gemigreerd; expliciet geïmporteerde datum blijft handmatig.

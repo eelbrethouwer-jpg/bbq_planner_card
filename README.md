@@ -31,7 +31,7 @@ Het publieke websiteadres is **https://eelbrethouwer-jpg.github.io/bbq_planner_c
 De vaste webpagina `index.html` opent automatisch de bestaande zelfstandige HTML-planner onder `dist/`, zodat de Home Assistant-code en de openbare website dezelfde planner blijven gebruiken.
 
 - Met **↗ Deel website** kun je vanaf een iPhone via het deelmenu (bijvoorbeeld WhatsApp) de openbare link doorsturen.
-- Iedereen beheert **zijn eigen** gerechten, recepten en reviews in de lokale browseropslag. Er is nog geen accountsysteem of synchronisatie.
+- Iedereen beheert op de **openbare website** zijn eigen recepten en reviews in de lokale browseropslag. In de **Home Assistant-dashboardkaart** synchroniseren eigen recepten vanaf v4.3.0 met de beveiligde gebruikersopslag van het ingelogde Home Assistant-account. De publieke site synchroniseert niet automatisch en gebruikt JSON import/export.
 - De openbare website leest **geen** Home Assistant- of MEATER-gegevens. De bestaande ingelogde HA-dashboardkaart blijft de enige live-bron.
 - De deelknop deelt alleen het **websiteadres**, nooit jouw eigen planning of sensorwaarden.
 
@@ -63,7 +63,7 @@ Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_c
 
 ## Versies
 
-Gepubliceerde versie: **v4.1.0**. **v4.2.0** is als releasekandidaat in een aparte branch voorbereid. HACS toont de nieuwe versie pas na het samenvoegen, taggen en publiceren van de officiële GitHub Release `v4.2.0`.
+Gepubliceerde versie: **v4.2.0**. **v4.3.0** met receptenbibliotheek en synchronisatie is voorbereid in een aparte ontwikkelbranch. HACS ziet v4.3.0 pas na merge en de officiële GitHub Release met tag `v4.3.0`.
 
 Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub Release met een versietag als je een versie wilt uitbrengen. De HACS-workflow controleert de repository automatisch op iedere push, pull request en via een geplande controle.
 
@@ -79,9 +79,19 @@ Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub R
 
 Deze nieuwe functies zijn in de releasebranch beschikbaar voor test; ze zijn **nog niet** opgenomen in de gepubliceerde HACS-release.
 
+## Mijn receptenbibliotheek en synchronisatie (v4.3.0)
+
+Open **Mijn receptenbibliotheek** onder de receptgenerator in het dashboard. Hier kun je eigen recepten bekijken, bewerken, verwijderen, aan de planning toevoegen en een volledige JSON-back-up maken. Met **Recepten importeren** kies je tussen samenvoegen en volledig vervangen; bij vervangen verschijnt een extra bevestiging.
+
+**Geen extra installatie nodig voor synchronisatie:** de reeds ingelogde Home Assistant-kaart gebruikt Home Assistant's eigen persoonlijke frontend-opslag via de WebSocket-verbinding. Recepten worden gekoppeld aan het **gebruikersaccount**, niet aan het fysieke apparaat. Als je op iPhone en computer dezelfde Home Assistant-gebruiker gebruikt, zijn de eigen recepten daar na synchronisatie te zien. Meerdere verschillende HA-gebruikers hebben elk een **aparte** bibliotheek.
+
+**De openbare GitHub Pages-versie** heeft bewust geen toegang tot je Home Assistant-opslag. Hier werkt de receptenbibliotheek lokaal; importeer/exporteer het JSON-bestand om recepten over te zetten. Bewaar je backups veilig. Er worden geen persoonlijke recepten of inloggegevens automatisch naar GitHub geüpload.
+
+**Beperkingen:** voor zeer gelijktijdige bewerkingen van hetzelfde recept geldt een last-write-wins-gedrag op basis van de opgeslagen wijzigingstijd. De import/export betreft recepten, **niet** alle oude reviews of planningen. Het maximum is 80 eigen recepten. De standaardrecepten zijn steeds beschikbaar in de app. Home Assistant- en Safari-apparaatproeven staan nog op de releasechecklist.
+
 ## Recepten en evaluaties (v4.1.0)
 
-De receptenbibliotheek en bereidingsevaluaties staan in de **browseropslag (localStorage)** van het apparaat waarop de planner geopend is. Ze zijn niet automatisch gedeeld tussen iPhone, Safari of het Home Assistant-dashboard op een ander apparaat. Het laden van een planning in JSON bevat de receptvelden van de gerechten; de los opgeslagen reviewhistorie en receptenbibliotheek worden niet mee geëxporteerd. Wis de browseropslag niet zonder een aparte back-up van je gegevens. Het resetten van de voorbeeldplanning wist de bibliotheek en reviews niet.
+De receptenbibliotheek staat lokaal in de **browseropslag (localStorage)** en wordt bij gebruik van de Home Assistant-dashboardkaart vanaf v4.3.0 ook in de persoonlijke opslag van het ingelogde HA-account bewaard. Bereidingsevaluaties blijven vooralsnog **uitsluitend lokaal** opgeslagen. Het laden van een planning in JSON bevat de receptvelden van de gerechten; de los opgeslagen reviewhistorie en receptenbibliotheek worden niet mee geëxporteerd. Wis de browseropslag niet zonder een aparte back-up van je gegevens. Het resetten van de voorbeeldplanning wist de bibliotheek en reviews niet.
 
 Een gewone receptlink wordt alleen automatisch gelezen als de website toegang via de browser toestaat én gestructureerde Recipe-gegevens aanbiedt. Anders kun je de tekst plakken. Dit programma omzeilt geen CORS-beveiliging en maakt geen gebruik van externe scraping- of AI-services. Controleer de geïmporteerde bereidingsinstructies, allergenen en voedselveiligheid.
 

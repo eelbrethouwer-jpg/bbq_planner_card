@@ -90,6 +90,8 @@ try{
   assert.equal(rs.length,1,'one review persisted');
   assert.equal(rs[0].finalCore,63);
   assert.equal(rs[0].lastMeasured,null,'no invented live MEATER values');
+  assert.ok(rs[0].id,'review gets a stable sync id');
+  assert.match($('review-sync-status').textContent,/Bereidingshistorie lokaal|lokaal bewaard/i,'standalone review remains local');
   assert.match(doc.querySelector('#dishes .review-editor').textContent,/Volgende keer korter op de BBQ/);
 
   click($('reset'));assert.equal(count(),3,'reset restores default plan');
@@ -154,6 +156,7 @@ try{
   assert.ok($('library-items'),'library manager exists');
   assert.ok($('library-count'),'library count exists');
   assert.match($('library-sync-status').textContent,/Lokale bibliotheek|Lokaal/);
+  assert.ok($('review-sync-status'),'review sync status exists');
   const custom=doc.querySelector('#library-items [data-library-name="Ribeye v4.2 proefrecept"]');
   assert.ok(custom,'generated recipe appears in library');
   click(custom.querySelector('[data-library-action="edit"]'));
@@ -208,7 +211,7 @@ try{
   assert.ok(entry.includes('href="'+route+'"'),'accessible fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('OK v4.2: auto date, category filters, equipment/method planning, phase conflicts, recipe generator, editable stages, persistence, reviews, MEATER offline and Pages');
+  console.log('OK v4.4: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');
 }finally{
   window.close();
 }
@@ -255,28 +258,45 @@ try {
   const card=w.document.createElement('bbq-planner-meater-card');
   w.document.body.appendChild(card);
   card.setConfig({});
-  let server={version:1,recipes:[{name:'Zalm',updatedAt:'2026-10-01T10:00:00.000Z',grill:160}],deleted:[]};
-  let subscription=null;
+  const servers={
+    bbq_planner_cookbook_v1:{version:1,recipes:[{name:'Zalm',updatedAt:'2026-10-01T10:00:00.000Z',grill:160}],deleted:[]},
+    bbq_planner_reviews_v1:{version:1,reviews:[{id:'zalm-2026-10-01',name:'Zalm',date:'01-10-2026',createdAt:'2026-10-01T10:00:00.000Z',rating:4,finalCore:61,grill:160,targetCore:'63',thermometer:'plus',lastMeasured:61,ambient:158,comment:'Volgende keer iets langer'}]}
+  };
+  const subscriptions=new Map();
   const connection={
     sendMessagePromise:async m=>{
-      if(m.type==='frontend/get_user_data')return {value:server};
-      if(m.type==='frontend/set_user_data'){server=m.value;subscription?.({value:server});return null;}
+      if(m.type==='frontend/get_user_data')return {value:servers[m.key]};
+      if(m.type==='frontend/set_user_data'){servers[m.key]=m.value;subscriptions.get(m.key)?.({value:servers[m.key]});return null;}
       throw Error('Unknown call '+m.type);
     },
-    subscribeMessage:async (fn,m)=>{assert.equal(m.type,'frontend/subscribe_user_data');subscription=fn;fn({value:server});return ()=>{subscription=null};}
+    subscribeMessage:async (fn,m)=>{
+      assert.equal(m.type,'frontend/subscribe_user_data');
+      subscriptions.set(m.key,fn);fn({value:servers[m.key]});
+      return ()=>subscriptions.delete(m.key);
+    }
   };
   card.hass={states:{},connection};
+
   const pork={name:'Pulled pork op brood',grill:120,updatedAt:'2026-10-20T10:00:00.000Z'};
   card._saveCookbook({version:1,recipes:[pork],deleted:[]});
   await card._syncQueue;
-  assert.deepEqual(Array.from(server.recipes,x=>x.name).sort(),['Pulled pork op brood','Zalm'],'HA merge preserves existing server recipes');
+  assert.deepEqual(Array.from(servers.bbq_planner_cookbook_v1.recipes,x=>x.name).sort(),['Pulled pork op brood','Zalm'],'HA merge preserves existing server recipes');
   const deleted={name:'Zalm',updatedAt:'2026-10-21T10:00:00.000Z'};
   card._saveCookbook({version:1,recipes:[],deleted:[deleted]});
   await card._syncQueue;
-  assert.deepEqual(Array.from(server.recipes,x=>x.name),['Pulled pork op brood'],'HA deletion prevents stale recipe resurrection');
-  assert.ok(server.deleted.some(x=>x.name==='Zalm'),'HA sync stores tombstones');
-  assert.ok(card._cookbookUnsub,'HA frontend user storage subscription connected');
+  assert.deepEqual(Array.from(servers.bbq_planner_cookbook_v1.recipes,x=>x.name),['Pulled pork op brood'],'HA deletion prevents stale recipe resurrection');
+  assert.ok(servers.bbq_planner_cookbook_v1.deleted.some(x=>x.name==='Zalm'),'HA sync stores tombstones');
+
+  const porkReview={name:'Pulled pork op brood',date:'21-10-2026',createdAt:'2026-10-21T18:00:00.000Z',rating:5,finalCore:94,grill:120,targetCore:'92',thermometer:'pro',lastMeasured:94,ambient:121,comment:'Mooie bark en sappig'};
+  card._saveReviews({version:1,reviews:[porkReview]});
+  await card._syncQueue;
+  assert.equal(servers.bbq_planner_reviews_v1.reviews.length,2,'HA review sync merges local and remote history');
+  assert.ok(servers.bbq_planner_reviews_v1.reviews.some(x=>x.name==='Zalm'),'existing remote review preserved');
+  assert.ok(servers.bbq_planner_reviews_v1.reviews.some(x=>x.name==='Pulled pork op brood'&&x.finalCore===94),'new cooking review synced including final core');
+  assert.ok(card._cookbookUnsub,'HA cookbook subscription connected');
+  assert.ok(card._reviewsUnsub,'HA review-history subscription connected');
+
   card.remove();
-  assert.equal(subscription,null,'HA subscription cleaned up');
+  assert.equal(subscriptions.size,0,'all HA user-storage subscriptions cleaned up');
 }finally{parentDom.window.close();}
-console.log('OK: secure HA user-storage cookbook merge/delete/subscription bridge');
+console.log('OK v4.4: secure HA user-storage cookbook and cooking-review sync bridge');

@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.4.0 — releasekandidaat (nog niet gepubliceerd)
+
+- **Bereidingshistorie per Home Assistant-gebruiker:** reviews synchroniseren tussen bijvoorbeeld iPhone en computer wanneer hetzelfde Home Assistant-account wordt gebruikt.
+- Een review bewaart beoordeling, werkelijk ingevoerde eindkern, ingestelde BBQ-/kerntemperatuur, thermometerkeuze, recente MEATER-kern/omgeving indien beschikbaar en opmerkingen voor de volgende bereiding.
+- Bestaande lokale reviews worden bij de eerste Home Assistant-koppeling **samengevoegd**, niet overschreven. De historie blijft begrensd op maximaal 250 beoordelingen.
+- Op de openbare GitHub Pages-versie blijven beoordelingen bewust lokaal; persoonlijke historie wordt niet naar GitHub of een externe cloudservice gestuurd.
+- Op de gerechtkaart worden nu de **vijf meest recente** beoordelingen van hetzelfde gerecht getoond.
+- De bestaande receptenbibliotheek, JSON-receptenback-up, internet-/tekstimport, uitklapbare bereidingsstappen, twee kamado's, slimme planning en MEATER kern-/omgevingsgrafieken blijven behouden.
+- De Home Assistant-bridge krijgt cacheversie `v4.4.0` en gebruikt dezelfde ingelogde WebSocket-sessie; er is geen extra toegangstoken nodig.
+- Regressietests dekken lokale reviewopslag en gesimuleerde Home Assistant merge/synchronisatie van zowel recepten als bereidingshistorie.
+
+**Status:** nog geen officiële HACS-release; zie [RELEASE_v4.4.0.md](RELEASE_v4.4.0.md).
+
 ## v4.3.0 — releasekandidaat (nog niet gepubliceerd)
 
 - Eigen **Mijn receptenbibliotheek** met recepten zoeken, bekijken, opnieuw bewerken, gebruiken en verwijderen.

@@ -2293,6 +2293,103 @@ function v46Init(){
  }
 }
 
+
+/* v4.7: Move existing panels instead of recreating controls; preserve all listeners. */
+let v47Current='overview',v47Mounted=false;
+function v47Fold(node,title,open=false){
+ if(!node)return null;
+ const f=document.createElement('details');f.className='v47-fold';f.open=open;
+ const label=document.createElement('summary');label.textContent=title;f.appendChild(label);f.appendChild(node);return f;
+}
+function v47Go(tab){
+ const allowed=['overview','planning','cooking','recipes','more'];
+ const id=allowed.includes(tab)?tab:'overview';v47Current=id;
+ document.querySelectorAll('[data-v47-page]').forEach(page=>{page.hidden=page.dataset.v47Page!==id;});
+ document.querySelectorAll('[data-v47-tab]').forEach(button=>{
+  if(button.dataset.v47Tab===id)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+ });
+ try{localStorage.setItem('bbq-v47-tab',id)}catch(e){}
+ window.scrollTo(0,0);
+ reportIframeSize();
+}
+function v47Refresh(base){
+ if(!v47Mounted)return;
+ $('v47-serve').textContent=fmt(base.serve);
+ $('v47-serve-date').textContent=base.serve==null?'Kies eerst een geldige datum':new Date(base.serve).toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' · planning';
+ $('v47-day').textContent=state.date;
+ const done=state.v46Done||{},tasks=v46Tasks(base).filter(x=>!done[x.id]);
+ const now=Date.now(),upcoming=tasks.find(t=>t.time>=now-10*60000)||tasks[0];
+ $('v47-next-time').textContent=upcoming?(upcoming.timeLabel&&!upcoming.timeLabel.includes(' om ')?'Datum':fmt(upcoming.time)):'—';
+ $('v47-next-text').textContent=upcoming?upcoming.title+(upcoming.timeLabel?' · '+upcoming.timeLabel:''):'Alles afgevinkt of nog geen handelingen';
+ $('v47-dish-mini').innerHTML=base.dishes.slice(0,8).map(d=>
+  '<article><small>'+(d.kamado==='large'?'🔥 Groot':'♨️ Klein')+'</small><b>'+escape(d.name)+'</b>'+
+  '<small>Start '+fmt(d.start)+' · '+escape(d.grill)+' °C</small>'+
+  '<small>'+(d.core!==''?'Richtkern '+escape(d.core)+' °C':'Geen kerndoel')+' · '+escape(d.phase||'waiting')+'</small></article>'
+ ).join('')||'<p class="v46-muted">Voeg gerechten toe via Planning of Recepten.</p>';
+ const live=['pro','plus'].some(key=>{
+  const m=meaterData[key]?.internal,t=Date.parse(m?.last_updated||'');
+  return meaterBridgeSeen&&Number.isFinite(t)&&t<=Date.now()+60000&&Date.now()-t<=300000&&meaterNum(m)!==null;
+ });
+ $('v47-live-label').textContent=live?'● Verse MEATER-metingen':'Planning · geen verse live MEATER-meting';
+ for(const d of base.dishes){
+  const card=[...$('dishes').querySelectorAll('article.dish')].find(el=>el.dataset.id===d.id);if(!card)continue;
+  const name=card.querySelector('[data-v47-dish-name]'),schedule=card.querySelector('[data-v47-dish-schedule]'),core=card.querySelector('[data-v47-dish-core]');
+  if(name)name.textContent=d.name;
+  if(schedule)schedule.textContent=(d.kamado==='large'?'🔥 Groot':'♨️ Klein')+' · '+fmt(d.start)+'–'+fmt(d.cookEnd)+' · '+d.grill+' °C';
+  if(core)core.textContent=d.core!==''?'Richtkern '+d.core+' °C · '+d.rest+' min rust':'Geen kerndoel · '+d.rest+' min rust';
+ }
+}
+function v47Init(){
+ const o=$('v47-overview-mount'),p=$('v47-planning-mount'),c=$('v47-cooking-mount'),r=$('v47-recipes-mount'),m=$('v47-more-mount');
+ const move=(target,node)=>{if(node)target.appendChild(node);};
+ const servePanel=$('v46-multi')?.closest('.v46-area');
+ const notifyPanel=$('v46-notify')?.closest('.v46-area');
+ const boardPanel=$('v46-board')?.closest('.v46-area');
+ const forecastPanel=$('v46-live')?.closest('.v46-area');
+ const pantryPanel=$('v46-pantry-list')?.closest('.v46-area');
+ const layout=document.querySelector('.layout-top');
+ move(o,$('metrics'));
+ move(o,document.querySelector('.layout-top .side'));
+ move(o,$('alerts'));
+ move(p,v47Fold(layout,'🗓️ Datum, serveertijd en kamado-instellingen',true));
+ move(p,v47Fold(servePanel,'🍽️ Voorgerecht, hoofdgerecht en dessert'));
+ move(r,$('recipe-importer'));move(r,$('library-panel'));
+ move(p,$('dishes-section'));
+ move(p,v47Fold($('timeline-panel'),'▦ Tijdlijn beide kamado’s'));
+ move(c,$('live-panel'));
+ move(c,boardPanel);
+ move(c,forecastPanel);
+ move(c,v47Fold($('smart-panel'),'🧠 Slim bijsturen en waarschuwingen'));
+ move(c,v47Fold($('v45-coach'),'🔥 BBQ-coach en volledige kookmodus'));
+ move(c,v47Fold($('steps')?.parentElement,'📖 Uitgebreid stap-voor-stap draaiboek'));
+ move(m,v47Fold($('v45-tools'),'🛒 Boodschappenlijst en slimme kamadoverdeling'));
+ move(m,v47Fold(pantryPanel,'🥬 Mijn voorraadkast'));
+ move(m,v47Fold(notifyPanel,'📱 Home Assistant-meldingen'));
+ const history=$('v46-history');
+ if(history){
+  const section=document.createElement('section');section.className='v47-block';section.appendChild(history);
+  move(m,v47Fold(section,'📈 Mijn eerdere bereidingen'));
+ }
+ move(m,document.querySelector('.intro .toolbar'));
+ const footer=document.querySelector('.shell > footer.footer');if(footer)move(m,footer);
+ document.body.classList.add('v47-ready');
+ v47Mounted=true;
+ $('v47-nav').addEventListener('click',e=>{const b=e.target.closest('[data-v47-tab]');if(b)v47Go(b.dataset.v47Tab);});
+ document.querySelectorAll('[data-v47-go]').forEach(button=>button.addEventListener('click',()=>v47Go(button.dataset.v47Go)));
+ $('v47-fullscreen').addEventListener('click',()=>$('v45-open').click());
+ $('dishes').addEventListener('click',e=>{
+  const b=e.target.closest('[data-v47-dish-toggle]');if(!b)return;
+  const card=b.closest('article.dish'),id=card?.dataset.id;
+  const detail=card?.querySelector('.v47-detail');if(!id||!detail)return;
+  const show=detail.hidden;detail.hidden=!show;
+  b.setAttribute('aria-expanded',String(show));b.textContent=show?'⌃ Sluit details':'⌄ Details';
+  if(show)v47Expanded.add(id);else v47Expanded.delete(id);
+  v47StoreExpanded();reportIframeSize();
+ });
+ let saved='overview';try{saved=localStorage.getItem('bbq-v47-tab')||'overview';}catch(e){}
+ v47Go(saved);v47Refresh(calc());
+}
+
 initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();
 })();
 </script>

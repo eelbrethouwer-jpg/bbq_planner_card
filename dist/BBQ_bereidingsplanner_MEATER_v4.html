@@ -1871,6 +1871,12 @@ function v46Render(base){
  $('v46-course-status').textContent=multi.checked?'Gangen zijn actief. Ieder gerecht rekent terug vanaf het gekozen serveermoment.':'Alle gerechten blijven op de bestaande gezamenlijke serveertijd.';
  $('v46-notify').checked=state.v46Notify===true;
  fill('v46-notify-service',state.v46NotifyService||'');
+ const status=$('v46-notify-status'),service=String(state.v46NotifyService||'');
+ if(!state.v46Notify)status.textContent='Meldingen uitgeschakeld.';
+ else if(window.parent===window)status.textContent='Geen Home Assistant-koppeling: meldingen zijn niet beschikbaar op de openbare site.';
+ else if(!/^notify\.mobile_app_[a-z0-9_]{1,70}$/.test(service))status.textContent='Vul een geldige notify.mobile_app_... service in.';
+ else if(!meaterBridgeSeen)status.textContent='Meldingen ingeschakeld; wacht op Home Assistant-koppeling.';
+ else if(!/verzonden|niet gelukt/.test(status.textContent))status.textContent='Meldingen ingeschakeld via Home Assistant. Houd de kookpagina actief.';
  v46Board(base);v46LiveRender(base);v46PantryRender();
 }
 function v46NotifySend(message,key){

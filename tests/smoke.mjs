@@ -177,6 +177,28 @@ try{
   assert.ok([...$('preset').options].some(o=>o.value==='Pulled pork op brood'),'built in recipes remain');
   click($('library-export'));
   assert.match($('library-feedback').textContent,/Back-up/,'library export button operates');
+
+  // Import entire cookbook from a real-format JSON fixture, first merging, then replacing.
+  const importFile=$('library-file');
+  function mockFile(books){Object.defineProperty(importFile,'files',{configurable:true,value:[{size:3000,text:async()=>JSON.stringify(books)}]});}
+  const readLibrary=()=>JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1'));
+  const backup={format:'bbq-receptenbibliotheek-v1',recipes:[
+    {name:'Meegenomen van iPhone',category:'varken',grill:120,cook:480,rest:45,core:'92',recipeIngredients:'2 kg procureur',recipeSteps:[{title:'Roken',trigger:'Tot 92 °C',detail:'Gaar indirect.'}]}
+  ]};
+  $('library-import-mode').value='merge';
+  mockFile(backup);importFile.dispatchEvent(new window.Event('change',{bubbles:true}));
+  await new Promise(r=>setImmediate(r));
+  assert.ok(readLibrary().some(r=>r.name==='Meegenomen van iPhone'),'merged backup cookbook recipe added');
+  assert.ok(readLibrary().some(r=>r.name==='BBQ proefgerecht'),'merge keeps older imported recipes');
+  assert.ok(readLibrary().find(r=>r.name==='Meegenomen van iPhone').recipeSteps.length===1,'import preserves recipe stages');
+  $('library-import-mode').value='replace';
+  mockFile(backup);importFile.dispatchEvent(new window.Event('change',{bubbles:true}));
+  await new Promise(r=>setImmediate(r));
+  assert.deepEqual(Array.from(readLibrary(),r=>r.name),['Meegenomen van iPhone'],'replace removes other personal recipes');
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-deletions-v1')).some(r=>r.name==='BBQ proefgerecht'),'replace creates deletion sync tombstones');
+  assert.ok([...$('preset').options].some(x=>x.value==='Pulled pork op brood'),'built-ins preserved after replacing local cookbook');
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,1,'review data preserved after library replacement');
+
   $('recipe-url').value='not a valid url';
   click($('recipe-read'));assert.match($('recipe-message').textContent,/geldige http/,'invalid URL handled locally');
 

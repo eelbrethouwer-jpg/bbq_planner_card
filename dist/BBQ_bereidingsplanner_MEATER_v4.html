@@ -419,6 +419,7 @@ const examples={
     "recipeCook": "Fase 1 — 120 °C INDIRECT: leg de procureur op het RVS-rooster, met hitteschild ertussen. Rook/gaar langzaam tot circa 70 °C kern. Besproei volgens de bron ongeveer elke 30 minuten met het apart gehouden appel-azijnmengsel. De stall kan lang duren.\nFase 2 — BIJ 70 °C KERN: bestrijk met circa de helft van de BBQ-saus; laat daarna nog ongeveer 90 minuten indirect doorgaren zodat de bark zich ontwikkelt.\nFase 3 — NA DIE 90 MINUTEN: neem het vlees kort van de kamado en pak het strak in aluminiumfolie. Gaar bij 120 °C indirect verder. Begin rond 88 °C kern met de priktest. De prikker moet vrijwel zonder weerstand ingaan; dit kan pas rond 92–96 °C gebeuren. MEATER-doel 92 °C is een controlepunt, géén garantie dat het vlees klaar is.\nTotale bereiding voor 2 kg: ±7–11 uur, bij stevige stall langer. Er is geen directe grillfase. Grill- en kerntijden blijven schattingen.",
     "recipeRest": "Haal het boterzachte vlees van de kamado. Open de folie voorzichtig boven een schaal en bewaar de vleessappen. Pak opnieuw in en laat minstens 60 minuten rusten. Bij langere wachttijd veilig warmhouden op minimaal 60 °C met temperatuurcontrole; vertrouw niet op een koelbox zonder te meten.",
     "recipeSlice": "Meng de opgevangen vleessappen met een paar eetlepels BBQ-saus en eventueel wat vers, niet met rauw vlees in aanraking gekomen appel-azijnmengsel. Trek de procureur met twee vorken of vleesklauwen uit elkaar. Meng naar smaak de saus en het vleessap door het vlees. Verdeel over 12 zachte bolletjes, met coleslaw zonder ui en BBQ-saus. Serveer warm.",
+    "prepTasks": [{"id":"pulled-pork-rub-avond","title":"Procureur schoonmaken en kruiden","daysBefore":1,"time":"","duration":0,"notes":"De avond vooraf: procureur droogdeppen, loshangende vlees- en vetstukken bijsnijden, rondom met circa 19 el BBQ-rub kruiden en afgedekt een nacht in de koelkast bewaren (maximaal 4 °C). Het exacte begintijdstip is niet voorgeschreven."}],
     "recipeSteps": [
       {
         "trigger": "Avond vooraf",
@@ -488,23 +489,23 @@ const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category
 /* V4.6: expliciete tijdsaanduidingen uit recepten herkennen; nooit een kloktijd verzinnen. */
 function v46InferPrepFromText(raw){
  const text=String(raw||'').slice(0,35000).replace(/\r/g,''),lines=text.split('\n'),found=[];
- const relative=/(?:\b(?:de\s+)?(?:avond|dag)\s+(?:er\s*voor|ervoor|tevoren|van\s+tevoren|vooraf|voordien|vóór\s+de\s+bereiding)\b|\b(?:een|1|twee|2|drie|3)\s+dagen?\s+(?:er\s*voor|ervoor|tevoren|van\s+tevoren|vooraf)\b|\b(?:24|48|72)\s*uur\s+(?:van\s+tevoren|vooraf|ervoor)\b)/i;
+ const relative=/(?:\b(?:de\s+)?(?:avond|dag)\s+(?:er\s*voor|ervoor|tevoren|van\s+te\s*voren|vooraf|voordien|v[oó]or\s+de\s+bereiding)\b|\b(?:een|1|twee|2|drie|3)\s+dagen?\s+(?:er\s*voor|ervoor|tevoren|van\s+tevoren|vooraf)\b|\b(?:24|48|72)\s*uur\s+(?:van\s+tevoren|vooraf|ervoor)\b)/i;
  const duration=/(?:\b(24|48|72)\s*uur\b.{0,85}\b(marineren|pekelen|rijzen|koel|rusten)\b|\b(marineer|marineren|pekel|pekelen|laat|rust|rijs|rijzen)\b.{0,85}\b(24|48|72)\s*uur\b)/i;
  const heading=/^(?:#{1,4}\s*)?(?:voorbereiding|bereiding(?:sdag|swijze)?|ingrediënten|ingredienten|rusten|serveren|stap\s+\d+|dag\s+zelf|op\s+de\s+dag\s+zelf)\s*:?\s*$/i;
  const clean=s=>s.replace(/^\s*(?:#{1,4}\s*|[-*•]\s*|\d+[.)]\s*)/,'').trim();
  for(let index=0;index<lines.length;index++){
   const line=clean(lines[index]);if(!line)continue;
   const match=line.match(relative),hours=line.match(duration);
-  if(!match&&!hours)continue;
+  if(!match&&!hours||/\b(?:niet\s+nodig|hoef\s+je\s+niets|geen\s+voorbereiding)\b/i.test(line))continue;
   let daysBefore=1;
-  const nums=line.match(/\b(een|1|twee|2|drie|3)\s+dagen?\s+(?:ervoor|er\s*voor|van\s+tevoren|tevoren|vooraf)\b/i);
-  if(nums)daysBefore=({een:1,twee:2,drie:3})[nums[1].toLowerCase()]||Number(nums[1])||1;
+  const nums=line.match(/\b(een|één|1|twee|2|drie|3)\s+dagen?\s+(?:ervoor|er\s*voor|van\s+te\s*voren|tevoren|vooraf|v[oó]or\s+de\s+bereiding)\b/i);
+  if(nums)daysBefore=({een:1,'één':1,twee:2,drie:3})[nums[1].toLowerCase()]||Number(nums[1])||1;
   else{const explicit=line.match(/\b(24|48|72)\s*uur\b/i);if(explicit)daysBefore=Number(explicit[1])/24;}
   const suffix=clean(match?line.replace(relative,'').replace(/^[\s:;,–-]+/,''):line);
   const fragments=[suffix].filter(Boolean);
   if((!suffix||suffix.length<38)&&index+1<lines.length){
    for(let j=index+1;j<Math.min(index+5,lines.length);j++){
-    const next=clean(lines[j]);if(!next||heading.test(next)||relative.test(next)||duration.test(next))break;
+    const next=clean(lines[j]);if(!next){if(j===index+1)continue;break;}if(heading.test(next)||relative.test(next)||duration.test(next))break;
     if(/^(stap\s+\d+|bbq\s+temperatuur|kerntemperatuur)\b/i.test(next))break;
     fragments.push(next);
     if(fragments.join(' ').length>=470||j>=index+2)break;
@@ -621,7 +622,7 @@ const calc=()=>{
   }
   const prepDone=state.v46Done||{};
   for(const p of v46PrepTasks({dishes})){
-   if(p.timeAt<Date.now()&&p.timeAt>=Date.now()-14*86400000&&!prepDone[state.date+'|'+p.dishId+':prep:'+p.id])
+   if((p.time?p.timeAt:new Date(p.timeAt).setHours(24,0,0,0))<Date.now()&&p.timeAt>=Date.now()-14*86400000&&!prepDone[state.date+'|'+p.dishId+':prep:'+p.id])
     alerts.push({type:'notice',message:'<strong>Voorbereiding niet afgevinkt:</strong> '+escape(p.titleFull)+' stond gepland op '+escape(v46PrepWhen(p))+'. Controleer of deze stap nog veilig en haalbaar is.'});
   }
  for(const d of dishes){if(d.mode==='manual'&&d.offset!==0&&d.start!=null){alerts.push({type:d.offset>0?'urgent':'notice',message:`<strong>${escape(d.name)}</strong> is met de vaste starttijd <strong>${Math.abs(d.offset)} minuten ${d.offset>0?'te laat':'te vroeg'}</strong> klaar t.o.v. ${fmt(d.serveAt)}.`});}}

@@ -19,6 +19,7 @@ const dom=new JSDOM(html,{
     window.addEventListener('error',event=>{errors.push(String(event.error?.stack||event.message));});
   }
 });
+const localToday=(()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')})();
 const {window}=dom;
 const doc=window.document;
 const $=x=>doc.getElementById(x);
@@ -28,7 +29,7 @@ try{
   assert.equal(errors.length,0,'startup JavaScript errors');
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
-  const localToday=(()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')})();
+
   assert.equal($('meal-date').value,localToday,'auto date starts on today');
   assert.match($('date-mode').textContent,/Automatisch/);
   $('meal-date').value='2027-02-14';$('meal-date').dispatchEvent(new window.Event('input',{bubbles:true}));
@@ -159,3 +160,31 @@ try{
 }finally{
   window.close();
 }
+
+/* Legacy browser storage and explicit future dates must survive migration. */
+function launchWithPlan(plan){
+ const instance=new JSDOM(html,{url:'https://planner-migration.test.invalid/',runScripts:'dangerously',pretendToBeVisual:true,
+  beforeParse(w){
+   w.Element.prototype.scrollIntoView=()=>{};
+   w.print=()=>{};w.confirm=()=>true;
+   w.localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(plan));
+  }});
+ return instance;
+}
+const previous=launchWithPlan({date:'2026-10-19',mealTime:'18:30',availableFrom:'16:30',
+ preheatLarge:30,preheatSmall:25,dishes:[{id:'legacy1',name:'Zalm',kamado:'small',grill:160,cook:30,rest:5,core:'63',mode:'auto'}]});
+try{
+ assert.equal(previous.window.document.getElementById('meal-date').value,localToday,'stale v4.1 auto dates migrate to browser-local today');
+ assert.equal(previous.window.document.querySelector('#dishes article.dish [data-field="category"]').value,'vis','existing dish category is inferred');
+ assert.equal(previous.window.document.querySelector('#dishes article.dish [data-field="grate"]').value,'rvs','existing dish has a valid grate');
+ assert.equal(previous.window.document.querySelector('#dishes article.dish [data-field="method"]').value,'indirect','existing dish has a valid cooking method');
+}finally{previous.window.close();}
+const manualFuture=new Date();manualFuture.setDate(manualFuture.getDate()+13);
+const future=[manualFuture.getFullYear(),String(manualFuture.getMonth()+1).padStart(2,'0'),String(manualFuture.getDate()).padStart(2,'0')].join('-');
+const planned=launchWithPlan({date:future,dateMode:'manual',mealTime:'19:00',availableFrom:'14:00',
+ preheatLarge:30,preheatSmall:25,dishes:[]});
+try{
+ assert.equal(planned.window.document.getElementById('meal-date').value,future,'explicit planned dates survive reload');
+ assert.match(planned.window.document.getElementById('date-mode').textContent,/Handmatig/);
+}finally{planned.window.close();}
+console.log('OK: legacy date migration, persistent manual future date, older recipe fields preserved');

@@ -12,7 +12,6 @@ const dom=new JSDOM(html,{
   pretendToBeVisual:true,
   beforeParse(window){
     window.Element.prototype.scrollIntoView=()=>{};
-   w.scrollTo=()=>{};
     window.scrollTo=()=>{};
     window.URL.createObjectURL=()=> 'blob:https://planner.test.invalid/mock';
     window.URL.revokeObjectURL=()=>{};
@@ -377,6 +376,7 @@ function launchWithPlan(plan){
  const instance=new JSDOM(html,{url:'https://planner-migration.test.invalid/',runScripts:'dangerously',pretendToBeVisual:true,
   beforeParse(w){
    w.Element.prototype.scrollIntoView=()=>{};
+   w.scrollTo=()=>{};
    w.print=()=>{};w.confirm=()=>true;
    w.localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(plan));
   }});

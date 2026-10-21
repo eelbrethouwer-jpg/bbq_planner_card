@@ -830,6 +830,7 @@ function addDish(data,message){
  // Place it at the top, right below the add button, not beyond existing cards.
  state.dishes.unshift(dish);
  persist();renderAll();toast(message);
+ if(v47Mounted&&v47Current==='recipes')v47Go('planning');
  const card=Array.from(document.querySelectorAll('.dish')).find(el=>el.dataset.id===dish.id);
  if(card){
    card.classList.add('just-added');
@@ -1360,7 +1361,7 @@ window.addEventListener('message',ev=>{
   const filtered={};for(const key of MEATER_KEYS){const val=data[key];if(val&&typeof val==='object')filtered[key]={state:String(val.state??'unavailable'),last_updated:typeof val.last_updated==='string'?val.last_updated:''};}
   meaterData[probe]=filtered;rememberProbe(probe,filtered);renderProbe(probe);
  }
- setMeaterConnection();renderLinkedDishes();renderSmart(calc());v45Render(calc());v46Render(calc());v46CheckNotifications();
+ setMeaterConnection();renderLinkedDishes();renderSmart(calc());v45Render(calc());v46Render(calc());v47Refresh(calc());v46CheckNotifications();
 });
 function reportIframeSize(){
  if(window.parent===window||location.protocol==='file:')return;
@@ -1407,7 +1408,7 @@ if(typeof ResizeObserver==='function'){
  const ro=new ResizeObserver(()=>{requestAnimationFrame(reportIframeSize)});ro.observe(document.body);
 }
 window.addEventListener('load',()=>{setMeaterConnection();reportIframeSize();if(window.parent!==window&&location.protocol!=='file:')window.parent.postMessage({__bbq:'bbq-child-ready-v1'},location.origin);});
-setInterval(()=>{updateAutoDate();if(meaterBridgeSeen){renderProbe('pro');renderProbe('plus');}renderSmart(calc());v45Render(calc());v46Render(calc());v46CheckNotifications();},60000);
+setInterval(()=>{updateAutoDate();if(meaterBridgeSeen){renderProbe('pro');renderProbe('plus');}renderSmart(calc());v45Render(calc());v46Render(calc());v47Refresh(calc());v46CheckNotifications();},60000);
 
 
 /* v4.5.0: cookbook + review history with optional per-user Home Assistant sync */
@@ -2317,6 +2318,7 @@ function v47Refresh(base){
  $('v47-serve').textContent=fmt(base.serve);
  $('v47-serve-date').textContent=base.serve==null?'Kies eerst een geldige datum':new Date(base.serve).toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short',year:'numeric'})+' · planning';
  $('v47-day').textContent=state.date;
+ const af=$('v47-alerts-fold');if(af){af.querySelector('summary').textContent='⚠️ Aandachtspunten ('+base.alerts.length+')';if(base.alerts.some(a=>a.type==='urgent'))af.open=true;}
  const done=state.v46Done||{},tasks=v46Tasks(base).filter(x=>!done[x.id]);
  const now=Date.now(),upcoming=tasks.find(t=>t.time>=now-10*60000)||tasks[0];
  $('v47-next-time').textContent=upcoming?(upcoming.timeLabel&&!upcoming.timeLabel.includes(' om ')?'Datum':fmt(upcoming.time)):'—';
@@ -2350,7 +2352,7 @@ function v47Init(){
  const layout=document.querySelector('.layout-top');
  move(o,$('metrics'));
  move(o,document.querySelector('.layout-top .side'));
- move(o,$('alerts'));
+ const alertFold=v47Fold($('alerts'),'ℹ️ Aandachtspunten');if(alertFold)alertFold.id='v47-alerts-fold';move(o,alertFold);
  move(p,v47Fold(layout,'🗓️ Datum, serveertijd en kamado-instellingen',true));
  move(p,v47Fold(servePanel,'🍽️ Voorgerecht, hoofdgerecht en dessert'));
  move(r,$('recipe-importer'));move(r,$('library-panel'));

@@ -2432,7 +2432,114 @@ function v47Init(){
  v47Go(saved);v47Refresh(calc());
 }
 
-initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();
+
+/* v4.8: beknopte eigen samenvattingen, geen gekopieerde volledige receptartikelen.
+   Foto's komen rechtstreeks van de oorspronkelijke aanbieder; niet lokaal gecachet. */
+const V48_RECIPES=[
+ ["Texas Style Buikspek","varken",20,300,60,1100,120,"93","indirect","texas-style-buikspek","2024/12/texas-style-buikspek",4,"1,2 kg buikspek zonder zwoerd\n3 el zeezout\n6 el zwarte peper\n1 el paprikapoeder\n1 el knoflookgranulaat\n1 el mosterd","De avond tevoren droog kruiden en onafgedekt gekoeld laten staan.","Indirect low & slow roken; malsheid vanaf circa 90 °C testen. Laat na het garen gecontroleerd rusten.","De bereiding beslaat inclusief een nacht koelkasttijd circa 18 uur; reken op variatie door een stall."],
+ ["Ribeye, Groene Asperges & Smashed Potatoes","rund",30,20,10,60,220,"","direct","ribeye-groene-asperges-smashed-potatoes","2026/05/ribeye-groene-asperges-smashed-potatoes",2,"400 g ribeye\n400 g krieltjes\n300 g groene asperges\n1 el steak-kruiden\n1 el olijfolie\nzeezout\nzwarte peper","Krieltjes voorkoken en asperges schoonmaken. Gebruik een plancha of gietijzer.","Ribeye direct grillen en laten rusten terwijl je de krieltjes platdrukt en asperges grilt.","Kerntemperatuur van de steak afhankelijk van je gewenste gaarheid; meet met MEATER."],
+ ["Hot Honey Chickenwings","gevogelte",15,50,5,70,150,"75","indirect","hot-honey-chickenwings","2026/07/hot-honey-chickenwings",4,"500 g kippenvleugels\n20 g BBQ-rub\n4 el hot honey","Kruid de vleugels en bereid de kamado indirect voor.","Rook indirect, lak richting einde met hot honey en laat kort rusten.","Controleer kip altijd op minimaal 75 °C kerntemperatuur."],
+ ["Omgekeerde Ananas Cake","dessert",30,60,10,100,170,"","indirect","omgekeerde-ananas-cake","2026/06/omgekeerde-ananas-cake",8,"0,5 ananas\n250 g zelfrijzend bakmeel\n225 g roomboter\n125 g suiker\n100 g yoghurt\n3 eieren\n2 tl vanille-extract\n3 el donkere basterdsuiker","Vet een skillet in, leg de ananas op de suikerlaag en meng het cakebeslag.","Bak de skillet indirect tot de cake gaar is; controleer met een schone prikker.","Bakduur en oven-/kamadotemperatuur zijn richtlijnen; controleer zelf de cake."],
+ ["Varkensrack met Kruiden-Parmezaankorst","varken",30,90,15,135,140,"62","indirect","varkensrack-met-kruiden-parmezaan-korst","2026/06/varkensrack-kruiden-parmezaan-korst",4,"1 kg varkensrack\n2 el Dijonmosterd\n2 tenen knoflook\n4 takjes oregano\n4 takjes rozemarijn\n2 takjes salie\n2 takjes tijm\n40 g Parmezaanse kaas\n20 g paneermeel\nzout en peper","Kerf de vetlaag in; maak de korst van verse kruiden, knoflook, kaas en paneermeel.","Gaar indirect met rookhout tot een passend kerndoel; rust voor het aansnijden.","62 °C is het receptdoel voor roze varkensvlees; pas de kerntemperatuur aan op je persoonlijke voedselveiligheidseisen."],
+ ["Jalapeño Popper Pig Shots","varken",60,60,5,185,150,"","indirect","jalapeno-popper-pig-shots","2026/06/jalapeno-popper-pig-shots",8,"1 rookworst\n12 plakken ontbijtspek\n200 g zuivelspread\n100 g cheddar\n2 jalapeño's\n1 el BBQ-rub","Maak van plakjes rookworst en spek kleine cups en vul ze met het kaas-jalapeñomengsel; zet ze gekoeld weg.","Rook de gevulde cups indirect en serveer warm.","De totale tijd omvat ook opstijven in de koelkast; maak de cups desgewenst de avond ervoor."],
+ ["Cheesy Garlic Hotdogs","overig",15,10,0,25,200,"","indirect","cheesy-garlic-hotdogs","2026/09/cheesy-garlic-hotdogs",4,"4 hotdogs\n4 hotdogbroodjes\n60 g kruidenboter\n80 g geraspte kaas","Beleg opengesneden broodjes met kruidenboter en kaas; verwarm de kamado met twee zones.","Smelt de kaas indirect en grill de worstjes kort direct.","Gebruik gare hotdogs en warm ze volgens de verpakking door."],
+ ["Smoked Creamcheese","overig",10,60,0,70,110,"","indirect","smoked-creamcheese","2026/09/smoked-creamcheese",4,"300 g roomkaas\n2 el BBQ-rub\nTortillachips","Maak een ondiep ruitpatroon in de roomkaas en bestrooi met rub.","Rook de roomkaas indirect op aluminiumfolie en serveer direct met chips.","Bewaar verse roomkaas gekoeld voordat hij op de BBQ gaat."],
+ ["Gegrilde Perzik","dessert",15,10,0,25,180,"","direct","gegrilde-perzik","2018/08/gegrilde-perzik",4,"6 rijpe perziken\n8 el Griekse yoghurt\n1 tl vanille-extract\nPistachenoten","Halveer de perziken en verwijder de pit; maak vanilleyoghurt.","Grill de snijkant van de perziken direct en serveer warm met yoghurt en pistache.","Let op met suiker: die kan bij hoge hitte snel verbranden."],
+ ["Gegrilde Bimi met Citroen & Knoflook","groenten",10,15,0,25,180,"","direct","gegrilde-bimi","2024/05/gegrilde-bimi",4,"400 g bimi\n1 citroen\n2 tenen knoflook\n2 el olijfolie\n2 tl zeezout","Meng een dressing van citroenrasp, sap, knoflook, olie en zout en verdeel over de bimi.","Grill de bimi direct, keer regelmatig en serveer nog knapperig.","Prima bijgerecht tijdens het rusten van vlees."],
+ ["Iberico Secreto met Mojo Verde","varken",30,10,5,45,230,"62","direct","iberico-secreto-met-mojo-verde","2026/08/iberico-secreto-mojo-verde",2,"500 g Iberico secreto\n10 g zeezout\n10 g zwarte peper\n10 g knoflookgranulaat\n30 g peterselie\n30 g koriander\n4 tenen knoflook\n1 groene peper\n1 tl komijn\n100 ml olijfolie\n40 ml wittewijnazijn","Maak de groene salsa en kruid het vlees.","Grill secreto direct op een hete kamado, laat rusten en serveer met Mojo Verde.","Een kern van 62 °C is het receptadvies voor medium; kies zelf een veilige doeltemperatuur."]
+].map((row,i)=>{
+ const [label,category,prep,cook,rest,total,grill,core,method,slug,photoFile,persons,ingredients,preparation,methodText,note]=row;
+ const name='BBQ Junkie · '+label,url='https://bbq-junkie.nl/bbq-recepten/'+slug+'/';
+ const photo='https://bbq-junkie.nl/wp-content/uploads/'+photoFile+'-recept-500x281.jpg';
+ return {id:i+1,name,label,category,prep,cook,rest,total,grill,core,method,url,photo,persons,ingredients,preparation,methodText,note,
+  noOnionMentioned:!/\b(?:ui|uien|lente-ui|bosui|sjalot)\b/i.test(ingredients)};
+});
+function v48RecipeData(item){
+ const caution='Samenvatting voor je eigen planner; bekijk het volledige oorspronkelijke recept via '+item.url;
+ return {
+  name:item.name,category:item.category,kamado:'large',method:item.method,
+  grate:item.method==='direct'?'rvs':'rvs',grill:item.grill,core:item.core,cook:item.cook,rest:item.rest,
+  notes:'Bron: BBQ Junkie. Voor '+item.persons+' personen. '+caution,
+  photo:item.photo,recipeSource:item.url,recipeIngredients:item.ingredients,
+  recipePrep:item.preparation,recipeCook:item.methodText,recipeRest:item.rest?('Rusten circa '+item.rest+' minuten.'):'',
+  recipeSlice:'Controleer gaarheid en serveer zoals in het bronrecept.',
+  recipeSteps:[{title:'Voorbereiden',trigger:'Voor de BBQ',detail:item.preparation},
+   {title:'BBQ-bereiding',trigger:'Geplande bereiding · controleer kerntemperatuur',detail:item.methodText},
+   {title:'Serveren en voedselveiligheid',trigger:'Na bereiding en eventuele rust',detail:item.note+' '+caution}],
+  prepTasks:item.id===1?[{id:'catalog-overnight-rub',title:'Buikspek vooraf kruiden',daysBefore:1,time:'',duration:0,notes:'Kruid het buikspek en laat een nacht veilig in de koelkast staan; exacte begintijd zelf invullen.'}]:[],
+  v46BasePeople:item.persons
+ };
+}
+function v48Match(item){
+ const search=($('v48-search').value||'').toLocaleLowerCase('nl-NL').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const norm=s=>String(s).toLocaleLowerCase('nl-NL').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const cat=$('v48-cat').value,tm=$('v48-time').value,method=$('v48-method').value;
+ if(search&&!norm(item.label+' '+item.category+' '+item.ingredients+' '+item.note).includes(search))return false;
+ if(cat!=='all'&&item.category!==cat)return false;
+ if(tm==='long'&&item.cook<=180)return false;
+ if(tm!=='all'&&tm!=='long'&&item.cook>Number(tm))return false;
+ if(method!=='all'&&item.method!==method)return false;
+ if($('v48-no-onion').checked&&!item.noOnionMentioned)return false;
+ return true;
+}
+function v48Render(){
+ const host=$('v48-grid');if(!host)return;
+ const found=V48_RECIPES.filter(v48Match);
+ $('v48-count').textContent=found.length+' van '+V48_RECIPES.length+' geselecteerde recepten · alleen bekijken, nog niets geïmporteerd.';
+ host.innerHTML=found.length?found.map(item=>{
+  const saved=localRecipes.some(r=>dishKey(r.name)===dishKey(item.name));
+  const expanded=v48Opened===item.id;
+  return '<article class="v48-card" data-v48-id="'+item.id+'">'+
+  '<div class="v48-cover"><img src="'+escape(item.photo)+'" alt="'+escape(item.label)+' — receptfoto BBQ Junkie" loading="lazy" referrerpolicy="no-referrer">'+
+  '<div class="v48-photo-alt" hidden aria-label="Foto tijdelijk niet beschikbaar">🔥</div><span class="v48-tag">📷 BBQ Junkie</span></div>'+
+  '<div class="v48-card-content"><h4>'+escape(item.label)+'</h4>'+
+  '<div class="v48-meta"><span>'+escape(CATEGORIES[item.category]||item.category)+'</span><span>🔥 BBQ '+item.cook+' min</span><span>⏱️ Totaal '+v48Format(item.total)+'</span><span>'+item.grill+' °C</span></div>'+
+  '<p class="v48-desc">'+escape(item.note)+'</p>'+
+  '<div class="v48-actions"><button class="btn small" type="button" data-v48-action="detail" aria-expanded="'+expanded+'">'+(expanded?'⌃ Sluiten':'👀 Bekijken')+'</button>'+
+  '<button class="btn small '+(saved?'':'primary')+'" type="button" data-v48-action="import" '+(saved?'disabled':'')+'>'+ (saved?'✓ In bibliotheek':'＋ Toevoegen aan bibliotheek')+'</button>'+
+  '<button class="btn small" type="button" data-v48-action="plan" '+(saved?'':'disabled')+'>📅 Plan gerecht</button></div></div>'+
+  '<div class="v48-detail" '+(expanded?'':'hidden')+'>'+
+  '<strong>Voorbereiding '+item.prep+' min · BBQ '+item.cook+' min · Rust '+item.rest+' min</strong>'+
+  '<p>Inclusief eventuele wachttijd: '+v48Format(item.total)+' · richttemperatuur '+item.grill+' °C · '+(item.core?'kernadvies '+item.core+' °C':'geen vast kerndoel')+'</p>'+
+  '<strong>Ingrediënten (bron: '+item.persons+' personen)</strong><p>'+escape(item.ingredients)+'</p>'+
+  '<strong>Voorbereiden</strong><p>'+escape(item.preparation)+'</p>'+
+  '<strong>BBQ-bereiding</strong><p>'+escape(item.methodText)+'</p>'+
+  '<p>'+escape(item.note)+'</p>'+
+  '<p><a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">↗ Volledige receptuitleg op BBQ Junkie</a></p>'+
+  '<p class="hint">Gebaseerd op de bron. Foto’s worden extern geladen; kookdata zijn geen live metingen.</p></div></article>';
+ }).join(''):'<div class="v48-empty">Geen recepten gevonden met deze filters. Wis een filter of gebruik een ruimere bereidingstijd.</div>';
+ host.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>{
+  img.hidden=true;const fallback=img.parentElement.querySelector('.v48-photo-alt');if(fallback)fallback.hidden=false;
+ },{once:true}));
+}
+function v48Format(minutes){const h=Math.floor(minutes/60),m=minutes%60;return h?(h+'u'+(m?' '+m+'m':'')):m+' min';}
+let v48Opened=null;
+function v48Init(){
+ ['v48-search','v48-cat','v48-time','v48-method','v48-no-onion'].forEach(id=>{
+  $(id).addEventListener(id==='v48-search'?'input':'change',v48Render);
+ });
+ $('v48-grid').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-v48-action]'),card=btn?.closest('[data-v48-id]');if(!btn||!card)return;
+  const item=V48_RECIPES.find(x=>x.id===Number(card.dataset.v48Id));if(!item)return;
+  if(btn.dataset.v48Action==='detail'){v48Opened=v48Opened===item.id?null:item.id;v48Render();return;}
+  const existing=localRecipes.find(x=>dishKey(x.name)===dishKey(item.name));
+  if(btn.dataset.v48Action==='import'){
+   if(existing){$('v48-feedback').textContent='Recept staat al in je bibliotheek. Bestaande gegevens worden niet overschreven.';return;}
+   if(localRecipes.length>=80){$('v48-feedback').textContent='De bibliotheek bevat al 80 recepten. Verwijder eerst een oud recept of maak een JSON-back-up.';return;}
+   const ok=saveLocalRecipe(v48RecipeData(item));
+   $('v48-feedback').textContent=ok?'✓ '+item.label+' toegevoegd aan je persoonlijke receptenbibliotheek. Foto blijft gelinkt aan BBQ Junkie.':'Opslaan niet gelukt; controleer je bibliotheek.';
+   v48Render();return;
+  }
+  if(btn.dataset.v48Action==='plan'){
+   if(!existing){$('v48-feedback').textContent='Voeg dit recept eerst toe aan je bibliotheek.';return;}
+   addDish(existing,'✓ '+item.label+' toegevoegd aan de BBQ-planning');
+   v48Opened=null;v48Render();
+  }
+ });
+ v48Render();
+}
+
+initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();v48Init();
 })();
 </script>
 </body>

@@ -12,6 +12,8 @@ const dom=new JSDOM(html,{
   pretendToBeVisual:true,
   beforeParse(window){
     window.Element.prototype.scrollIntoView=()=>{};
+    window.URL.createObjectURL=()=> 'blob:https://planner.test.invalid/mock';
+    window.URL.revokeObjectURL=()=>{};
     window.confirm=()=>true;
     window.print=()=>{};
     window.navigator.share=async data=>{window.__shareURL=data.url;};

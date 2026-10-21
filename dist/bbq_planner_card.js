@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v4.1.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v4.2.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=4.1.0', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=4.2.0', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'

@@ -31,6 +31,43 @@ try{
   assert.equal(errors.length,0,'startup JavaScript errors');
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
+
+  // v4.6: multiple courses, task board, timers, pantry and strict opt-in notifications.
+  assert.ok($('v46-control'),'BBQ Regisseur is present');
+  assert.match($('v46-board').textContent,/Steek|Leg/,'generated schedule tasks appear');
+  assert.ok(!$('v46-multi').checked,'legacy single serve time stays default');
+  assert.ok(!$('v46-notify').checked,'mobile notifications require explicit opt-in');
+  const original=JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].serveSlot;
+  assert.equal(original,'main','existing dishes start as main course');
+  $('v46-multi').checked=true;$('v46-multi').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46MultiServe,true);
+  let course=doc.querySelector('#dishes article.dish [data-v46-course]');
+  assert.ok(course,'dish offers course selection');
+  course.value='starter';course.dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].serveSlot,'starter');
+  assert.match($('steps').textContent,/Serveer voorgerecht/,'new course appears on schedule');
+  $('v46-multi').checked=false;$('v46-multi').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.match($('v46-course-status').textContent,/gezamenlijke/,'single serve behavior restored');
+  const task=doc.querySelector('#v46-board [data-v46-check]');
+  assert.ok(task,'task checkbox available');
+  const taskId=task.dataset.v46Check;task.checked=true;task.dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Done[taskId],true,'task completion persists');
+  $('v46-pantry-name').value='krieltjes';$('v46-pantry-qty').value='250';$('v46-pantry-unit').value='g';
+  click($('v46-pantry-add'));
+  assert.match($('v46-pantry-list').textContent,/krieltjes/i,'pantry add works');
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Pantry[0].qty,250);
+  click($('v46-pantry-list').querySelector('[data-v46-stock-remove]'));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Pantry.length,0,'pantry deletion works');
+  const recipeBox=doc.querySelector('#dishes article.dish .v46-recipes');
+  assert.ok(recipeBox,'recipe scaling and timer controls available');
+  recipeBox.open=true;
+  click(recipeBox.querySelector('[data-v46-timer-start]'));
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].v46TimerEndsAt>Date.now(),'timer starts and persists');
+  const stop=doc.querySelector('#dishes article.dish [data-v46-timer-stop]');
+  click(stop);
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].v46TimerEndsAt,0,'timer stops');
+  assert.ok(fs.existsSync('sw.js')&&fs.existsSync('manifest.webmanifest'),'public PWA offline assets exist');
+
   // v4.5: mobile cooking panel and practical preparation tools.
   assert.ok($('v45-coach-content').textContent,'coaching UI is rendered without falsely claiming live readings');
   assert.ok($('v45-shopping'),'shopping UI exists');
@@ -234,8 +271,8 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route+'?v=4.5.0'),'HTML redirect points at versioned planner');
-  assert.ok(entry.includes('href="'+route+'?v=4.5.0"'),'accessible versioned fallback link');
+  assert.ok(entry.includes('url='+route+'?v=4.6.0'),'HTML redirect points at versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v=4.6.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('OK v4.5: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');

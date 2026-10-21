@@ -14,6 +14,8 @@ const dom=new JSDOM(html,{
     window.Element.prototype.scrollIntoView=()=>{};
     window.confirm=()=>true;
     window.print=()=>{};
+    window.navigator.share=async data=>{window.__shareURL=data.url;};
+    window.prompt=()=>null;
     window.addEventListener('error',event=>{errors.push(String(event.error?.stack||event.message));});
   }
 });
@@ -26,6 +28,8 @@ try{
   assert.equal(errors.length,0,'startup JavaScript errors');
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
+  click($('share-public'));
+  assert.equal(window.__shareURL,'https://eelbrethouwer-jpg.github.io/bbq_planner_card/','share button never reveals HA URL or local plans');
   assert.equal($('meater-source').textContent,'Niet gekoppeld · plannermodus');
 
   click($('add'));assert.equal(count(),4,'add dish button');
@@ -68,8 +72,13 @@ try{
   $('recipe-url').value='not a valid url';
   click($('recipe-read'));assert.match($('recipe-message').textContent,/geldige http/,'invalid URL handled locally');
 
+  const entry=fs.readFileSync('index.html','utf8');
+  const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
+  assert.ok(entry.includes('url='+route),'HTML redirect points at actual planner');
+  assert.ok(entry.includes('href="'+route+'"'),'accessible fallback link');
+  assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('OK: initial render, controls, add, preset, expandable steps, recipe import, local saves, reviews, reset and offline MEATER');
+  console.log('OK: landing route, iPhone share action, controls, add, preset, expandable steps, recipe import, local saves, reviews, reset and offline MEATER');
 }finally{
   window.close();
 }

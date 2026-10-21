@@ -116,7 +116,8 @@
  </div>
  <div class="toolbar">
   <button class="btn ghost" id="reset">↺ Voorbeeld herstellen</button>
-  <button class="btn ghost" id="json-export" type="button">↧ Plan bewaren</button>
+  <button class="btn ghost" id="share-public" type="button" title="Deel de openbare website, niet jouw persoonlijke planning">↗ Deel website</button>
+   <button class="btn ghost" id="json-export" type="button">↧ Plan bewaren</button>
   <button class="btn ghost" id="json-import" type="button">↥ Plan laden</button>
   <input type="file" accept="application/json,.json" id="json-file" style="display:none" aria-label="Laad planning uit JSON-bestand">
   <button class="btn ghost" id="print">⎙ Print</button>
@@ -224,6 +225,7 @@
 <script>
 (()=>{'use strict';
 const KEY='kamado-bereidingsplanner-v1';
+const PUBLIC_SITE_URL='https://eelbrethouwer-jpg.github.io/bbq_planner_card/';
 const $=id=>document.getElementById(id);
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const examples={
@@ -291,6 +293,7 @@ function initControls(){
  sel.addEventListener('change',e=>{const value=e.target.value;if(value){sel.value='';addDish(examples[value],`${value} toegevoegd`);}});
  $('add').addEventListener('click',()=>addDish({},'Nieuw gerecht toegevoegd! Pas hieronder de naam aan.'));
  $('reset').addEventListener('click',()=>{if(confirm('Voorbeeld herstellen? Je huidige gerechten en instellingen worden vervangen.')){state=initial();persist();initValuesOnly();renderAll();toast('Voorbeeld hersteld');}});
+ $('share-public').addEventListener('click',sharePublicPlanner);
  $('json-export').addEventListener('click',downloadPlanJson);$('json-import').addEventListener('click',()=>{const i=$('json-file');i.value='';i.click()});$('json-file').addEventListener('change',uploadPlanJson);
  $('print').addEventListener('click',()=>window.print());$('export').addEventListener('click',downloadSchedule);
  $('smart-on').addEventListener('change',ev=>{state.smart={...smartSettings(),enabled:ev.target.checked};persist();renderOutputs()});
@@ -651,6 +654,19 @@ function reportIframeSize(){
  if(window.parent===window||location.protocol==='file:')return;
  const height=Math.ceil(document.documentElement.scrollHeight||document.body.scrollHeight)+16;
  window.parent.postMessage({__bbq:'bbq-child-height-v1',height},location.origin);
+}
+async function sharePublicPlanner(){
+ const data={title:'BBQ-bereidingsplanner',text:'Bekijk deze gratis kamado-bereidingsplanner met recepten en gezamenlijke serveertijd 🔥',url:PUBLIC_SITE_URL};
+ if(typeof navigator.share==='function'){
+  try{await navigator.share(data);return;}catch(e){if(e?.name==='AbortError')return;}
+ }
+ try{
+  if(!navigator.clipboard?.writeText)throw new Error('Geen klembordtoegang');
+  await navigator.clipboard.writeText(PUBLIC_SITE_URL);
+  toast('Website-link gekopieerd! Je eigen planning en MEATER-data worden niet gedeeld.');
+ }catch(e){
+  window.prompt('Kopieer deze link om de BBQ-planner te delen:',PUBLIC_SITE_URL);
+ }
 }
 function downloadPlanJson(){
  const data=JSON.stringify({format:'bbq-planner-v4',savedAt:new Date().toISOString(),plan:state},null,2);

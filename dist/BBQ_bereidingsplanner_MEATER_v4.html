@@ -1493,13 +1493,13 @@ function v45Advice(base){
  for(const d of base.dishes){
   if(d.phase==='done')continue;
   const prefix=d.name+': ',m=v45Probe(d),goal=Number(d.core);
+  if(d.core!==''&&Number.isFinite(goal)&&d.category==='gevogelte'&&goal<75)rows.push({warn:true,text:prefix+'kerndoel onder 75 °C: kip en ander gevogelte volledig garen en op meerdere plaatsen controleren.'});
   if(!m.ok){
    if(['pro','plus'].includes(d.meater))rows.push({warn:true,text:prefix+m.note+'. Geen automatisch temperatuuradvies.'});
    else if(d.phase==='waiting'&&Number.isFinite(d.start)&&Math.abs(d.start-Date.now())<600000)rows.push({text:prefix+'geplande start '+fmt(d.start)+'. Controleer of de kamado op temperatuur is (tijdadvies).'});
    continue;
   }
   if(d.core!==''&&Number.isFinite(goal)){
-   if(d.category==='gevogelte'&&goal<75)rows.push({warn:true,text:prefix+'kerndoel onder 75 °C: kip en ander gevogelte volledig garen en op meerdere plaatsen controleren.'});
    if(d.method==='combo'&&m.core>=goal-9&&m.core<goal-2)rows.push({text:prefix+'kern '+m.core.toFixed(1)+' °C. Bereid de overgang van indirect naar direct voor; bewaak de doorgaring.'});
    else if(m.core>=goal-2)rows.push({warn:true,text:prefix+'kern '+m.core.toFixed(1)+' °C, bijna bij plandoel '+goal+' °C. Controleer gaarheid en kies zelf wanneer je stopt.'});
    else rows.push({text:prefix+'live kern '+m.core.toFixed(1)+' °C richting '+goal+' °C'+(m.ambient===null?' (omgeving onbekend).':'; omgeving '+m.ambient.toFixed(1)+' °C.')});

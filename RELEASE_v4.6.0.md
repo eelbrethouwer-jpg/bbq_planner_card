@@ -10,6 +10,14 @@
 7. **Voorraadkast:** lokaal opgeslagen voorraad (g/ml/stuks/el/tl) verminderen de resterende boodschappenhoeveelheden voor identieke ingrediënten + eenheden. Bewaar via JSON-planexport; geen automatische HA-cloudsynchronisatie van voorraad.
 8. **Offline webapp:** publieke GitHub Pages-installeerbare PWA met service-worker-cache, zolang eerder online geopend. Live metingen en HA-synchronisatie werken alleen online.
 
+## Extra: planning op meerdere dagen
+- **Duidelijkere starttijdbewaking:** een tijdsverschil op een toekomstige BBQ-datum is een planningsadvies, geen onterechte melding dat je vandaag te laat bent. Datum en tijd worden volledig getoond; zodra de benodigde starttijd werkelijk verstreken is, wordt het wel een waarschuwing.
+- **Voorbereidingen op eerdere dagen:** per gerecht handelingen tot veertien dagen voor de serveerdatum toevoegen en bewerken, met voorbeeldstappen voor vis pekelen, vlees marineren en deeg maken, of een eigen stap.
+- **Apart voorbereidingsschema:** iedere voorbereidende handeling komt gedateerd in het gedetailleerde draaiboek, het afvinkbare kookoverzicht, een afzonderlijke voorbereidingstijdlijn en de tekstexport.
+- **Opslag:** voorbereidingen zitten in JSON-planback-ups en kunnen expliciet worden opgeslagen bij de receptenbibliotheek (in Home Assistant per gebruiker synchroniseerbaar).
+- **Beschikbare begintijd:** is uitdrukkelijk alleen voor de dag van het diner bedoeld. Dag-ervoor-taken hebben eigen tijden.
+- **Voedselveiligheid:** voorinstellingen zetten niet automatisch de pekelduur op 24 uur; bewaartemperatuur en werkelijke pekeltijd moeten volgens het betreffende recept worden gecontroleerd.
+
 ## Compatibiliteit & veiligheid
 - Zelfstandige HTML blijft: \`dist/BBQ_bereidingsplanner_MEATER_v4.html\`.
 - Receptenbibliotheek, HA per-gebruiker reviewsync, MEATER Pro/Plus-grafieken, foto's, bestaande planning en flexibele adviezen blijven intact.
@@ -24,5 +32,7 @@
 - [ ] Home Assistant: echte sensoren en juiste \`notify.mobile_app_...\` service, met expliciete toestemming
 - [ ] Offline: na online bezoek vliegtuigmodus; recepten en plan zichtbaar maar MEATER niet live
 - [ ] Handmatig: 3 gangen en beide kamado's; controleer alle start- en opwarmtijden
+- [ ] Test morgen gepland diner: toekomstig starttijdconflict is advies, niet een melding dat vandaag al te laat is
+- [ ] Test vis een dag eerder pekelen en beide dagen afzonderlijk in het draaiboek, bewaren, heropenen en afvinken
 
 **Nog niet mergen of taggen tot CI en handmatige controles klaar zijn.**

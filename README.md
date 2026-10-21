@@ -16,7 +16,7 @@ Een mobiele BBQ-bereidingsplanner voor **één grote en één kleine kamado**, m
 - Werkt als Home Assistant-dashboardkaart en behoudt de afzonderlijke zelfstandige HTML-planner.
 - Klikbare stappen in **04 Draaiboek** met voorbereiden, garen, rusten en aansnijden, inclusief een uitgewerkt **Ribeye 500 g**-recept.
 - Een recept toevoegen via internetlink (alleen als de bron CORS-toegang toestaat) of door de recepttekst te plakken. Eigen recepten blijven lokaal beschikbaar als voorbeeldgerecht.
-- Bewaar een beoordeling na iedere bereiding, met je uiteindelijke kern, instellingen en optioneel de recente MEATER-kern/omgeving. Eerdere beoordelingen zijn zichtbaar als je hetzelfde gerecht opnieuw bereidt.
+- Bewaar een beoordeling na iedere bereiding, met je uiteindelijke kern, instellingen en optioneel de recente MEATER-kern/omgeving. Vanaf v4.4.0 synchroniseert deze bereidingshistorie in de Home Assistant-kaart per ingelogd gebruikersaccount; eerdere beoordelingen zijn zichtbaar als je hetzelfde gerecht opnieuw bereidt.
 - MEATER-grafieken tonen nu **kern én omgeving** in °C, op een gezamenlijke schaal en met tijden.
 
 **Let op:** handmatige bereidingstijden zijn schattingen; MEATER-waarden zijn echte metingen uit Home Assistant met mogelijke vertraging. De planner is geen vervanging voor voedselveiligheidscontroles. Live-informatie verschijnt alleen in de Home Assistant-dashboardkaart.
@@ -31,7 +31,7 @@ Het publieke websiteadres is **https://eelbrethouwer-jpg.github.io/bbq_planner_c
 De vaste webpagina `index.html` opent automatisch de bestaande zelfstandige HTML-planner onder `dist/`, zodat de Home Assistant-code en de openbare website dezelfde planner blijven gebruiken.
 
 - Met **↗ Deel website** kun je vanaf een iPhone via het deelmenu (bijvoorbeeld WhatsApp) de openbare link doorsturen.
-- Iedereen beheert op de **openbare website** zijn eigen recepten en reviews in de lokale browseropslag. In de **Home Assistant-dashboardkaart** synchroniseren eigen recepten vanaf v4.3.0 met de beveiligde gebruikersopslag van het ingelogde Home Assistant-account. De publieke site synchroniseert niet automatisch en gebruikt JSON import/export.
+- Iedereen beheert op de **openbare website** zijn eigen recepten en reviews in de lokale browseropslag. In de **Home Assistant-dashboardkaart** synchroniseren eigen recepten vanaf v4.3.0 en bereidingsevaluaties vanaf v4.4.0 met de beveiligde gebruikersopslag van het ingelogde Home Assistant-account. De publieke site synchroniseert niet automatisch; recepten zijn via JSON te back-uppen.
 - De openbare website leest **geen** Home Assistant- of MEATER-gegevens. De bestaande ingelogde HA-dashboardkaart blijft de enige live-bron.
 - De deelknop deelt alleen het **websiteadres**, nooit jouw eigen planning of sensorwaarden.
 
@@ -63,7 +63,7 @@ Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_c
 
 ## Versies
 
-Gepubliceerde versie: **v4.2.0**. **v4.3.0** met receptenbibliotheek en synchronisatie is voorbereid in een aparte ontwikkelbranch. HACS ziet v4.3.0 pas na merge en de officiële GitHub Release met tag `v4.3.0`.
+De huidige `main`-code bevat **v4.3.0** met de receptenbibliotheek en Home Assistant-receptensynchronisatie. **v4.4.0** is als releasekandidaat voorbereid met gesynchroniseerde bereidingshistorie. HACS ziet v4.4.0 pas na merge en de officiële GitHub Release met tag `v4.4.0`.
 
 Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub Release met een versietag als je een versie wilt uitbrengen. De HACS-workflow controleert de repository automatisch op iedere push, pull request en via een geplande controle.
 
@@ -79,6 +79,12 @@ Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub R
 
 Deze nieuwe functies zijn in de releasebranch beschikbaar voor test; ze zijn **nog niet** opgenomen in de gepubliceerde HACS-release.
 
+## Bereidingshistorie synchroniseren (v4.4.0)
+
+Vanaf v4.4.0 wordt ook de **bereidingsevaluatie per gerecht** via Home Assistant gesynchroniseerd. Een review bevat de beoordeling, werkelijk ingevoerde eindkerntemperatuur, ingestelde BBQ-/kerntemperatuur, gekozen thermometer, een recente MEATER-kern/omgeving indien beschikbaar, en je opmerkingen voor de volgende bereiding. De vijf meest recente reviews van hetzelfde gerecht staan direct op de gerechtkaart.
+
+De synchronisatie gebruikt hetzelfde ingelogde Home Assistant-account als de receptenbibliotheek en vraagt geen los token of externe cloudservice. Bestaande lokale reviews worden bij de eerste Home Assistant-koppeling samengevoegd met de opgeslagen historie van dat account. Maximaal 250 reviews worden bewaard. Op de openbare GitHub Pages-versie blijft de historie bewust lokaal in die browser.
+
 ## Mijn receptenbibliotheek en synchronisatie (v4.3.0)
 
 Open **Mijn receptenbibliotheek** onder de receptgenerator in het dashboard. Hier kun je eigen recepten bekijken, bewerken, verwijderen, aan de planning toevoegen en een volledige JSON-back-up maken. Met **Recepten importeren** kies je tussen samenvoegen en volledig vervangen; bij vervangen verschijnt een extra bevestiging.
@@ -91,7 +97,7 @@ Open **Mijn receptenbibliotheek** onder de receptgenerator in het dashboard. Hie
 
 ## Recepten en evaluaties (v4.1.0)
 
-De receptenbibliotheek staat lokaal in de **browseropslag (localStorage)** en wordt bij gebruik van de Home Assistant-dashboardkaart vanaf v4.3.0 ook in de persoonlijke opslag van het ingelogde HA-account bewaard. Bereidingsevaluaties blijven vooralsnog **uitsluitend lokaal** opgeslagen. Het laden van een planning in JSON bevat de receptvelden van de gerechten; de los opgeslagen reviewhistorie en receptenbibliotheek worden niet mee geëxporteerd. Wis de browseropslag niet zonder een aparte back-up van je gegevens. Het resetten van de voorbeeldplanning wist de bibliotheek en reviews niet.
+De receptenbibliotheek staat lokaal in de **browseropslag (localStorage)** en wordt bij gebruik van de Home Assistant-dashboardkaart vanaf v4.3.0 ook in de persoonlijke opslag van het ingelogde HA-account bewaard. Vanaf v4.4.0 geldt dat ook voor de **bereidingsevaluaties/reviewhistorie**. Het laden van een planning in JSON bevat de receptvelden van de gerechten; de losse receptenbibliotheek en reviewhistorie zitten niet in het planbestand. Op de openbare website blijven reviews uitsluitend lokaal. Het resetten van de voorbeeldplanning wist de bibliotheek en reviews niet.
 
 Een gewone receptlink wordt alleen automatisch gelezen als de website toegang via de browser toestaat én gestructureerde Recipe-gegevens aanbiedt. Anders kun je de tekst plakken. Dit programma omzeilt geen CORS-beveiliging en maakt geen gebruik van externe scraping- of AI-services. Controleer de geïmporteerde bereidingsinstructies, allergenen en voedselveiligheid.
 

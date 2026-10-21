@@ -473,7 +473,7 @@ const examples={
 };
 const builtInRecipeNames=new Set(Object.keys(examples));
 let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
-const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category:CATEGORIES[data.category]?data.category:categoryGuess(data.name),method:METHODS[data.method]?data.method:methodGuess(data.name),grate:GRATES[data.grate]?data.grate:grateGuess(data.name,data.method||methodGuess(data.name)),grate2:GRATES[data.grate2]?data.grate2:'cast',phase2Temp:data.phase2Temp??(data.method==='combo'||methodGuess(data.name)==='combo'?250:180),phase2Minutes:data.phase2Minutes??6,transitionMins:data.transitionMins??(data.method==='combo'||methodGuess(data.name)==='combo'?15:0),kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',photo:validV45Photo(data.photo)?data.photo:'',coachStep:Number.isInteger(Number(data.coachStep))?Math.max(0,Math.min(29,Number(data.coachStep))):0,serveSlot:['starter','main','dessert'].includes(data.serveSlot)?data.serveSlot:'main',v46BasePeople:Math.max(1,Math.min(50,Number(data.v46BasePeople)||4)),v46TimerEndsAt:Math.max(0,Number(data.v46TimerEndsAt)||0),meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
+const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category:CATEGORIES[data.category]?data.category:categoryGuess(data.name),method:METHODS[data.method]?data.method:methodGuess(data.name),grate:GRATES[data.grate]?data.grate:grateGuess(data.name,data.method||methodGuess(data.name)),grate2:GRATES[data.grate2]?data.grate2:'cast',phase2Temp:data.phase2Temp??(data.method==='combo'||methodGuess(data.name)==='combo'?250:180),phase2Minutes:data.phase2Minutes??6,transitionMins:data.transitionMins??(data.method==='combo'||methodGuess(data.name)==='combo'?15:0),kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',photo:validV45Photo(data.photo)?data.photo:'',coachStep:Number.isInteger(Number(data.coachStep))?Math.max(0,Math.min(29,Number(data.coachStep))):0,serveSlot:['starter','main','dessert'].includes(data.serveSlot)?data.serveSlot:'main',v46BasePeople:Number(data.v46BasePeople)||0,v46TimerEndsAt:Math.max(0,Number(data.v46TimerEndsAt)||0),meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
 const initial=()=>({date:today(),dateMode:'auto',equipment:{large:[],small:[]},mealTime:'18:30',availableFrom:'16:30',preheatLarge:30,preheatSmall:25,smart:{enabled:true,mode:'fixed'},dishes:[makeDish(examples.Bavette),makeDish(examples.Krieltjes),makeDish(examples.Maïskolven)]});
 let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();if(state.dateMode!=='manual'&&state.dateMode!=='auto'){state.dateMode=state.date>today()?'manual':'auto';}if(state.dateMode==='auto')state.date=today();if(!state.equipment||typeof state.equipment!=='object')state.equipment={large:[],small:[]};
 for(const d of state.dishes){
@@ -1740,6 +1740,208 @@ function v45Init(){
   const d=state.dishes.find(x=>x.id===card.dataset.id);if(!d)return;
   d.photo='';persist();if(localRecipes.some(x=>dishKey(x.name)===dishKey(d.name)))saveLocalRecipe(d);renderAll();
  });
+}
+
+
+/* v4.6.0 BBQ Regisseur — no fictitious sensor readings, no remote controls */
+function v46DishServe(d,fallback){
+ if(!state.v46MultiServe)return fallback;
+ const slot=['starter','dessert'].includes(d.serveSlot)?d.serveSlot:'main';
+ if(slot==='main')return fallback;
+ return dateAt(state.date,slot==='starter'?(state.v46Starter||'17:30'):(state.v46Dessert||'19:15'))??fallback;
+}
+function v46DishPanel(d){
+ const count=Math.max(1,Math.min(50,Number(state.v45People)||4));
+ const basis=Math.max(1,Math.min(50,Number(d.v46BasePeople)||Number(state.v45Base)||4));
+ const lines=recipeDetails(d).ingredients.split(/\r?\n/).map(line=>{
+  const r=v45Ingredient(line);
+  if(!r)return null;
+  const qty=r.qty===null?'':Number((r.qty*count/basis).toFixed(2)).toLocaleString('nl-NL')+' '+r.unit+' ';
+  return qty+escape(r.name);
+ }).filter(Boolean);
+ const end=Number(d.v46TimerEndsAt)||0;
+ return '<details class="v46-recipes"><summary>🍴 Recept schalen & bereidingstimer</summary>'+
+  '<div class="v46-row"><label class="v46-field">Basisrecept voor personen <input data-v46-basis type="number" min="1" max="50" value="'+basis+'"></label>'+
+  '<span class="v46-muted">Berekend voor '+count+' personen; pas boven bij de boodschappenlijst het aantal gasten aan.</span></div>'+
+  '<p>'+(lines.length?lines.join('\n'):'Geen gestructureerde ingrediënten beschikbaar. Voeg ze toe bij recept bewerken.')+'</p>'+
+  '<p class="v46-muted">Dit verandert alleen de hoeveelheden, niet automatisch de BBQ-tijd, dikte of kerntemperatuur. Controleer gaarheid en roosteroppervlak.</p>'+
+  '<div class="v46-row"><label class="v46-field">Timer (minuten)<input data-v46-timer-min type="number" min="1" max="1440" value="10"></label>'+
+  '<button type="button" class="btn small" data-v46-timer-start>▶ Start timer</button>'+
+  '<button type="button" class="btn small" data-v46-timer-stop>Stop timer</button></div>'+
+  '<div class="v46-muted">'+(end?(end>Date.now()?'Timer loopt tot '+fmt(end):'⏰ Timer is afgelopen'):'Geen actieve timer')+'</div>'+
+  '</details>';
+}
+function v46PantryClean(){
+ const result=[],allowed=new Set(['g','ml','stuks','el','tl']);
+ for(const x of Array.isArray(state.v46Pantry)?state.v46Pantry:[]){
+  if(!x||typeof x.name!=='string')continue;
+  const name=x.name.trim().slice(0,100),unit=String(x.unit||''),qty=Number(x.qty);
+  if(name&&allowed.has(unit)&&Number.isFinite(qty)&&qty>0&&qty<=100000)result.push({name,unit,qty});
+  if(result.length>=120)break;
+ }
+ return result;
+}
+function v46Remaining(r){
+ if(r.qty===null)return null;
+ const matched=v46PantryClean().filter(p=>dishKey(p.name)===dishKey(r.name)&&p.unit===r.unit);
+ return Math.max(0,r.qty-matched.reduce((a,p)=>a+p.qty,0));
+}
+function v46Prediction(d,now=Date.now()){
+ const m=v45Probe(d);
+ if(!m.ok)return {ok:false,why:m.note};
+ const goal=Number(d.core);
+ if(d.core===''||!Number.isFinite(goal)||goal<=0)return {ok:false,why:'Geen geldig doel voor de kerntemperatuur'};
+ if(m.core>=goal)return {ok:true,eta:now,source:'Kerndoel bereikt; controleer handmatig gaarheid'};
+ const pred=probePrediction(d,now,{pro:1,plus:1});
+ if(pred.usable&&Number.isFinite(pred.eta)&&pred.eta>=now&&pred.eta<=now+24*3600000)
+  return {ok:true,eta:pred.eta,source:'MEATER ETA'};
+ const points=meaterHistory[d.meater].filter(x=>Number.isFinite(x.core)&&x.t>=now-25*60000&&x.t<=now+60000);
+ if(points.length<2)return {ok:false,why:'Nog onvoldoende live meetpunten voor een trend'};
+ const last=points[points.length-1],first=points.find(x=>last.t-x.t>=3*60000);
+ if(!first)return {ok:false,why:'Wacht op minstens drie minuten temperatuurtrend'};
+ const slope=(last.core-first.core)/((last.t-first.t)/60000);
+ if(slope<=0.025||slope>2.5)return {ok:false,why:'Temperatuurtrend is onvoldoende stabiel'};
+ const remaining=(goal-m.core)/slope;
+ if(remaining>1440||remaining<0)return {ok:false,why:'Temperatuurextrapolatie buiten bereik'};
+ return {ok:true,eta:now+remaining*60000,source:'Ruwe extrapolatie uit live kerntrend'};
+}
+function v46Tasks(base){
+ const tasks=[];
+ const add=(id,time,title,k)=>{if(Number.isFinite(time))tasks.push({id,time,title,k})};
+ for(const k of ['large','small'])add(k+':fire',base.fires[k],'Steek '+(k==='large'?'grote':'kleine')+' kamado aan',k);
+ for(const d of base.dishes){
+  add(d.id+':on',d.start,'Leg '+d.name+' op de '+(d.kamado==='large'?'grote':'kleine')+' kamado',d.kamado);
+  add(d.id+':off',d.cookEnd,'Haal '+d.name+' van de BBQ; controleer kern en gaarheid',d.kamado);
+  if(d.rest>0)add(d.id+':serve',d.end,'Rusttijd '+d.name+' afgerond; serveer veilig',d.kamado);
+ }
+ return tasks.sort((a,b)=>a.time-b.time);
+}
+function v46Board(base){
+ const done=state.v46Done||{},now=Date.now(),tasks=v46Tasks(base);
+ if(!tasks.length){$('v46-board').innerHTML='<p class="v46-muted">Voeg een gerecht toe om handelingen te zien.</p>';return;}
+ const group=[
+  ['Nu doen',tasks.filter(t=>!done[t.id]&&t.time<=now+10*60000)],
+  ['Hierna',tasks.filter(t=>!done[t.id]&&t.time>now+10*60000)],
+  ['Afgevinkt',tasks.filter(t=>!!done[t.id])]
+ ];
+ $('v46-board').innerHTML=group.map(([label,ts])=>'<div class="v46-task-group"><h4>'+label+' ('+ts.length+')</h4>'+
+  (ts.length?ts.slice(0,16).map(t=>'<label class="v46-task '+(done[t.id]?'done':'')+'"><input type="checkbox" data-v46-check="'+escape(t.id)+'" '+(done[t.id]?'checked':'')+'>'+
+    '<span><strong>'+escape(t.title)+'</strong><small>'+fmt(t.time)+' · '+(t.k==='large'?'grote kamado':'kleine kamado')+'</small></span></label>').join(''):
+    '<p class="v46-muted">Geen handelingen.</p>')+'</div>').join('');
+}
+function v46LiveRender(base){
+ $('v46-live').innerHTML=base.dishes.map(d=>{
+  const p=v46Prediction(d);
+  if(d.phase==='done')return '<div class="v46-status">'+escape(d.name)+': gereed gemeld.</div>';
+  if(!p.ok)return '<div class="v46-status">'+escape(d.name)+': '+escape(p.why)+' — geplande serveertijd '+fmt(d.serveAt)+'.</div>';
+  const ready=p.eta+minutes(d.rest)*60000,delta=d.serveAt==null?null:Math.round((ready-d.serveAt)/60000);
+  return '<div class="v46-status '+(delta!==null&&delta>10?'warn':'')+'"><strong>'+escape(d.name)+'</strong><br>'+escape(p.source)+
+   ' · kernverwachting '+fmt(p.eta)+' · inclusief rust circa '+fmt(ready)+
+   (delta===null?'': ' ('+Math.abs(delta)+(delta>=0?' min later':' min eerder')+' dan gepland)')+
+   '<br><span class="v46-muted">Indicatie, nooit garantie. Controleer kerntemperatuur en voedselveiligheid; geen automatische herplanning.</span></div>';
+ }).join('')||'<p class="v46-muted">Nog geen gerechten.</p>';
+ const records=[];
+ for(const d of base.dishes){
+  const rs=savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)&&Number.isFinite(Number(r.actualMinutes))&&Number(r.actualMinutes)>0).slice(-7);
+  if(!rs.length)continue;
+  const durations=rs.map(x=>Number(x.actualMinutes)).sort((a,b)=>a-b);
+  const mid=Math.floor(durations.length/2);
+  const median=durations.length%2?durations[mid]:(durations[mid-1]+durations[mid])/2;
+  const scores=rs.filter(x=>Number.isFinite(Number(x.rating))).map(x=>Number(x.rating));
+  const average=scores.length?(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1):'—';
+  const cores=rs.filter(x=>x.finalCore!==null&&x.finalCore!==undefined).map(x=>Number(x.finalCore)).filter(Number.isFinite);
+  records.push('<div class="v46-status"><strong>'+escape(d.name)+'</strong><br>'+rs.length+' geregistreerde sessies · mediane duur '+median+' min'+
+    '<br>Bereik '+durations[0]+'–'+durations[durations.length-1]+' min · score '+average+'/5'+
+    (cores.length?'<br>Geregistreerde eindkernen '+Math.min(...cores)+'–'+Math.max(...cores)+' °C':'')+
+    '<br><span class="v46-muted">Gebaseerd op je eigen beoordelingen, niet op voorbeelden.</span></div>');
+ }
+ $('v46-history').innerHTML=records.join('')||'<p class="v46-muted">Historie verschijnt na je eerste review met werkelijke bereidingstijd.</p>';
+}
+function v46PantryRender(){
+ const p=v46PantryClean();
+ $('v46-pantry-list').innerHTML=p.length?p.map((x,i)=>'<div class="v46-stock-item"><span>'+escape(x.name)+' · '+Number(x.qty.toFixed(2)).toLocaleString('nl-NL')+' '+escape(x.unit)+'</span>'+
+ '<button class="btn small" type="button" data-v46-stock-remove="'+i+'" aria-label="Verwijder '+escape(x.name)+'">✕</button></div>').join(''):'<p class="v46-muted">Je voorraadkast is nog leeg.</p>';
+}
+function v46Render(base){
+ const multi=$('v46-multi');if(!multi)return;
+ multi.checked=state.v46MultiServe===true;
+ const fill=(id,value)=>{const el=$(id);if(document.activeElement!==el)el.value=value;};
+ fill('v46-starter',state.v46Starter||'17:30');fill('v46-dessert',state.v46Dessert||'19:15');
+ $('v46-serves').style.opacity=multi.checked?'1':'.65';
+ $('v46-course-status').textContent=multi.checked?'Gangen zijn actief. Ieder gerecht rekent terug vanaf het gekozen serveermoment.':'Alle gerechten blijven op de bestaande gezamenlijke serveertijd.';
+ $('v46-notify').checked=state.v46Notify===true;
+ fill('v46-notify-service',state.v46NotifyService||'');
+ v46Board(base);v46LiveRender(base);v46PantryRender();
+}
+function v46NotifySend(message,key){
+ const service=String(state.v46NotifyService||'').trim().toLowerCase();
+ if(!state.v46Notify||!/^notify\.mobile_app_[a-z0-9_]{1,70}$/.test(service)){return false;}
+ if(window.parent===window||location.protocol==='file:'||!meaterBridgeSeen)return false;
+ if((state.v46AlertSent||{})[key])return false;
+ state.v46AlertSent=state.v46AlertSent||{};
+ state.v46AlertSent[key]=Date.now();
+ const keys=Object.keys(state.v46AlertSent);if(keys.length>160)for(const k of keys.slice(0,keys.length-160))delete state.v46AlertSent[k];
+ persist();
+ window.parent.postMessage({__bbq:'bbq-notify-request-v1',service,message:message.slice(0,230),key},location.origin);
+ return true;
+}
+function v46CheckNotifications(){
+ if(!state.v46Notify)return;
+ for(const d of state.dishes){
+  if(d.phase==='cooking'&&d.core!==''&&Number(d.core)>0){
+   const p=v45Probe(d);
+   if(p.ok&&p.core>=Number(d.core)-1)v46NotifySend('BBQ: '+d.name+' bereikt bijna de geplande kern ('+Number(d.core)+' °C). Controleer de gaarheid zelf.',state.date+'|'+d.id+'|core');
+  }
+  const end=Number(d.v46TimerEndsAt);
+  if(Number.isFinite(end)&&end>0&&end<=Date.now()&&end>Date.now()-24*3600000)
+   v46NotifySend('BBQ-timer afgelopen voor '+d.name+'. Controleer het gerecht.',d.id+'|timer|'+end);
+ }
+}
+function v46Init(){
+ $('v46-multi').addEventListener('change',e=>{state.v46MultiServe=e.target.checked;persist();renderAll();});
+ for(const [id,key] of [['v46-starter','v46Starter'],['v46-dessert','v46Dessert']]){
+  $(id).addEventListener('change',e=>{if(!/^\d{2}:\d{2}$/.test(e.target.value))return;state[key]=e.target.value;persist();renderOutputs();});
+ }
+ $('v46-notify').addEventListener('change',e=>{state.v46Notify=e.target.checked;persist();v46Render(calc());});
+ $('v46-notify-service').addEventListener('change',e=>{state.v46NotifyService=e.target.value.trim().toLowerCase().slice(0,90);persist();v46Render(calc());});
+ $('v46-board').addEventListener('change',e=>{const k=e.target.dataset.v46Check;if(!k)return;state.v46Done=state.v46Done||{};state.v46Done[k]=e.target.checked;persist();v46Board(calc());});
+ $('dishes').addEventListener('change',e=>{
+  const card=e.target.closest('[data-id]'),d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
+  if(e.target.matches('[data-v46-course]')){d.serveSlot=e.target.value;persist();renderAll();}
+  if(e.target.matches('[data-v46-basis]')){d.v46BasePeople=Math.max(1,Math.min(50,Number(e.target.value)||4));persist();v45ShopRender();renderAll();}
+ });
+ $('dishes').addEventListener('click',e=>{
+  const start=e.target.closest('[data-v46-timer-start]'),stop=e.target.closest('[data-v46-timer-stop]');
+  if(!start&&!stop)return;
+  const card=e.target.closest('[data-id]'),d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
+  if(stop)d.v46TimerEndsAt=0;
+  else{const mins=Number(card.querySelector('[data-v46-timer-min]')?.value);
+   if(!Number.isFinite(mins)||mins<1||mins>1440){toast('Kies een timer van 1 tot 1440 minuten');return;}
+   d.v46TimerEndsAt=Date.now()+mins*60000;
+  }
+  persist();renderAll();toast(start?'Timer gestart; meldingen werken alleen via actieve HA-verbinding.':'Timer gestopt');
+ });
+ $('v46-pantry-add').addEventListener('click',()=>{
+  const name=$('v46-pantry-name').value.trim().slice(0,100),qty=Number($('v46-pantry-qty').value),unit=$('v46-pantry-unit').value;
+  if(!name||!Number.isFinite(qty)||qty<=0||qty>100000){toast('Vul een geldig ingrediënt en hoeveelheid in');return;}
+  const p=v46PantryClean();if(p.length>=120){toast('Voorraadkast is vol');return;}
+  const found=p.find(x=>dishKey(x.name)===dishKey(name)&&x.unit===unit);
+  if(found)found.qty=Math.min(100000,found.qty+qty);else p.push({name,qty,unit});
+  state.v46Pantry=p;$('v46-pantry-name').value='';persist();v45ShopRender();v46PantryRender();
+ });
+ $('v46-pantry-list').addEventListener('click',e=>{
+  const button=e.target.closest('[data-v46-stock-remove]');if(!button)return;
+  const p=v46PantryClean();p.splice(Number(button.dataset.v46StockRemove),1);
+  state.v46Pantry=p;persist();v45ShopRender();v46PantryRender();
+ });
+ window.addEventListener('message',e=>{
+  if(e.origin!==location.origin||e.source!==window.parent||!e.data)return;
+  if(e.data.__bbq==='bbq-notify-result-v1')$('v46-notify-status').textContent=e.data.ok?'HA-melding verzonden.':'HA-melding niet gelukt: '+String(e.data.error||'onbekend').slice(0,130);
+ });
+ if('serviceWorker' in navigator&&location.hostname==='eelbrethouwer-jpg.github.io'&&location.pathname.startsWith('/bbq_planner_card/')){
+  const manifest=document.createElement('link');manifest.rel='manifest';manifest.href='../manifest.webmanifest';document.head.append(manifest);
+  window.addEventListener('load',()=>navigator.serviceWorker.register('../sw.js',{scope:'../'}).catch(()=>{}));
+ }
 }
 
 initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();

@@ -1903,6 +1903,7 @@ function v46Prediction(d,now=Date.now()){
 function v46Tasks(base){
  const tasks=[];
  const add=(id,time,title,k)=>{if(Number.isFinite(time))tasks.push({id:state.date+'|'+id,time,title,k})};
+ for(const prep of v46PrepTasks(base))add(prep.dishId+':prep:'+prep.id,prep.timeAt,prep.titleFull+' · voorbereiding',prep.kamado);
  for(const k of ['large','small'])add(k+':fire',base.fires[k],'Steek '+(k==='large'?'grote':'kleine')+' kamado aan',k);
  for(const d of base.dishes){
   add(d.id+':on',d.start,'Leg '+d.name+' op de '+(d.kamado==='large'?'grote':'kleine')+' kamado',d.kamado);
@@ -1914,14 +1915,17 @@ function v46Tasks(base){
 function v46Board(base){
  const done=state.v46Done||{},now=Date.now(),tasks=v46Tasks(base);
  if(!tasks.length){$('v46-board').innerHTML='<p class="v46-muted">Voeg een gerecht toe om handelingen te zien.</p>';return;}
+ const prepDay=dateAt(state.date,'00:00');
+ const before=t=>t.id.includes(':prep:')&&prepDay!=null&&t.time<prepDay;
  const group=[
-  ['Nu doen',tasks.filter(t=>!done[t.id]&&t.time<=now+10*60000)],
-  ['Hierna',tasks.filter(t=>!done[t.id]&&t.time>now+10*60000)],
+  ['Voorbereiden op eerdere dagen',tasks.filter(t=>!done[t.id]&&before(t))],
+  ['Nu doen',tasks.filter(t=>!done[t.id]&&!before(t)&&t.time<=now+10*60000)],
+  ['Hierna',tasks.filter(t=>!done[t.id]&&!before(t)&&t.time>now+10*60000)],
   ['Afgevinkt',tasks.filter(t=>!!done[t.id])]
  ];
  $('v46-board').innerHTML=group.map(([label,ts])=>'<div class="v46-task-group"><h4>'+label+' ('+ts.length+')</h4>'+
   (ts.length?ts.slice(0,16).map(t=>'<label class="v46-task '+(done[t.id]?'done':'')+'"><input type="checkbox" data-v46-check="'+escape(t.id)+'" '+(done[t.id]?'checked':'')+'>'+
-    '<span><strong>'+escape(t.title)+'</strong><small>'+fmt(t.time)+' · '+(t.k==='large'?'grote kamado':'kleine kamado')+'</small></span></label>').join(''):
+    '<span><strong>'+escape(t.title)+'</strong><small>'+escape(v46When(t.time))+' · '+(t.k==='large'?'grote kamado':'kleine kamado')+'</small></span></label>').join(''):
     '<p class="v46-muted">Geen handelingen.</p>')+'</div>').join('');
 }
 function v46LiveRender(base){
@@ -2000,6 +2004,47 @@ function v46CheckNotifications(){
  }
 }
 function v46Init(){
+
+ $('dishes').addEventListener('change',e=>{
+  const input=e.target.closest('[data-v46-prep-field]'),card=input?.closest('[data-id]'),box=input?.closest('[data-v46-prep-id]');
+  if(!input||!card||!box)return;
+  const d=state.dishes.find(x=>x.id===card.dataset.id),task=d?.prepTasks?.find(x=>x.id===box.dataset.v46PrepId);
+  if(!task)return;
+  const key=input.dataset.v46PrepField;
+  if(key==='daysBefore')task.daysBefore=Math.max(0,Math.min(14,Math.round(Number(input.value)||0)));
+  if(key==='duration')task.duration=Math.max(0,Math.min(600,Math.round(Number(input.value)||0)));
+  if(key==='time'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(input.value))task.time=input.value;
+  if(key==='title')task.title=input.value.trim().slice(0,120)||'Voorbereiding';
+  if(key==='notes')task.notes=input.value.slice(0,1500);
+  persist();renderOutputs();
+ });
+ $('dishes').addEventListener('click',e=>{
+  const add=e.target.closest('[data-v46-prep-add]'),remove=e.target.closest('[data-v46-prep-remove]'),save=e.target.closest('[data-v46-prep-save]');
+  if(!add&&!remove&&!save)return;
+  const card=e.target.closest('[data-id]'),d=state.dishes.find(x=>x.id===card?.dataset.id);
+  if(!d)return;
+  d.prepTasks=v46PrepClean(d.prepTasks);
+  if(add){
+   if(d.prepTasks.length>=20){toast('Maximaal twintig voorbereidingen per gerecht.');return;}
+   const selected=card.querySelector('[data-v46-prep-template]')?.value||'custom';
+   const example=V46_PREP_TEMPLATES[selected]||V46_PREP_TEMPLATES.custom;
+   d.prepTasks.push({...example,id:'prep-'+Date.now()+'-'+(++serial)});
+   persist();
+  }
+  if(remove){
+   const id=remove.closest('[data-v46-prep-id]')?.dataset.v46PrepId;
+   d.prepTasks=d.prepTasks.filter(t=>t.id!==id);
+   persist();
+  }
+  if(save){
+   if(saveLocalRecipe(d))toast('Voorbereidingsstappen ook in je receptenbibliotheek bewaard.');
+   else toast('Bibliotheek vol of opslaan niet beschikbaar. Plan is wel lokaal bewaard.');
+  }
+  const editor=card.querySelector('.v46-prep-editor');
+  if(editor&&(add||remove)){editor.outerHTML=v46PrepEditor(d);card.querySelector('.v46-prep-editor').open=true;}
+  renderOutputs();
+ });
+
  $('v46-multi').addEventListener('change',e=>{state.v46MultiServe=e.target.checked;persist();renderAll();});
  for(const [id,key] of [['v46-starter','v46Starter'],['v46-dessert','v46Dessert']]){
   $(id).addEventListener('change',e=>{if(!/^\d{2}:\d{2}$/.test(e.target.value))return;state[key]=e.target.value;persist();renderOutputs();});

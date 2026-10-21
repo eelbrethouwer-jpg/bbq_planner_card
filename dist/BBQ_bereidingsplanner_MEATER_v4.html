@@ -662,6 +662,7 @@ async function importLibraryJson(event){
   const imported=obj.recipes.map(cleanLibraryRecipe);
   if(imported.some(x=>!x)||new Set(imported.map(x=>dishKey(x.name))).size!==imported.length)throw Error('Ongeldig recept of dubbele receptnaam in bestand');
   const mode=$('library-import-mode').value;
+  if(mode==='replace'&&window.parent!==window&&!libraryConnected){$('library-feedback').textContent='Wacht op Home Assistant-synchronisatie voordat je de hele bibliotheek vervangt.';return;}
   if(!confirm('Importeer '+imported.length+' recepten? '+(mode==='replace'?'Dit vervangt alle eigen recepten (de verwijdering synchroniseert ook naar Home Assistant).':'Bestaande recepten met dezelfde naam worden bijgewerkt; andere blijven behouden.')+' Bestaande beoordelingen blijven ongewijzigd.'))return;
   const at=new Date().toISOString();
   if(mode==='replace'){
@@ -1265,13 +1266,15 @@ function renderGeneratorPreview(){
 }
 function saveLocalRecipe(d){
  const recipe=cleanLibraryRecipe({...d,updatedAt:new Date().toISOString()});
- if(!recipe)return;
- const i=localRecipes.findIndex(x=>dishKey(x.name)===dishKey(recipe.name));if(i>=0)localRecipes.splice(i,1);
- localRecipes.push(recipe);if(localRecipes.length>80)localRecipes.shift();
+ if(!recipe)return false;
+ const i=localRecipes.findIndex(x=>dishKey(x.name)===dishKey(recipe.name));
+ if(i<0&&localRecipes.length>=80){$('library-feedback').textContent='Bibliotheek bevat maximaal 80 recepten. Maak eerst een back-up en verwijder een oud recept.';return false;}
+ if(i>=0)localRecipes.splice(i,1);
+ localRecipes.push(recipe);
  const tomb=recipeDeletions.findIndex(x=>dishKey(x.name)===dishKey(recipe.name));if(tomb>=0)recipeDeletions.splice(tomb,1);
  examples[recipe.name]=recipe;
  store(RECIPE_KEY,localRecipes);store(LIBRARY_DELETED_KEY,recipeDeletions);
- renderPresetOptions();queueLibrarySync();
+ renderPresetOptions();queueLibrarySync();return true;
 }
 function saveGeneratorRecipe(){
  if(!recipeDraft)return;
@@ -1285,7 +1288,7 @@ function saveGeneratorRecipe(){
  if(f.core!==''&&f.core!=null&&!(Number(f.core)>=0&&Number(f.core)<=100)){$('recipe-message').textContent='Controleer de kerntemperatuur.';return;}
  if(recipeDraft.originalName&&dishKey(recipeDraft.originalName)!==dishKey(String(f.name))){deleteLibraryRecipe(recipeDraft.originalName);}
  const dish={...f,name:String(f.name).trim().slice(0,150),kamado:'large',cook:minutes(f.cook),rest:minutes(f.rest),grill:n(f.grill),core:String(f.core||''),phase2Temp:n(f.phase2Temp),phase2Minutes:minutes(f.phase2Minutes),transitionMins:minutes(f.transitionMins),recipeSteps:recipeDraft.stages.slice(0,30)};
- saveLocalRecipe(dish);addDish(dish,'✓ Recept opgeslagen en aan de planning toegevoegd');
+ if(!saveLocalRecipe(dish)){$('recipe-message').textContent='Opslaan mislukt: bibliotheek vol of niet beschikbaar.';return;}addDish(dish,'✓ Recept opgeslagen en aan de planning toegevoegd');
  $('recipe-message').textContent='Recept goedgekeurd en lokaal opgeslagen. Bekijk de stappen onder 04.';
  $('generator-preview').classList.remove('visible');recipeDraft=null;
 }
@@ -1339,7 +1342,7 @@ function importRecipe(){
  grill:Math.min(450,Math.max(50,n($('recipe-temp').value,180))),core:$('recipe-core').value,
  notes:'Geïmporteerd recept. Controleer gaarheid en instellingen.',recipeSource:source,
  recipeIngredients:r.ingredients,recipePrep:r.prep,recipeCook:r.cook,recipeRest:r.rest,recipeSlice:r.slice};
- saveLocalRecipe(dish);
+ if(!saveLocalRecipe(dish)){message.textContent='Opslaan mislukt: bibliotheek vol of niet beschikbaar.';return;}
  addDish(dish,'Recept toegevoegd en lokaal bewaard');
  message.textContent='Recept toegevoegd! De bereidingsstappen staan onder 04 en zijn te wijzigen op de gerechtkaart.';
 }

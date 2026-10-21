@@ -1,3 +1,20 @@
+# Changelog
+
+## v4.2.0 — voorbereide release (nog niet gepubliceerd)
+
+- **Datum:** standaard automatisch de lokale dag van vandaag; zelfgekozen datum blijft bewaard, met knop ‘Vandaag gebruiken’. Bestaande plannen worden voorzichtig gemigreerd; expliciet geïmporteerde datum blijft handmatig.
+- **Receptenfilter:** categorieën rund, varken, gevogelte, lam, wild, vis, schaal- en schelpdieren, groenten, vegetarisch en dessert; filter en zoeken.
+- **Kamado-methode:** direct, indirect, indirect → direct (reverse sear) of direct → indirect; roosterkeuze per fase en optionele accessoire-inventaris voor beide kamado's.
+- **Roosteradvies:** RVS, gietijzer, plancha of pizzasteen, hitteschildvermelding en indicatie van ontbrekende accessoires.
+- **Tijdlijn:** methodefasen en optelbare ombouw/opstooktijd bij gecombineerde bereidingen; waarschuwingen bij gelijktijdige temperatuur-, rooster- en opstellingsconflicten. Ombouw tussen losse gerechten wordt gewaarschuwd, niet automatisch verschoven.
+- **Offline receptgenerator:** plak recepttekst, analyseer naam, ingrediënten, temperaturen, tijden, bereidingsmethode en losse stappen. Onduidelijke of ontbrekende waarden blijven zichtbaar als ontbrekend. Concept is te bewerken en wordt pas na bevestiging opgeslagen. Geen extern AI-model of sleutel nodig.
+- **Receptstappen:** bewerken, toevoegen, verwijderen en herschikken op de gerechtkaart; uitgebreid draaiboek blijft beschikbaar.
+- **Compatibiliteit:** oorspronkelijke serveertijd, MEATER Pro/Plus, beoordelingen, lokale bibliotheek, HACS-dashboardkaart en GitHub Pages behouden. JSON-plan import/export ondersteunt de nieuwe velden.
+- **Standaardrecept:** ‘Pulled pork op brood’ met negen stappen, toegevoegd sinds de vorige tag.
+- **Testen:** uitgebreider browser-DOM-testpakket en controle van JavaScript-syntax en HACS-repository.
+
+**Let op:** kerntemperatuur en bereidingsduur uit automatisch gelezen recepten zijn géén veiligheidscontrole. Bij gecombineerde gerechten worden wisselminuten expliciet geteld; daadwerkelijke warmtestabilisatie blijft handmatig te beoordelen. Live MEATER-test en iPhone Safari hardwaretest zijn niet uitgevoerd door de CI.
+
 # Wijzigingen
 
 ## v4.1.0 — Recepten, evaluaties en twee MEATER-temperatuurlijnen (voorbereid)

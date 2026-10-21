@@ -1,0 +1,19 @@
+{
+  "name": "BBQ Regisseur – Kamado Bereidingsplanner",
+  "short_name": "BBQ Planner",
+  "description": "Offline recepten en planning voor grote en kleine kamado",
+  "start_url": "./dist/BBQ_bereidingsplanner_MEATER_v4.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0c1318",
+  "theme_color": "#122b2c",
+  "lang": "nl",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

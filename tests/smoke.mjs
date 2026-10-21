@@ -33,47 +33,6 @@ try{
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
 
-  // v4.8: cards from a curated source catalog, opt-in import only.
-  assert.ok($('v48-catalog').closest('#v47-recipes'),'catalog belongs in the recipe screen');
-  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,11,'all curated catalog cards rendered');
-  const first=$('v48-grid').querySelector('.v48-card');
-  assert.ok(first.querySelector('.v48-cover img').src.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'card shows verified source image URL');
-  assert.ok(first.querySelector('[data-v48-action="import"]'),'individual import control exists');
-  assert.ok(first.querySelector('[data-v48-action="plan"]').disabled,'planning needs a deliberate library import');
-  assert.ok(first.querySelector('.v48-detail').hidden,'detail starts compact');
-  click(first.querySelector('[data-v48-action="detail"]'));
-  assert.ok(!$('v48-grid').querySelector('.v48-card .v48-detail').hidden,'preview expands');
-  assert.match($('v48-grid').querySelector('.v48-card .v48-detail').textContent,/BBQ Junkie/,'source attribution in expanded detail');
-  assert.equal(window.localStorage.getItem('kamado-recipe-book-v1'),null,'catalog browsing does not auto-add recipes');
-  $('v48-cat').value='gevogelte';$('v48-cat').dispatchEvent(new window.Event('change',{bubbles:true}));
-  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,1,'filter by meat type');
-  assert.match($('v48-grid').textContent,/Hot Honey Chickenwings/);
-  $('v48-cat').value='all';$('v48-cat').dispatchEvent(new window.Event('change',{bubbles:true}));
-  $('v48-time').value='30';$('v48-time').dispatchEvent(new window.Event('change',{bubbles:true}));
-  assert.ok($('v48-grid').querySelectorAll('.v48-card').length>0&&$('v48-grid').querySelectorAll('.v48-card').length<11,'grill duration filter works');
-  $('v48-time').value='all';$('v48-time').dispatchEvent(new window.Event('change',{bubbles:true}));
-  $('v48-search').value='iberico';$('v48-search').dispatchEvent(new window.Event('input',{bubbles:true}));
-  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,1,'search term matches one catalog item');
-  $('v48-search').value='';$('v48-search').dispatchEvent(new window.Event('input',{bubbles:true}));
-  const picked=[...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek'));
-  assert.ok(picked,'Texas pork available');
-  const title='BBQ Junkie · Texas Style Buikspek';
-  const plannedBefore=count();
-  click(picked.querySelector('[data-v48-action="import"]'));
-  assert.equal(count(),plannedBefore,'import into library does not schedule dish');
-  let lib=JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1'));
-  let catalogRecipe=lib.find(x=>x.name===title);
-  assert.ok(catalogRecipe,'curated recipe saved in library');
-  assert.equal(catalogRecipe.recipeSource,'https://bbq-junkie.nl/bbq-recepten/texas-style-buikspek/');
-  assert.equal(catalogRecipe.prepTasks[0].daysBefore,1,'overnight preparation carried over');
-  assert.ok(catalogRecipe.photo.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'external source image link retained after import');
-  assert.equal([...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek')).querySelector('[data-v48-action="import"]').disabled,true,'cannot overwrite imported recipe');
-  click([...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek')).querySelector('[data-v48-action="plan"]'));
-  assert.equal(count(),plannedBefore+1,'explicit plan action adds dish');
-  assert.equal(doc.querySelector('[data-v47-page]:not([hidden])').dataset.v47Page,'planning','planner opens after scheduling from catalog');
-  assert.equal(errors.length,0,'catalog has no runtime errors');
-
-
   // v4.7: all controls remain in DOM but are reorganized into single-screen navigation.
   const nav=$('v47-nav');
   assert.ok(nav,'five-screen mobile navigation exists');
@@ -407,6 +366,48 @@ try{
   assert.ok(entry.includes('href="'+route+'?v=4.8.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
+  // v4.8: cards from a curated source catalog, opt-in import only.
+  assert.ok($('v48-catalog').closest('#v47-recipes'),'catalog belongs in the recipe screen');
+  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,11,'all curated catalog cards rendered');
+  const first=$('v48-grid').querySelector('.v48-card');
+  assert.ok(first.querySelector('.v48-cover img').src.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'card shows verified source image URL');
+  assert.ok(first.querySelector('[data-v48-action="import"]'),'individual import control exists');
+  assert.ok(first.querySelector('[data-v48-action="plan"]').disabled,'planning needs a deliberate library import');
+  assert.ok(first.querySelector('.v48-detail').hidden,'detail starts compact');
+  click(first.querySelector('[data-v48-action="detail"]'));
+  assert.ok(!$('v48-grid').querySelector('.v48-card .v48-detail').hidden,'preview expands');
+  assert.match($('v48-grid').querySelector('.v48-card .v48-detail').textContent,/BBQ Junkie/,'source attribution in expanded detail');
+  assert.ok(!(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')||'[]')).some(r=>r.name==='BBQ Junkie · Texas Style Buikspek'),'catalog browsing does not auto-add recipes');
+  $('v48-cat').value='gevogelte';$('v48-cat').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,1,'filter by meat type');
+  assert.match($('v48-grid').textContent,/Hot Honey Chickenwings/);
+  $('v48-cat').value='all';$('v48-cat').dispatchEvent(new window.Event('change',{bubbles:true}));
+  $('v48-time').value='30';$('v48-time').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.ok($('v48-grid').querySelectorAll('.v48-card').length>0&&$('v48-grid').querySelectorAll('.v48-card').length<11,'grill duration filter works');
+  $('v48-time').value='all';$('v48-time').dispatchEvent(new window.Event('change',{bubbles:true}));
+  $('v48-search').value='iberico';$('v48-search').dispatchEvent(new window.Event('input',{bubbles:true}));
+  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,1,'search term matches one catalog item');
+  $('v48-search').value='';$('v48-search').dispatchEvent(new window.Event('input',{bubbles:true}));
+  const picked=[...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek'));
+  assert.ok(picked,'Texas pork available');
+  const title='BBQ Junkie · Texas Style Buikspek';
+  const plannedBefore=count();
+  click(picked.querySelector('[data-v48-action="import"]'));
+  assert.equal(count(),plannedBefore,'import into library does not schedule dish');
+  let lib=JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1'));
+  let catalogRecipe=lib.find(x=>x.name===title);
+  assert.ok(catalogRecipe,'curated recipe saved in library');
+  assert.equal(catalogRecipe.recipeSource,'https://bbq-junkie.nl/bbq-recepten/texas-style-buikspek/');
+  assert.equal(catalogRecipe.prepTasks[0].daysBefore,1,'overnight preparation carried over');
+  assert.ok(catalogRecipe.photo.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'external source image link retained after import');
+  assert.equal([...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek')).querySelector('[data-v48-action="import"]').disabled,true,'cannot overwrite imported recipe');
+  click([...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek')).querySelector('[data-v48-action="plan"]'));
+  assert.equal(count(),plannedBefore+1,'explicit plan action adds dish');
+  assert.equal(doc.querySelector('[data-v47-page]:not([hidden])').dataset.v47Page,'planning','planner opens after scheduling from catalog');
+  assert.equal(errors.length,0,'catalog has no runtime errors');
+
+
+
   console.log('OK v4.7: five-screen nav, compact dish cards and v4.6 cooking functions preserved');
 }finally{
   window.close();

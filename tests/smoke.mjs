@@ -247,11 +247,11 @@ try {
   const pork={name:'Pulled pork op brood',grill:120,updatedAt:'2026-10-20T10:00:00.000Z'};
   card._saveCookbook({version:1,recipes:[pork],deleted:[]});
   await card._syncQueue;
-  assert.deepEqual(server.recipes.map(x=>x.name).sort(),['Pulled pork op brood','Zalm'],'HA merge preserves existing server recipes');
+  assert.deepEqual(Array.from(server.recipes,x=>x.name).sort(),['Pulled pork op brood','Zalm'],'HA merge preserves existing server recipes');
   const deleted={name:'Zalm',updatedAt:'2026-10-21T10:00:00.000Z'};
   card._saveCookbook({version:1,recipes:[],deleted:[deleted]});
   await card._syncQueue;
-  assert.deepEqual(server.recipes.map(x=>x.name),['Pulled pork op brood'],'HA deletion prevents stale recipe resurrection');
+  assert.deepEqual(Array.from(server.recipes,x=>x.name),['Pulled pork op brood'],'HA deletion prevents stale recipe resurrection');
   assert.ok(server.deleted.some(x=>x.name==='Zalm'),'HA sync stores tombstones');
   assert.ok(card._cookbookUnsub,'HA frontend user storage subscription connected');
   card.remove();

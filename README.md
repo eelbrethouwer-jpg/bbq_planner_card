@@ -63,9 +63,21 @@ Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_c
 
 ## Versies
 
-Gepubliceerde versie: **v4.0.0**. **v4.1.0** is voorbereid in een aparte releasebranch en wordt pas actief na samenvoegen, taggen en het publiceren van een nieuwe GitHub Release.
+Gepubliceerde versie: **v4.1.0**. **v4.2.0** is als releasekandidaat in een aparte branch voorbereid. HACS toont de nieuwe versie pas na het samenvoegen, taggen en publiceren van de officiële GitHub Release `v4.2.0`.
 
 Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub Release met een versietag als je een versie wilt uitbrengen. De HACS-workflow controleert de repository automatisch op iedere push, pull request en via een geplande controle.
+
+## Nieuw in de voorbereide v4.2.0
+
+- **Datum automatisch vandaag.** Bij een bestaande planning uit v4.1.0 wordt een oude verlopen datum automatisch bijgewerkt; een zelfgekozen toekomstige datum blijft behouden. Handmatig kiezen zet de datum vast; `Vandaag gebruiken` schakelt terug naar automatisch. Bij import uit een bestand wordt de oude datum als bewuste keuze behouden, tenzij het bestand expliciet automatisch aangeeft.
+- **Recepten zoeken en filteren:** categorie zoals rund, varken, gevogelte, lam, vis, groenten, vegetarisch en dessert. Eigen recepten worden ook doorzocht.
+- **Bereidingsmethode en roosters:** kies direct/indirect, reverse sear of direct-naar-indirect, met RVS/gietijzer/plancha/pizzasteen. Bij indirect is een hitteschild nodig. Stel optioneel per kamado je daadwerkelijk aanwezige accessoires in; zonder die gegevens is een advies geen bewijs dat je het rooster hebt.
+- **Ombouwfasen:** bij twee bereidingsfasen worden de opgegeven ombouwminuten aan de bereidingstijd toegevoegd. De tijdlijn toont de verschillende fasen en waarschuwt wanneer de grote/kleine kamado gelijktijdig twee verschillende roosters, methoden of temperaturen vereist. Bij wissels tussen afzonderlijke gerechten wordt een korte waarschuwing getoond; de planner kan niet bepalen hoeveel tijd jouw kamado werkelijk nodig heeft om af te koelen/op te stoken.
+- **Offline receptgenerator:** open de generator, plak recepttekst en klik **Analyseer recept**. Het programma herkent waar mogelijk ingrediënten, naam, kern- en BBQ-temperatuur, tijden en instructiestappen. Controleer het concept en wijzig de velden en stappen voordat je **Recept goedkeuren en bewaren** kiest. Een lege onbekende temperatuur blijft leeg; het is nooit een live meting of gegarandeerd voedselveilige waarde. De eenvoudige oude import blijft als alternatief.
+- **Stappen individueel bewerken:** gerechten kunnen uitgebreide instructies met eigen triggers bewaren. Receptbibliotheek, reviews en tijdlijnen van v4.1.0 blijven bestaan.
+- **Pulled pork op brood:** standaardrecept met 2 kg procureur, indirect 120 °C, 7–11 uur als bereik, minimaal 1 uur rust en negen uitklapbare stappen. Het instelbare richtpunt 92 °C is een `priktest`-herinnering, geen automatisch gaarverklaring.
+
+Deze nieuwe functies zijn in de releasebranch beschikbaar voor test; ze zijn **nog niet** opgenomen in de gepubliceerde HACS-release.
 
 ## Recepten en evaluaties (v4.1.0)
 

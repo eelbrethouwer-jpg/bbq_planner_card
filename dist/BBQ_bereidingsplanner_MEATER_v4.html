@@ -571,7 +571,7 @@ function initControls(){
  renderEquipmentOptions();
  sel.addEventListener('change',e=>{const value=e.target.value;if(value){sel.value='';addDish(examples[value],`${value} toegevoegd`);}});
  $('add').addEventListener('click',()=>addDish({},'Nieuw gerecht toegevoegd! Pas hieronder de naam aan.'));
- $('reset').addEventListener('click',()=>{if(confirm('Voorbeeld herstellen? Je huidige gerechten en instellingen worden vervangen.')){state=initial();persist();initValuesOnly();renderAll();toast('Voorbeeld hersteld');}});
+ $('reset').addEventListener('click',()=>{if(confirm('Voorbeeld herstellen? Je huidige gerechten en instellingen worden vervangen.')){const pantry=v46PantryClean();state=initial();state.v46Pantry=pantry;persist();initValuesOnly();renderAll();toast('Voorbeeld hersteld; voorraad behouden');}});
  $('share-public').addEventListener('click',sharePublicPlanner);
  $('json-export').addEventListener('click',downloadPlanJson);$('json-import').addEventListener('click',()=>{const i=$('json-file');i.value='';i.click()});$('json-file').addEventListener('change',uploadPlanJson);
  $('print').addEventListener('click',()=>window.print());$('export').addEventListener('click',downloadSchedule);
@@ -1187,7 +1187,7 @@ async function uploadPlanJson(ev){
   clean.equipment={large:Array.isArray(plan.equipment?.large)?plan.equipment.large.filter(g=>GRATES[g]||g==='deflector'):[],small:Array.isArray(plan.equipment?.small)?plan.equipment.small.filter(g=>GRATES[g]||g==='deflector'):[]};
   if(plan.smart&&typeof plan.smart==='object')clean.smart={enabled:plan.smart.enabled!==false,mode:plan.smart.mode==='flex'?'flex':'fixed'};
   clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),category:CATEGORIES[x.category]?x.category:categoryGuess(x.name),method:METHODS[x.method]?x.method:methodGuess(x.name),grate:GRATES[x.grate]?x.grate:grateGuess(x.name,x.method),grate2:GRATES[x.grate2]?x.grate2:'cast',phase2Temp:n(x.phase2Temp,180),phase2Minutes:minutes(x.phase2Minutes??6),transitionMins:minutes(x.transitionMins??0),recipeSteps:Array.isArray(x.recipeSteps)?x.recipeSteps.slice(0,30):[],photo:validV45Photo(x.photo)?x.photo:'',serveSlot:['starter','main','dessert'].includes(x.serveSlot)?x.serveSlot:'main',v46BasePeople:Math.max(1,Math.min(50,Number(x.v46BasePeople)||4)),recipeIngredients:String(x.recipeIngredients??'').slice(0,6000),recipePrep:String(x.recipePrep??'').slice(0,6000),recipeCook:String(x.recipeCook??'').slice(0,10000),recipeRest:String(x.recipeRest??'').slice(0,4000),recipeSlice:String(x.recipeSlice??'').slice(0,4000),recipeSource:String(x.recipeSource??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
-  clean.v46MultiServe=plan.v46MultiServe===true;clean.v46Starter=/^\d{2}:\d{2}$/.test(plan.v46Starter||'')?plan.v46Starter:'17:30';clean.v46Dessert=/^\d{2}:\d{2}$/.test(plan.v46Dessert||'')?plan.v46Dessert:'19:15';clean.v46Pantry=Array.isArray(plan.v46Pantry)?plan.v46Pantry.slice(0,120).filter(x=>x&&typeof x.name==='string'):[];state=clean;persist();initValuesOnly();renderAll();toast('Planning geladen');
+  clean.v46MultiServe=plan.v46MultiServe===true;clean.v46Starter=/^\d{2}:\d{2}$/.test(plan.v46Starter||'')?plan.v46Starter:'17:30';clean.v46Dessert=/^\d{2}:\d{2}$/.test(plan.v46Dessert||'')?plan.v46Dessert:'19:15';clean.v46Pantry=Array.isArray(plan.v46Pantry)?plan.v46Pantry.slice(0,120).filter(x=>x&&typeof x.name==='string'):v46PantryClean();state=clean;persist();initValuesOnly();renderAll();toast('Planning geladen');
  }catch(e){alert('Kan planning niet laden: '+e.message);}
 }
 if(typeof ResizeObserver==='function'){
@@ -1807,7 +1807,7 @@ function v46Prediction(d,now=Date.now()){
 }
 function v46Tasks(base){
  const tasks=[];
- const add=(id,time,title,k)=>{if(Number.isFinite(time))tasks.push({id,time,title,k})};
+ const add=(id,time,title,k)=>{if(Number.isFinite(time))tasks.push({id:state.date+'|'+id,time,title,k})};
  for(const k of ['large','small'])add(k+':fire',base.fires[k],'Steek '+(k==='large'?'grote':'kleine')+' kamado aan',k);
  for(const d of base.dishes){
   add(d.id+':on',d.start,'Leg '+d.name+' op de '+(d.kamado==='large'?'grote':'kleine')+' kamado',d.kamado);

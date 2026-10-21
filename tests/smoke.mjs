@@ -114,6 +114,7 @@ try{
   rs=JSON.parse(window.localStorage.getItem('kamado-reviews-v1'));
   assert.equal(rs.length,2,'a second review remains distinct');
   assert.match($('v45-learning').textContent,/mediane duur/i,'two real durations activate history advice');
+  assert.match($('v45-learning').textContent,/mediane duur 60 min/i,'two durations yield the arithmetic median');
   assert.match($('v45-shopping').textContent,/vis/i,'shopping list includes parsed recipe ingredients');
   const receipt=$('v45-shopping').querySelector('input[data-v45-check]');
   assert.ok(receipt,'grocery checkbox exists');

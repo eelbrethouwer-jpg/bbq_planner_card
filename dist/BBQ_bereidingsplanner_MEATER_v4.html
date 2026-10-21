@@ -1035,12 +1035,19 @@ function equipmentAdvice(d){
   '<br>Advies, geen garantie: controleer opstelling, kerntemperatuur en voedselveiligheid.';
 }
 function refreshAdvice(){for(const d of state.dishes){const el=$('advice-'+d.id);if(el)el.innerHTML=equipmentAdvice(d)}}
+/* v4.7: visual state, separate from cooking plan. */
+const V47_EXPANDED_KEY='bbq-v47-expanded-v1';
+let v47Expanded=new Set();
+try{const list=JSON.parse(localStorage.getItem(V47_EXPANDED_KEY)||'[]');if(Array.isArray(list))v47Expanded=new Set(list.slice(-60).filter(x=>typeof x==='string'));}catch(e){}
+function v47StoreExpanded(){try{localStorage.setItem(V47_EXPANDED_KEY,JSON.stringify([...v47Expanded].slice(-60)));}catch(e){}}
 function renderDishes(){
  const status=$('js-status');
  if(status){status.classList.add('active');status.textContent=`✓ Interactieve bediening actief · ${state.dishes.length} ${state.dishes.length===1?'gerecht':'gerechten'}. Tik op + Gerecht toevoegen om een extra gerecht bovenaan te plaatsen.`;}
  const host=$('dishes');if(!state.dishes.length){host.innerHTML='<div class="empty" style="grid-column:1/-1">Nog geen gerechten. Klik op <strong>＋ Gerecht toevoegen</strong> of kies een voorbeeldgerecht.</div>';return;}
  host.innerHTML=state.dishes.map((d,i)=>`<article class="dish" data-id="${escape(d.id)}">
   <div class="dish-top"><div class="dish-index"><span class="dot ${d.kamado==='small'?'sm':''}"></span> GERECHT ${String(i+1).padStart(2,'0')}</div><div class="card-bottom"><button class="move-btn" data-action="duplicate" title="Dupliceer gerecht" aria-label="Dupliceer ${escape(d.name)}">⧉ Kopieer</button><button class="btn small danger delete-btn" data-action="remove" aria-label="Verwijder ${escape(d.name)}">× Verwijder</button></div></div>
+  <div class="v47-dish-compact"><div><strong data-v47-dish-name>${escape(d.name)}</strong><small data-v47-dish-schedule>🔥 ${d.kamado==='large'?'Grote':'Kleine'} kamado · ${escape(d.grill)} °C · ${escape(d.cook)} min</small><small data-v47-dish-core>${d.core!==''?'🌡️ Richtkern '+escape(d.core)+' °C':'Zonder kerntemperatuur'}</small></div><button type="button" class="btn small v47-dish-toggle" data-v47-dish-toggle aria-expanded="${v47Expanded.has(d.id)?'true':'false'}" aria-controls="${escape(d.id)}-v47-detail">${v47Expanded.has(d.id)?'⌃ Sluit details':'⌄ Details'}</button></div>
+  <div class="v47-detail" id="${escape(d.id)}-v47-detail" ${v47Expanded.has(d.id)?'':'hidden'}>
   <div class="grid-fields">
    ${field(d.id,'name','Gerecht',d.name,'text','','','span2')}
    <div class="field span2"><label for="${escape(d.id)}-kamado">Kamado</label><select id="${escape(d.id)}-kamado" data-field="kamado"><option value="large" ${d.kamado==='large'?'selected':''}>🔥 Grote kamado</option><option value="small" ${d.kamado==='small'?'selected':''}>🔥 Kleine kamado</option></select></div>
@@ -1069,6 +1076,7 @@ function renderDishes(){
   <div class="schedule-note" id="schedule-${escape(d.id)}"></div><div class="linked-info" id="meater-link-${escape(d.id)}" aria-live="polite"></div>
  <div class="advice" id="advice-${escape(d.id)}">${equipmentAdvice(d)}</div>
  ${renderRecipeEditor(d)}${renderReviewEditor(d)}${v45PhotoEditor(d)}${v46DishPanel(d)}${v46PrepEditor(d)}
+  </div>
  </article>`).join('');
 }
 function renderFire(c){$('fire-times').innerHTML=[['large','Grote kamado','big'],['small','Kleine kamado','small']].map(([k,label,cls])=>`<div class="fireline"><div class="details"><div class="fire-emoji">${k==='large'?'🔥':'♨️'}</div><div><strong>${label}</strong><small>${c.fires[k]==null?'Nog geen gerechten':'Aansteken'+dayHint(c.fires[k],c.serve)}</small></div></div><span class="fire-value ${cls}">${fmt(c.fires[k])}</span></div>`).join('')}
@@ -1226,7 +1234,7 @@ function renderSmart(base){
  }).join('')||'<div class="smart-message">Voeg een gerecht toe voor startadviezen.</div>';
 }
 
-function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDishSchedule(c);renderAlerts(c);renderTimeline(c);renderRecipeSteps(c);renderLinkedDishes();renderSmart(c);v45Render(c);v46Render(c);}
+function renderOutputs(){const c=calc();renderFire(c);renderMetrics(c);renderDishSchedule(c);renderAlerts(c);renderTimeline(c);renderRecipeSteps(c);renderLinkedDishes();renderSmart(c);v45Render(c);v46Render(c);v47Refresh(c);}
 function renderAll(){renderDishes();renderOutputs();}
 function downloadSchedule(){const c=calc();const lines=[`BBQ BEREIDINGSPLANNER`,`Datum: ${state.date}`,`Gezamenlijke serveertijd: ${state.mealTime}`,`Beschikbaar op BBQ-dag vanaf: ${state.availableFrom}`,'',`GROTE KAMADO aansteken: ${fmt(c.fires.large)}${dayHint(c.fires.large,c.serve)}`,`KLEINE KAMADO aansteken: ${fmt(c.fires.small)}${dayHint(c.fires.small,c.serve)}`,'','GERECHTEN'];
  c.dishes.forEach(d=>lines.push(`${d.name} | ${d.kamado==='large'?'Grote':'Kleine'} kamado | Start ${fmt(d.start)}${dayHint(d.start,c.serve)} | Van BBQ ${fmt(d.cookEnd)} | Klaar ${fmt(d.end)} | BBQ ${d.grill}°C | Kern ${d.core!==''?d.core+'°C':'n.v.t.'} | Bereiding ${d.cook} min | Rust ${d.rest} min${d.notes?' | '+d.notes:''}`));
@@ -1357,7 +1365,7 @@ window.addEventListener('message',ev=>{
 function reportIframeSize(){
  if(window.parent===window||location.protocol==='file:')return;
  const height=Math.ceil(document.documentElement.scrollHeight||document.body.scrollHeight)+16;
- window.parent.postMessage({__bbq:'bbq-child-height-v1',height},location.origin);
+ window.parent.postMessage({__bbq:'bbq-child-height-v1',height,mode:'viewport'},location.origin);
 }
 async function sharePublicPlanner(){
  const data={title:'BBQ-bereidingsplanner',text:'Bekijk deze gratis kamado-bereidingsplanner met recepten en gezamenlijke serveertijd 🔥',url:PUBLIC_SITE_URL};
@@ -2285,7 +2293,7 @@ function v46Init(){
  }
 }
 
-initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();
+initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();
 })();
 </script>
 </body>

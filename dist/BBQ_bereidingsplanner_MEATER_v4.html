@@ -366,13 +366,26 @@ const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}};
 const updateDateUi=()=>{const el=$('date-mode');if(el)el.textContent=state.dateMode==='manual'?'Handmatig gekozen datum':'Automatisch: vandaag';};
 const updateAutoDate=()=>{if(state.dateMode==='auto'&&state.date!==today()){state.date=today();$('meal-date').value=state.date;persist();renderOutputs();}updateDateUi();};
 let timer;const toast=message=>{const el=$('toast');el.textContent=message;el.classList.add('on');clearTimeout(timer);timer=setTimeout(()=>el.classList.remove('on'),2800)};
+const phaseSegments=d=>{
+ if(d.start==null||d.cookEnd==null)return [];
+ const method=METHODS[d.method]?d.method:'indirect';
+ if(method!=='combo'&&method!=='directindirect')return [{start:d.start,end:d.cookEnd,method,grate:d.grate||'rvs',temp:n(d.grill),title:'Bereiden'}];
+ const active=minutes(d.cookActive??d.cook),p2=Math.min(Math.max(1,minutes(d.phase2Minutes)),Math.max(1,active));
+ const trans=minutes(d.transitionMins),swap=addm(d.start,Math.max(0,active-p2)),p2start=addm(swap,trans);
+ return [
+  {start:d.start,end:swap,method:method==='combo'?'indirect':'direct',grate:d.grate||'rvs',temp:n(d.grill),title:'Fase 1'},
+  ...(trans?[{start:swap,end:p2start,method:'ombouw',grate:'wisselen',temp:null,title:'Ombouw / opstoken'}]:[]),
+  {start:p2start,end:d.cookEnd,method:method==='combo'?'direct':'indirect',grate:d.grate2||'cast',temp:n(d.phase2Temp),title:'Fase 2'}
+ ].filter(p=>p.end>p.start);
+};
 const calc=()=>{
  const serve=dateAt(state.date,state.mealTime);const ready=serve!=null?serve:null;
  const dishes=state.dishes.map(d=>{
-   const cook=minutes(d.cook),rest=minutes(d.rest),autostart=ready==null?null:addm(ready,-cook-rest);
+   const active=minutes(d.cook),trans=['combo','directindirect'].includes(d.method)?minutes(d.transitionMins):0;
+   const cook=active+trans,rest=minutes(d.rest),autostart=ready==null?null:addm(ready,-cook-rest);
    let start=d.mode==='manual'?dateAt(state.date,d.fixedStart):autostart;
    let off=start==null||ready==null?0:Math.round((addm(start,cook+rest)-ready)/60000);
-   return {...d,cook,rest,start,cookEnd:start==null?null:addm(start,cook),end:start==null?null:addm(start,cook+rest),offset:off};
+   return {...d,cook,cookActive:active,rest,start,cookEnd:start==null?null:addm(start,cook),end:start==null?null:addm(start,cook+rest),offset:off};
  });
  const large=dishes.filter(d=>d.kamado==='large'&&d.start!=null),small=dishes.filter(d=>d.kamado==='small'&&d.start!=null);
  const fires={large:large.length?addm(Math.min(...large.map(d=>d.start)),-minutes(state.preheatLarge)):null,small:small.length?addm(Math.min(...small.map(d=>d.start)),-minutes(state.preheatSmall)):null};
@@ -382,9 +395,26 @@ const calc=()=>{
  const available=dateAt(state.date,state.availableFrom);
  if(first!=null&&available!=null&&first<available){const late=Math.ceil((available-first)/60000);alerts.push({type:'urgent',message:`Om deze planning te halen moet je al om <strong>${fmt(first)}${dayHint(first,ready)}</strong> starten. Dat is ${late} min vóór je opgegeven begintijd (${state.availableFrom}). ${dishes.every(d=>d.mode==='auto')?`Overweeg het eten te verschuiven naar ongeveer <strong>${fmt(addm(ready,late))}</strong>.`:'Pas de serveertijd of vaste starttijden aan.'}`});}
  for(const d of dishes){if(d.mode==='manual'&&d.offset!==0&&d.start!=null){alerts.push({type:d.offset>0?'urgent':'notice',message:`<strong>${escape(d.name)}</strong> is met de vaste starttijd <strong>${Math.abs(d.offset)} minuten ${d.offset>0?'te laat':'te vroeg'}</strong> klaar t.o.v. ${escape(state.mealTime)}.`});}}
- for(const group of [large,small])for(let i=0;i<group.length;i++)for(let j=i+1;j<group.length;j++){
-  const a=group[i],b=group[j],overlap=a.start<b.cookEnd&&b.start<a.cookEnd;
-  if(overlap&&Math.abs(n(a.grill)-n(b.grill))>25){alerts.push({type:'urgent',message:`Temperatuurconflict op de <strong>${a.kamado==='large'?'grote':'kleine'} kamado</strong>: <strong>${escape(a.name)}</strong> (${n(a.grill)}°C) en <strong>${escape(b.name)}</strong> (${n(b.grill)}°C) overlappen. Een kamado kan niet tegelijk op beide temperaturen staan.`});}
+ for(const group of [large,small]){
+  const segments=group.flatMap(d=>phaseSegments(d).map(p=>({...p,dish:d}))),warned=new Set();
+  for(let i=0;i<segments.length;i++)for(let j=i+1;j<segments.length;j++){
+   const a=segments[i],b=segments[j];
+   if(a.dish.id===b.dish.id||a.start>=b.end||b.start>=a.end)continue;
+   const reason=a.method==='ombouw'||b.method==='ombouw'?'Ombouwen terwijl een ander gerecht op de kamado ligt':
+    a.method!==b.method||a.grate!==b.grate?'Verschillende directe/indirecte opstellingen of roosters':
+    Math.abs(a.temp-b.temp)>25?'Verschillende BBQ-temperaturen':null;
+   const key=[a.dish.id,b.dish.id].sort().join(':')+':'+reason;
+   if(reason&&!warned.has(key)){warned.add(key);
+    alerts.push({type:'urgent',message:'<strong>'+escape(reason)+'</strong> op de '+(a.dish.kamado==='large'?'grote':'kleine')+' kamado tussen <strong>'+escape(a.dish.name)+'</strong> ('+escape(a.method)+' / '+escape(a.grate)+') en <strong>'+escape(b.dish.name)+'</strong> ('+escape(b.method)+' / '+escape(b.grate)+'). Pas methode, rooster, tijd of kamado aan.'});
+   }
+  }
+  const seq=[...group].sort((a,b)=>a.start-b.start);
+  for(let i=1;i<seq.length;i++){
+   const a=seq[i-1],b=seq[i],pa=phaseSegments(a).at(-1),pb=phaseSegments(b)[0];
+   if(pa&&pb&&b.start>=a.cookEnd&&b.start-a.cookEnd<15*60000&&(pa.method!==pb.method||pa.grate!==pb.grate||Math.abs(pa.temp-pb.temp)>60)){
+    alerts.push({type:'notice',message:'<strong>Ombouwtijd controleren:</strong> slechts '+Math.round((b.start-a.cookEnd)/60000)+' min tussen '+escape(a.name)+' en '+escape(b.name)+' op dezelfde kamado. Reken zelf voldoende wissel- en opwarmtijd.'});
+   }
+  }
  }
  if(dishes.length>0&&dishes.every(d=>d.mode==='auto')){
   for(const group of [large,small]){
@@ -536,7 +566,8 @@ function renderTimeline(c){const target=$('timeline');const ds=c.dishes.filter(d
   if(!group.length){content+='<div style="font-size:12px;color:var(--muted);padding:13px 0">Geen gerechten op deze kamado</div>';continue;}
   for(const d of group){
    const left=pct(d.start),width=Math.max(0,pct(d.cookEnd)-left),rleft=pct(d.cookEnd),rwidth=Math.max(0,pct(d.end)-rleft),serveLeft=c.serve!=null?pct(c.serve):null;
-   content+=`<div class="timeline-row"><div class="timeline-label" title="${escape(d.name)}">${escape(d.name)}<small>${fmt(d.start)} – ${fmt(d.end)}</small></div><div class="timeline-chart">${serveLeft!==null?`<span class="line-serve" style="left:${serveLeft}%" title="Serveertijd ${fmt(c.serve)}"></span>`:''}<div class="bar grill-${kamado==='large'?'big':'small'}" style="left:${left}%;width:${width}%" title="${escape(d.name)}: BBQ ${fmt(d.start)}–${fmt(d.cookEnd)}">${width>13?escape(d.name):''}</div>${d.rest>0?`<div class="bar rest" style="left:${rleft}%;width:${rwidth}%" title="${escape(d.name)} rust ${d.rest} min">${rwidth>9?'Rust':''}</div>`:''}</div></div>`;
+   const segmentsHtml=phaseSegments(d).map(p=>'<div class="bar '+(p.method==='ombouw'?'rest':'grill-'+(kamado==='large'?'big':'small'))+'" style="left:'+pct(p.start)+'%;width:'+Math.max(0,pct(p.end)-pct(p.start))+'%;'+(p.method==='direct'?'filter:brightness(1.2)':'')+'" title="'+escape(d.name)+' · '+escape(p.title)+' · '+escape(p.method)+' · '+(p.temp==null?'ombouw':p.temp+'°C')+'">'+(pct(p.end)-pct(p.start)>8?escape(p.title):'')+'</div>').join('');
+   content+=`<div class="timeline-row"><div class="timeline-label" title="${escape(d.name)}">${escape(d.name)}<small>${fmt(d.start)} – ${fmt(d.end)}</small></div><div class="timeline-chart">${serveLeft!==null?`<span class="line-serve" style="left:${serveLeft}%" title="Serveertijd ${fmt(c.serve)}"></span>`:''}${segmentsHtml}${d.rest>0?`<div class="bar rest" style="left:${rleft}%;width:${rwidth}%" title="${escape(d.name)} rust ${d.rest} min">${rwidth>9?'Rust':''}</div>`:''}</div></div>`;
   }
  }
  target.innerHTML=content;$('timeline-footer').innerHTML=`Dit is de <strong>oorspronkelijke tijdlijn</strong>. Slimme voorstellen staan erboven apart. De verticale <strong>witte lijn</strong> markeert de gezamenlijke serveertijd (${escape(state.mealTime)}). Overlap op dezelfde kamado kan, zolang temperatuur en roosterruimte dat toelaten.`;
@@ -913,7 +944,12 @@ function renderRecipeSteps(c){
  for(const d of c.dishes){if(d.start==null)continue;
   const r=recipeDetails(d),kamado=d.kamado==='large'?'grote':'kleine';
   push(addm(d.start,-20),d.kamado,'Bereid '+d.name+' voor','20 minuten voor de start',[['Ingrediënten',r.ingredients||'Zie je eigen ingrediëntenlijst.'],['Voorbereiden en snijden',r.prep],['Hygiëne','Gebruik schoon gereedschap en voorkom kruisbesmetting.']]);
-  push(d.start,d.kamado,'Leg '+d.name+' op de '+kamado+' kamado','BBQ '+d.grill+'°C · '+d.cook+' min indicatie',[['Bereidingswijze',r.cook],['Temperatuur','Geplande BBQ '+d.grill+'°C'+(d.core!==''?' · kerntemperatuur '+d.core+'°C':'')+'. Gebruik bij vlees altijd een thermometer.'],['Eigen notities',d.notes||'Geen extra notities.']]);
+  push(d.start,d.kamado,'Leg '+d.name+' op de '+kamado+' kamado','BBQ '+d.grill+'°C · '+d.cook+' min indicatie',[['Bereidingswijze',r.cook],['Kamado opbouwen',(METHODS[d.method]||'Indirect')+' · '+(GRATES[d.grate]||GRATES.rvs)+(d.method!=='direct'?' + hitteschild':'')+'. '+(['combo','directindirect'].includes(d.method)?'Tweede fase: '+(GRATES[d.grate2]||GRATES.cast)+' bij '+n(d.phase2Temp)+'°C.':'')],['Temperatuur','Geplande BBQ '+d.grill+'°C'+(d.core!==''?' · kerntemperatuur '+d.core+'°C':'')+'. Gebruik bij vlees altijd een thermometer.'],['Eigen notities',d.notes||'Geen extra notities.']]);
+  if(['combo','directindirect'].includes(d.method)){
+   const phases=phaseSegments(d),sw=phases.find(p=>p.method==='ombouw'),second=phases.at(-1);
+   if(sw)push(sw.start,d.kamado,'Bouw '+d.name+' om naar fase 2','Start roosterwissel en opstoken · '+minutes(d.transitionMins)+' min',[['Rooster / opstelling','Verander van '+(d.method==='combo'?'indirect naar direct':'direct naar indirect')+'. Wissel het rooster van '+(GRATES[d.grate]||GRATES.rvs)+' naar '+(GRATES[d.grate2]||GRATES.cast)+'. Gebruik hittebestendige bescherming.'],['Temperatuur','Stabiliseer de kamado op '+n(d.phase2Temp)+'°C voordat je doorgaat.']]);
+   if(second)push(second.start,d.kamado,'Begin fase 2 van '+d.name,second.method+' · '+n(d.phase2Temp)+'°C',[['Garen','Fase 2: circa '+minutes(d.phase2Minutes)+' minuten als schatting; gebruik de kernthermometer.'],['Rooster',GRATES[d.grate2]||GRATES.cast]]);
+  }
   push(d.cookEnd,d.kamado,d.rest>0?'Haal '+d.name+' van de BBQ':d.name+' is klaar','Controleer de gaarheid',[['Rust / gaarheid',r.rest],['Controle',d.core!==''?'Controleer de gemeten kern rond de ingestelde richtwaarde '+d.core+'°C; voedselveiligheid blijft leidend.':'Beoordeel gaarheid en veilige bereiding.']]);
   if(d.rest>0)push(d.end,d.kamado,'Snijd en serveer '+d.name,'Klaar om te serveren',[['Aansnijden en opdienen',r.slice]]);
  }

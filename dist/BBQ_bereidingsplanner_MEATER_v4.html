@@ -1009,7 +1009,7 @@ function analyzeRecipeText(raw){
  const bbqLine=find(/(?:bbq|kamado|grill).{0,45}(?:temperatuur|(?:op|tot|naar)\s*\d{2,3})/i)||
   find(/(?:verwarm|stook|verhit).{0,70}(?:bbq|kamado|grill)/i);
  const coreLine=find(/(?:kerntemperatuur|kern(?:temp(?:eratuur)?)?|eindkern|doeltemperatuur).{0,60}\d{2,3}/i);
- const bbq=bbqLine.match(temp),core=coreLine.match(temp);
+ const bbq=bbqLine.match(temp),core=coreLine.slice(Math.max(0,coreLine.search(/kerntemperatuur|kern(?:temp(?:eratuur)?)?|eindkern|doeltemperatuur/i))).match(temp);
  const durationLine=find(/(?:bereidingstijd|totale bereiding|bereiding duurt).{0,70}\d+(?:[,.]\d+)?\s*(?:[–-]\s*\d+)?\s*(?:uur|minuten)/i);
  const dm=durationLine.match(/(\d+(?:[,.]\d+)?)\s*[–-]\s*(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i)||
   durationLine.match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);

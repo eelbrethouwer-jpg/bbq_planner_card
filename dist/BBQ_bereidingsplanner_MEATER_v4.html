@@ -670,7 +670,7 @@ function renderLibrary(){
  $('library-count').textContent=String(localRecipes.length);
  const host=$('library-items');
  host.innerHTML=localRecipes.length?localRecipes.slice().sort((a,b)=>a.name.localeCompare(b.name,'nl')).map(r=>
- '<article class="library-item" data-library-name="'+escape(r.name)+'"><h4>'+escape(r.name)+'</h4><div class="hint">'+escape(CATEGORIES[r.category]||CATEGORIES[categoryGuess(r.name)])+' · '+escape(METHODS[r.method]||'Indirect')+' · '+escape(r.grill)+'°C</div>'+
+ '<article class="library-item" data-library-name="'+escape(r.name)+'">'+(validV45Photo(r.photo)?'<img class="v45-photo" alt="Eigen receptfoto" src="'+escape(r.photo)+'">':'')+'<h4>'+escape(r.name)+'</h4><div class="hint">'+escape(CATEGORIES[r.category]||CATEGORIES[categoryGuess(r.name)])+' · '+escape(METHODS[r.method]||'Indirect')+' · '+escape(r.grill)+'°C</div>'+
  '<div class="library-item-actions"><button class="btn small" type="button" data-library-action="use">＋ Plannen</button><button class="btn small" type="button" data-library-action="edit">✎ Bewerken</button><button class="btn small danger" type="button" data-library-action="delete">Verwijderen</button></div></article>'
  ).join(''):'<p class="hint">Nog geen eigen recepten. Maak er één met de receptgenerator, of importeer je bibliotheek. Ingebouwde voorbeeldrecepten zijn altijd beschikbaar.</p>';
 }
@@ -1238,7 +1238,7 @@ function renderRecipeEditor(d){
 }
 function renderReviewEditor(d){
  const rs=savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)).slice(-5).reverse();
- const history=rs.length?'<ul class="recipe-past">'+rs.map(r=>'<li>'+escape(r.date)+' · '+escape(r.rating)+'/5 · eindkern '+(r.finalCore==null?'onbekend':escape(r.finalCore)+'°C')+(r.lastMeasured==null?'':' · MEATER '+escape(r.lastMeasured)+'°C')+' · '+escape(r.comment||'')+'</li>').join('')+'</ul>':'<p class="recipe-past">Nog geen eerdere bereiding geëvalueerd.</p>';
+ const history=rs.length?'<ul class="recipe-past">'+rs.map(r=>'<li>'+escape(r.date)+' · '+escape(r.rating)+'/5 · eindkern '+(r.finalCore==null?'onbekend':escape(r.finalCore)+'°C')+(r.lastMeasured==null?'':' · MEATER '+escape(r.lastMeasured)+'°C') +' · '+escape(r.comment||'')+(r.actualMinutes?' · werkelijke BBQ-tijd '+escape(r.actualMinutes)+' min':'')+(validV45Photo(r.photo)?' <img class="v45-mini" alt="Foto vorige bereiding" src="'+escape(r.photo)+'">':'')+'</li>').join('')+'</ul>':'<p class="recipe-past">Nog geen eerdere bereiding geëvalueerd.</p>';
  return '<details class="review-editor"><summary>⭐ Bereiding beoordelen ('+savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)).length+')</summary>'+history+
  '<div class="recipe-edit-grid"><div class="field"><label>Beoordeling</label><select data-review="rating"><option value="5">5 · geweldig</option><option value="4">4 · goed</option><option value="3">3 · redelijk</option><option value="2">2 · kan beter</option><option value="1">1 · mislukt</option></select></div>'+
  '<div class="field"><label>Werkelijk gemeten eindkern (°C)</label><input data-review="finalCore" type="number" step="0.1" min="-10" max="120" placeholder="Bijv. 54"></div>'+
@@ -1260,6 +1260,7 @@ function saveReview(id,card){
  if(review)savedReviews.push(review);
  v45PendingPhotos.delete(id);
  if(savedReviews.length>250)savedReviews.shift();
+ savedReviews.splice(0,savedReviews.length,...normalizeReviewState(savedReviews).reviews);
  if(store(REVIEWS_KEY,savedReviews)){queueReviewSync();renderAll();toast(reviewConnected?'Review bewaard en gesynchroniseerd':'Review lokaal bewaard voor toekomstige bereidingen')}else toast('Review niet bewaard: opslag niet beschikbaar');
 }
 function richText(value){return escape(value).replace(/\r?\n/g,'<br>')}

@@ -320,6 +320,51 @@ try{
  const updated=JSON.parse(distribution.window.localStorage.getItem('kamado-bereidingsplanner-v1'));
  assert.notEqual(updated.dishes[0].kamado,updated.dishes[1].kamado,'explicit applying optimizer separates conflicting dishes');
 }finally{distribution.window.close();}
+
+/* v4.6 — planned tomorrow/future is not 'already too late'; food preparation may be a day earlier. */
+const preparedPlan=launchWithPlan({
+ date:future,dateMode:'manual',mealTime:'18:30',availableFrom:'17:45',
+ preheatLarge:30,preheatSmall:25,dishes:[{
+  id:'prepared-fish',name:'Gerookte zalm',category:'vis',kamado:'large',method:'indirect',
+  grill:120,cook:120,rest:10,core:'63',mode:'auto',
+  prepTasks:[{id:'brine',title:'Vis pekelen',daysBefore:1,time:'19:00',duration:15,notes:'Koelkast maximaal 4 °C en receptduur controleren'}]
+ }]
+});
+try{
+ const w=preparedPlan.window,d=w.document;
+ const all=()=>JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1'));
+ const alert=d.querySelector('#alerts .alert');
+ assert.ok(alert,'availability gap on a future date is still a planning consideration');
+ assert.match(alert.textContent,/Vooruitblik op de BBQ-dag/,'future gap is named correctly');
+ assert.match(alert.textContent,/gekozen toekomstige datum/,'future planned actions are not already overdue');
+ assert.ok(!alert.classList.contains('urgent'),'future availability gap does not become an overdue warning');
+ assert.match(d.getElementById('v46-prep-timeline').textContent,/Vis pekelen/,'prep timeline contains day-before action');
+ assert.match(d.getElementById('steps').textContent,/Vis pekelen/,'detailed recipe schedule shows prep');
+ assert.match(d.getElementById('v46-board').textContent,/Voorbereiden op eerdere dagen/,'interactive board separates previous-day prep');
+ assert.equal(d.querySelector('#dishes .v46-prep-row [data-v46-prep-field="daysBefore"]').value,'1');
+ const editor=d.querySelector('#dishes .v46-prep-editor');editor.open=true;
+ const days=editor.querySelector('[data-v46-prep-field="daysBefore"]');
+ days.value='2';days.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.equal(all().dishes[0].prepTasks[0].daysBefore,2,'prep offset persists to plan storage');
+ const template=editor.querySelector('[data-v46-prep-template]');template.value='meat';
+ editor.querySelector('[data-v46-prep-add]').click();
+ assert.equal(all().dishes[0].prepTasks.length,2,'prep template adds another editable task');
+ assert.match(d.getElementById('v46-prep-timeline').textContent,/Vlees marineren/,'second task is visible on prep timeline');
+ const updatedEditor=d.querySelector('#dishes .v46-prep-editor');
+ updatedEditor.querySelector('[data-v46-prep-save]').click();
+ const saved=JSON.parse(w.localStorage.getItem('kamado-recipe-book-v1'));
+ assert.ok(saved.some(x=>x.name==='Gerookte zalm'&&x.prepTasks.length===2),'prep persists in local recipe library');
+ const remove=updatedEditor.querySelector('[data-v46-prep-remove]');
+ remove.click();
+ assert.equal(all().dishes[0].prepTasks.length,1,'remove prep task works');
+ const prepCheck=d.querySelector('#v46-board [data-v46-check*=":prep:"]');
+ assert.ok(prepCheck,'prep task can be checked off');
+ prepCheck.checked=true;prepCheck.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.ok(Object.values(all().v46Done).some(Boolean),'checked prep survives rerender');
+ assert.equal(all().dishes[0].cook,120,'prep offsets never change cooking time');
+}finally{preparedPlan.window.close();}
+console.log('OK v4.6: multi-day preparations, future-only warnings and recipe persistence');
+
 console.log('OK: optimizer is opt-in and preserves legacy plan support');
 
 /* Independent HA bridge tests with a mocked authenticated WebSocket connection.

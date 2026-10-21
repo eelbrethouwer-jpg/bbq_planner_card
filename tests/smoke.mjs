@@ -147,6 +147,34 @@ try{
   click($('recipe-analyze'));
   assert.equal($('generator-fields').querySelector('[data-gfield="grill"]').value,'','missing BBQ temp stays blank');
   assert.equal($('generator-fields').querySelector('[data-gfield="core"]').value,'','missing core stays blank');
+
+  // v4.3 local cookbook: custom recipes are listed, usable, editable and removable.
+  assert.ok($('library-items'),'library manager exists');
+  assert.ok($('library-count'),'library count exists');
+  assert.match($('library-sync-status').textContent,/Lokale bibliotheek|Lokaal/);
+  const custom=doc.querySelector('#library-items [data-library-name="Ribeye v4.2 proefrecept"]');
+  assert.ok(custom,'generated recipe appears in library');
+  click(custom.querySelector('[data-library-action="edit"]'));
+  assert.ok($('generator-preview').classList.contains('visible'),'library recipe opens editable draft');
+  assert.equal($('generator-fields').querySelector('[data-gfield="name"]').value,'Ribeye v4.2 proefrecept');
+  const renamed=$('generator-fields').querySelector('[data-gfield="name"]');
+  renamed.value='Ribeye proefrecept bewerkt';
+  renamed.dispatchEvent(new window.Event('input',{bubbles:true}));
+  click($('generator-save'));
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).some(r=>r.name==='Ribeye proefrecept bewerkt'),'renamed recipe saved');
+  assert.ok(!JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).some(r=>r.name==='Ribeye v4.2 proefrecept'),'rename deletes original recipe');
+  assert.ok(doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"]'));
+  const countBeforeUse=count();
+  click(doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"] [data-library-action="use"]'));
+  assert.equal(count(),countBeforeUse+1,'reusable cookbook entry added to planning');
+  click(doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"] [data-library-action="delete"]'));
+  assert.ok(!doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"]'),'deleted recipe hidden');
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-deletions-v1')).some(x=>x.name==='Ribeye proefrecept bewerkt'),'deletion tombstone persisted');
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length===1,'reviews are never erased by cookbook edits');
+  assert.ok(![...$('preset').options].some(o=>o.value==='Ribeye proefrecept bewerkt'),'deleted cookbook entry removed from selector');
+  assert.ok([...$('preset').options].some(o=>o.value==='Pulled pork op brood'),'built in recipes remain');
+  click($('library-export'));
+  assert.match($('library-feedback').textContent,/Back-up/,'library export button operates');
   $('recipe-url').value='not a valid url';
   click($('recipe-read'));assert.match($('recipe-message').textContent,/geldige http/,'invalid URL handled locally');
 
@@ -188,3 +216,43 @@ try{
  assert.match(planned.window.document.getElementById('date-mode').textContent,/Handmatig/);
 }finally{planned.window.close();}
 console.log('OK: legacy date migration, persistent manual future date, older recipe fields preserved');
+
+/* Independent HA bridge tests with a mocked authenticated WebSocket connection.
+   This is not live HA or Safari testing. */
+const bridgeCode=fs.readFileSync('dist/bbq_planner_card.js','utf8').replace('import.meta.url','"https://planner.test.invalid/dist/bbq_planner_card.js"');
+const parentDom=new JSDOM('<!doctype html><body></body>',{
+  url:'https://planner.test.invalid/',
+  runScripts:'dangerously',
+  pretendToBeVisual:true
+});
+try {
+  const w=parentDom.window;
+  w.eval(bridgeCode);
+  const card=w.document.createElement('bbq-planner-meater-card');
+  w.document.body.appendChild(card);
+  card.setConfig({});
+  let server={version:1,recipes:[{name:'Zalm',updatedAt:'2026-10-01T10:00:00.000Z',grill:160}],deleted:[]};
+  let subscription=null;
+  const connection={
+    sendMessagePromise:async m=>{
+      if(m.type==='frontend/get_user_data')return {value:server};
+      if(m.type==='frontend/set_user_data'){server=m.value;subscription?.({value:server});return null;}
+      throw Error('Unknown call '+m.type);
+    },
+    subscribeMessage:async (fn,m)=>{assert.equal(m.type,'frontend/subscribe_user_data');subscription=fn;fn({value:server});return ()=>{subscription=null};}
+  };
+  card.hass={states:{},connection};
+  const pork={name:'Pulled pork op brood',grill:120,updatedAt:'2026-10-20T10:00:00.000Z'};
+  card._saveCookbook({version:1,recipes:[pork],deleted:[]});
+  await card._syncQueue;
+  assert.deepEqual(server.recipes.map(x=>x.name).sort(),['Pulled pork op brood','Zalm'],'HA merge preserves existing server recipes');
+  const deleted={name:'Zalm',updatedAt:'2026-10-21T10:00:00.000Z'};
+  card._saveCookbook({version:1,recipes:[],deleted:[deleted]});
+  await card._syncQueue;
+  assert.deepEqual(server.recipes.map(x=>x.name),['Pulled pork op brood'],'HA deletion prevents stale recipe resurrection');
+  assert.ok(server.deleted.some(x=>x.name==='Zalm'),'HA sync stores tombstones');
+  assert.ok(card._cookbookUnsub,'HA frontend user storage subscription connected');
+  card.remove();
+  assert.equal(subscription,null,'HA subscription cleaned up');
+}finally{parentDom.window.close();}
+console.log('OK: secure HA user-storage cookbook merge/delete/subscription bridge');

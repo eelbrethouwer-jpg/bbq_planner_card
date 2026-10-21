@@ -963,6 +963,103 @@ function renderRecipeSteps(c){
  $('steps').innerHTML=timedHtml+detailedHtml;
 }
 function presetOption(name){const sel=$('preset');if(!sel||[...sel.options].some(o=>o.value===name))return;const o=document.createElement('option');o.value=name;o.textContent='Eigen · '+name;sel.append(o)}
+
+/* V4.2: offline recipe generator. No external API, and missing temperatures stay missing. */
+let recipeDraft=null;
+function analyzeRecipeText(raw){
+ const source=String(raw||'').slice(0,35000),lines=source.replace(/\r/g,'').split('\n'),groups={ingredients:[],prep:[],cook:[],rest:[],slice:[]};
+ let section='';
+ const headings={ingredients:/^(ingrediënten|ingredienten|ingredients)\s*:?\s*$/i,prep:/^(voorbereiding|voorbereiden|avond van te voren|de avond ervoor)\s*:?\s*$/i,cook:/^(bereiding|werkwijze|bereidingswijze|instructies|stappen|pulled pork bereiden(?: op de bbq)?)\s*:?\s*$/i,rest:/^(rusten|rusttijd)\s*:?\s*$/i,slice:/^(serveren|aansnijden|snijden)\s*:?\s*$/i};
+ for(const line of lines){
+  const t=line.trim();
+  if(/^(overige benodigdheden|benodigdheden)\s*:?\s*$/i.test(t)){section='';continue;}
+  const found=Object.entries(headings).find(([k,re])=>re.test(t));if(found){section=found[0];continue;}
+  if(section&&t)groups[section].push(t.replace(/^[-–•]\s*/,''));
+ }
+ const find=re=>lines.find(l=>re.test(l))||'';
+ const temp=/(\d{2,3})(?:\s*[–-]\s*\d{2,3})?\s*(?:°\s*)?(?:c\b|graden\b)/i;
+ const bbqLine=find(/(?:bbq|kamado|grill).{0,45}(?:temperatuur|(?:op|tot|naar)\s*\d{2,3})/i)||
+  find(/(?:verwarm|stook|verhit).{0,70}(?:bbq|kamado|grill)/i);
+ const coreLine=find(/(?:kerntemperatuur|kern(?:temp(?:eratuur)?)?|eindkern|doeltemperatuur).{0,60}\d{2,3}/i);
+ const bbq=bbqLine.match(temp),core=coreLine.match(temp);
+ const durationLine=find(/(?:bereidingstijd|totale bereiding|bereiding duurt).{0,70}\d+(?:[,.]\d+)?\s*(?:[–-]\s*\d+)?\s*(?:uur|minuten)/i);
+ const dm=durationLine.match(/(\d+(?:[,.]\d+)?)\s*[–-]\s*(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i)||
+  durationLine.match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);
+ const dur=dm?(dm.length===4?(Number(dm[1].replace(',','.'))+Number(dm[2].replace(',','.')))/2:Number(dm[1].replace(',','.')))*(dm[dm.length-1].toLowerCase()==='uur'?60:1):'';
+ const restLine=find(/(?:rusttijd|laat).{0,80}\d+(?:[,.]\d+)?\s*(?:uur|minuten)/i),rm=restLine.match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);
+ const rest=rm?Number(rm[1].replace(',','.'))*(rm[2].toLowerCase()==='uur'?60:1):'';
+ const modes=[...source.matchAll(/\b(indirect|direct)\b/gi)].map(m=>m[1].toLowerCase());
+ const method=modes.includes('indirect')&&modes.includes('direct')?(modes[0]==='indirect'?'combo':'directindirect'):(modes[0]||'indirect');
+ const name=(lines.find(l=>l.trim())||'Nieuw recept').trim().replace(/^\s*#+\s*/,'').replace(/\s+in het kort$/i,'').slice(0,150);
+ const grateMatch=source.match(/\b(rvs|gietijzer|plancha|bakplaat|pizzasteen)\b/i);
+ const grate=grateMatch?/gietijzer/i.test(grateMatch[0])?'cast':/plancha|bakplaat/i.test(grateMatch[0])?'plancha':/pizza/i.test(grateMatch[0])?'pizza':'rvs':'rvs';
+ const start=source.search(/avond van te voren|de avond ervoor|bereiding(?:swijze)?:/i);
+ const procedural=(start>=0?source.slice(start):groups.cook.join('\n')||source).slice(0,14000);
+ const blocks=procedural.split(/\n\s*\n/).map(p=>p.replace(/\s+/g,' ').trim()).filter(Boolean);
+ const action=/\b(haal|dep|snijd|meng|giet|injecteer|steek|maak|voeg|leg|sluit|besproei|bestrijk|pak|gaar|verwarm|laat|trek|serveer|draai|grill|rook|bak|wrijf|wikkel|plaats|verwijder)\b/i;
+ const stages=[];
+ for(const p of blocks.filter(p=>p.length<2100&&action.test(p)&&!/^(hoe|waarom|wat is)\b/i.test(p))){
+  const sentences=p.match(/[^.!?]+[.!?]?/g)||[p];
+  for(let i=0;i<sentences.length;i+=3){
+   const detail=sentences.slice(i,i+3).join(' ').trim().slice(0,2200);
+   if(!action.test(detail))continue;
+   const m=detail.match(/(?:bij|tot|vanaf)\s*(?:een\s*)?(?:kern(?:temperatuur)?\s*(?:van\s*)?)?(\d{2,3})\s*(?:°\s*)?(?:c\b|graden\b)/i);
+   stages.push({title:detail.split(/[.!?]/)[0].slice(0,85),trigger:m?'Bij '+m[1]+'°C (controleer context)':/avond tevoren|avond van te voren/i.test(p)?'Avond vooraf':'Op volgorde; tijd onbekend',detail});
+   if(stages.length===30)break;
+  }
+  if(stages.length===30)break;
+ }
+ if(!stages.length)stages.push({title:'Bereiding controleren',trigger:'Tijdstip onbekend',detail:groups.cook.join('\n')||source.slice(0,2000)});
+ const sourceTemp2=[...source.matchAll(/(?:bbq|kamado|grill|verhoog|stook).{0,70}(\d{2,3})\s*(?:°\s*)?(?:c\b|graden\b)/gi)].map(m=>Number(m[1])).find(v=>v>=50&&v<=450&&v!==Number(bbq?.[1]));
+ const fields={name,category:categoryGuess(name+' '+find(/procureur|varkensnek|ribeye|rund|kip|zalm|vis/i)),method,grate,grate2:'cast',
+  grill:bbq?.[1]||'',core:core?.[1]||'',cook:dur===''?'':Math.round(dur),rest:rest===''?'':Math.round(rest),
+  phase2Temp:sourceTemp2||'',phase2Minutes:'',transitionMins:'',recipeIngredients:groups.ingredients.join('\n'),
+  recipePrep:groups.prep.join('\n'),recipeCook:groups.cook.join('\n')||procedural.slice(0,10000),recipeRest:groups.rest.join('\n'),recipeSlice:groups.slice.join('\n'),
+  recipeSource:$('recipe-url').value.trim(),notes:'Tekst geanalyseerd; controleer gaarheid en voedselveiligheid.'};
+ const evidence={grill:bbq?'bron':'ontbreekt',core:core?'bron':'ontbreekt',cook:dm?'bron':'ontbreekt',rest:rm?'bron':'ontbreekt',
+  method:modes.length?'bron':'voorstel',grate:grateMatch?'bron':'voorstel',category:'voorstel',phase2Temp:sourceTemp2?'bron':'ontbreekt',phase2Minutes:'ontbreekt',transitionMins:'ontbreekt'};
+ return {fields,evidence,stages};
+}
+function renderGeneratorStages(){
+ $('generator-stages').innerHTML='<h4>Stappen ('+recipeDraft.stages.length+') · aanpasbaar</h4>'+recipeDraft.stages.map((step,i)=>
+ '<div class="generator-stage" data-stage="'+i+'"><label>Stap '+(i+1)+' titel<input data-stage-field="title" value="'+escape(step.title)+'"></label><label>Wanneer<input data-stage-field="trigger" value="'+escape(step.trigger)+'"></label><label>Uitgebreide uitleg<textarea data-stage-field="detail" rows="3">'+escape(step.detail)+'</textarea></label><button type="button" class="btn small" data-stage-action="up">↑</button> <button type="button" class="btn small" data-stage-action="down">↓</button> <button type="button" class="btn small danger" data-stage-action="remove">Verwijder</button></div>'
+ ).join('');
+}
+function renderGeneratorPreview(){
+ const props=[['name','Receptnaam','text'],['category','Categorie','category'],['method','Methode','method'],['grate','Rooster fase 1','grate'],['grate2','Rooster fase 2','grate'],['grill','BBQ °C','number'],['core','Kern °C (optioneel)','number'],['cook','Bereiding minuten','number'],['rest','Rust minuten','number'],['phase2Temp','BBQ fase 2 °C','number'],['phase2Minutes','Fase 2 minuten','number'],['transitionMins','Ombouw minuten','number'],['recipeIngredients','Ingrediënten','textarea'],['recipePrep','Voorbereiding','textarea'],['recipeCook','Bereidingswijze','textarea'],['recipeRest','Rusten','textarea'],['recipeSlice','Serveren','textarea']];
+ $('generator-fields').innerHTML=props.map(([key,label,type])=>{
+  const v=recipeDraft.fields[key]??'',origin=recipeDraft.evidence[key]||'bron/bewerkbaar';
+  const attr='data-gfield="'+key+'" aria-label="'+label+'"';
+  const control=type==='category'||type==='method'||type==='grate'?
+   '<select '+attr+'>'+Object.entries(type==='category'?CATEGORIES:type==='method'?METHODS:GRATES).map(([k,val])=>'<option value="'+k+'" '+(k===v?'selected':'')+'>'+escape(val)+'</option>').join('')+'</select>':
+   type==='textarea'?'<textarea '+attr+' rows="4">'+escape(v)+'</textarea>':
+   '<input '+attr+' type="'+type+'" value="'+escape(v)+'" placeholder="Niet gevonden — zelf invullen">';
+  return '<div class="field '+(type==='textarea'?'wide':'')+'"><label>'+label+' <small class="hint">('+origin+')</small></label>'+control+'</div>';
+ }).join('');
+ $('generator-confidence').textContent='Bronwaarden zijn onderscheiden van voorstellen of ontbrekende waarden. Controleer temperatuur en bereiding vóór opslaan.';
+ renderGeneratorStages();$('generator-preview').classList.add('visible');
+}
+function saveLocalRecipe(d){
+ const i=localRecipes.findIndex(x=>dishKey(x.name)===dishKey(d.name));if(i>=0)localRecipes.splice(i,1);
+ localRecipes.push(d);if(localRecipes.length>80)localRecipes.shift();
+ examples[d.name]=d;store(RECIPE_KEY,localRecipes);renderPresetOptions();
+}
+function saveGeneratorRecipe(){
+ if(!recipeDraft)return;
+ const f=recipeDraft.fields;
+ if(!String(f.name||'').trim()||!(Number(f.grill)>=50&&Number(f.grill)<=450)||!(Number(f.cook)>0)){
+  $('recipe-message').textContent='Controleer naam, BBQ-temperatuur en bereidingstijd. Ontbrekende bronwaarden moet je zelf invullen.';return;
+ }
+ if(['combo','directindirect'].includes(f.method)&&(!(Number(f.phase2Temp)>=50&&Number(f.phase2Temp)<=450)||!(Number(f.phase2Minutes)>0))){
+  $('recipe-message').textContent='Bij twee fasen zijn de temperatuur en bereidingstijd voor fase 2 verplicht.';return;
+ }
+ if(f.core!==''&&f.core!=null&&!(Number(f.core)>=0&&Number(f.core)<=100)){$('recipe-message').textContent='Controleer de kerntemperatuur.';return;}
+ const dish={...f,name:String(f.name).trim().slice(0,150),kamado:'large',cook:minutes(f.cook),rest:minutes(f.rest),grill:n(f.grill),core:String(f.core||''),phase2Temp:n(f.phase2Temp),phase2Minutes:minutes(f.phase2Minutes),transitionMins:minutes(f.transitionMins),recipeSteps:recipeDraft.stages.slice(0,30)};
+ saveLocalRecipe(dish);addDish(dish,'✓ Recept opgeslagen en aan de planning toegevoegd');
+ $('recipe-message').textContent='Recept goedgekeurd en lokaal opgeslagen. Bekijk de stappen onder 04.';
+ $('generator-preview').classList.remove('visible');recipeDraft=null;
+}
+
 function textRecipe(text){
  const fields={ingredients:[],prep:[],cook:[],rest:[],slice:[]};let key='prep';
  for(const line of String(text).slice(0,25000).split(/\r?\n/)){
@@ -1019,6 +1116,17 @@ function importRecipe(){
  message.textContent='Recept toegevoegd! De bereidingsstappen staan onder 04 en zijn te wijzigen op de gerechtkaart.';
 }
 localRecipes.forEach(d=>{examples[d.name]=d});
+$('recipe-analyze').addEventListener('click',()=>{const input=$('recipe-text').value.trim();if(!input){$('recipe-message').textContent='Plak eerst recepttekst.';return;}recipeDraft=analyzeRecipeText(input);renderGeneratorPreview();$('recipe-message').textContent='Concept klaar. Controleer waarden en stappen vóór bewaren.';});
+$('generator-fields').addEventListener('input',e=>{const key=e.target.dataset.gfield;if(recipeDraft&&key){recipeDraft.fields[key]=e.target.value;recipeDraft.evidence[key]='aangepast';}});
+$('generator-stages').addEventListener('input',e=>{const key=e.target.dataset.stageField,el=e.target.closest('[data-stage]');if(recipeDraft&&key&&el)recipeDraft.stages[Number(el.dataset.stage)][key]=e.target.value;});
+$('generator-stages').addEventListener('click',e=>{const b=e.target.closest('[data-stage-action]');if(!b||!recipeDraft)return;const i=Number(b.closest('[data-stage]').dataset.stage),a=recipeDraft.stages;
+ if(b.dataset.stageAction==='remove')a.splice(i,1);
+ if(b.dataset.stageAction==='up'&&i>0)[a[i-1],a[i]]=[a[i],a[i-1]];
+ if(b.dataset.stageAction==='down'&&i<a.length-1)[a[i+1],a[i]]=[a[i],a[i+1]];
+ renderGeneratorStages();
+});
+$('generator-stage-add').addEventListener('click',()=>{if(!recipeDraft||recipeDraft.stages.length>=30)return;recipeDraft.stages.push({title:'Nieuwe stap',trigger:'Handmatig',detail:''});renderGeneratorStages();});
+$('generator-save').addEventListener('click',saveGeneratorRecipe);
 $('recipe-read').addEventListener('click',tryImportURL);
 $('recipe-add').addEventListener('click',importRecipe);
 

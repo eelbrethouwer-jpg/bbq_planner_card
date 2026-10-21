@@ -271,8 +271,8 @@ const categoryGuess=name=>{
  if(/cake|dessert|choco|lava/.test(x))return 'dessert';
  return 'overig';
 };
-const methodGuess=name=>/ribeye|picanha/i.test(name)?'combo':/bavette/i.test(name)?'direct':'indirect';
-const grateGuess=(name,method)=>/pizza/i.test(name)?'pizza':/cake/i.test(name)?'plancha':method==='direct'?'rvs':'rvs';
+const methodGuess=name=>/ribeye|picanha/i.test(name)?'combo':/bavette|maïskolf|maiskolf|gegrilde groenten/i.test(name)?'direct':'indirect';
+const grateGuess=(name,method)=>/pizza/i.test(name)?'pizza':/garnal|scampi|kleine groenten/i.test(name)?'plancha':method==='direct'?'rvs':'rvs';
 const GRATES={rvs:'RVS-rooster',cast:'Gietijzeren rooster',plancha:'Plancha / bakplaat',pizza:'Pizzasteen'};
 const METHODS={direct:'Direct',indirect:'Indirect',combo:'Indirect → direct',directindirect:'Direct → indirect'};
 const examples={
@@ -480,7 +480,9 @@ function initControls(){
    }
    persist();renderOutputs();return;
   }
-  d[field.dataset.field]=field.value;persist();if(['mode','kamado','meater','category','method','grate','grate2'].includes(field.dataset.field))renderAll();else{renderOutputs();refreshAdvice();}
+  const priorMethod=d.method;d[field.dataset.field]=field.value;
+  if(field.dataset.field==='method'&&!['combo','directindirect'].includes(priorMethod)&&['combo','directindirect'].includes(d.method)&&!minutes(d.transitionMins)){d.transitionMins=15;d.phase2Temp=250;d.phase2Minutes=6;}
+  persist();if(['mode','kamado','meater','category','method','grate','grate2'].includes(field.dataset.field))renderAll();else{renderOutputs();refreshAdvice();}
  });
  $('dishes').addEventListener('click',ev=>{
   const button=ev.target.closest('[data-action]');if(!button)return;const card=button.closest('[data-id]');if(!card)return;const id=card.dataset.id;

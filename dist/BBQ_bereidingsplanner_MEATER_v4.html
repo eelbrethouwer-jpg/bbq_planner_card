@@ -104,6 +104,24 @@
 .chart-legend{display:flex;gap:14px;flex-wrap:wrap;color:#c5d3d5;font-size:11px;padding:3px 5px 0}
 .chart-dot{width:9px;height:9px;display:inline-block;margin-right:5px;border-radius:50%}
 .chart-readout{color:#b6c5c9;font-size:11px;padding:3px 5px}
+/* v4.2: responsive recipe generator, filters and grilling advice */
+.date-helper{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-top:5px}
+.category-filter,.preset-search{min-height:43px;padding:8px 10px;border:1px solid #425760;background:#1b2a32;color:#fff;border-radius:10px;max-width:195px}
+.generator-preview{margin:12px 0;border:1px solid #64846f;background:#16312d;border-radius:12px;padding:15px;display:none}
+.generator-preview.visible{display:block}
+.generator-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.generator-fields .field.wide{grid-column:1/-1}
+.generator-preview textarea{min-height:95px}
+.generator-result{font-size:12px;color:#b0ded0;margin:8px 0}
+.advice{background:#192c2b;border:1px solid #446452;border-radius:11px;margin-top:10px;padding:12px;font-size:12px;line-height:1.6}
+.advice strong{color:#e5f6e9}
+.method-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.equipment-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.equipment-checks label{display:flex;gap:7px;align-items:center;font-size:12px;color:#cbdad9}
+.equipment-checks input{accent-color:#f2a561}
+.generator-stage{border-top:1px solid #446052;margin-top:9px;padding-top:9px}
+.generator-stage input,.generator-stage textarea{width:100%;margin:3px 0 7px;background:#0f2127;color:white;border:1px solid #425a61;border-radius:7px;padding:8px}
+@media(max-width:540px){.category-filter,.preset-search{max-width:none;flex:1}.generator-fields{grid-template-columns:1fr}.generator-fields .field.wide{grid-column:auto}.equipment-checks{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -165,6 +183,8 @@
     <div class="field"><label for="available-from">Ik kan beginnen vanaf</label><input type="time" id="available-from" required></div>
    </div>
    <div class="divider"></div>
+   <details><summary style="cursor:pointer;font-weight:700;color:#f2a561">🧰 Beschikbare roosters en accessoires instellen</summary><p class="hint">Vink alleen aan wat je daadwerkelijk hebt. Niet ingevuld = onbekend; roosteradviezen blijven voorstellen.</p><div class="setup-grid" id="equipment-options"></div></details>
+   <div class="divider"></div>
    <h3 class="sec-title" style="font-size:15px">Opwarmtijd per kamado</h3>
    <p class="sec-sub">Aansteken gebeurt vóór de eerste bereiding op die kamado.</p>
    <div class="setup-grid">
@@ -193,8 +213,8 @@
   <p class="interactive-status" id="js-status" role="status">⚠ De interactieve bediening is niet geladen. Open dit bestand in een volledige webbrowser (niet alleen in de Bestanden-voorvertoning).</p>
   
  <details id="recipe-importer" class="recipe-importer">
- <summary>📥 Recept van internet toevoegen</summary>
- <p class="sec-sub">Plak de receptlink en probeer hem uit te lezen. Blokkeert de website dit, plak dan zelf de recepttekst.</p>
+ <summary>✨ Slimme receptgenerator · tekst plakken of link gebruiken</summary>
+ <p class="sec-sub">Plak een volledig recept. Analyse gebeurt lokaal in deze browser, zonder AI-account. Controleer het bewerkbare concept; niet-herkende gegevens worden nooit verzonnen. Een webpagina uitlezen kan alleen als de bron het toestaat.</p>
  <div class="recipe-import-grid">
   <div class="field wide"><label for="recipe-url">Receptlink (optioneel)</label><input type="url" id="recipe-url" placeholder="https://..."></div>
   <div class="field wide"><label for="recipe-text">Ingrediënten en bereidingswijze</label><textarea id="recipe-text" placeholder="Ingrediënten&#10;…&#10;Bereiding&#10;…"></textarea></div>
@@ -203,7 +223,15 @@
   <div class="field"><label for="recipe-core">Kerntemperatuur °C (optioneel)</label><input id="recipe-core" type="number" min="0" max="100"></div>
   <div class="field"><label for="recipe-duration">Bereiding in minuten</label><input id="recipe-duration" type="number" min="1" max="10000" value="40"></div>
  </div>
- <div class="recipe-import-actions"><button type="button" id="recipe-read" class="btn small">↧ Link uitlezen</button><button type="button" id="recipe-add" class="btn primary small">＋ Recept toevoegen en bewaren</button></div>
+ <div class="recipe-import-actions"><button type="button" id="recipe-read" class="btn small">↧ Link uitlezen</button><button type="button" id="recipe-analyze" class="btn primary small">✨ Analyseer recept</button><button type="button" id="recipe-add" class="btn small">＋ Oude snelle invoer</button></div>
+ <div id="generator-preview" class="generator-preview" aria-live="polite">
+  <h3 style="margin:3px 0 8px">Conceptrecept · controleer vóór opslaan</h3>
+  <p id="generator-confidence" class="generator-result">Gevonden waarden zijn geen voedselveiligheidscontrole.</p>
+  <div id="generator-fields" class="generator-fields"></div>
+  <div id="generator-stages"></div>
+  <div class="recipe-import-actions" style="margin-top:12px"><button type="button" id="generator-stage-add" class="btn small">＋ Stap toevoegen</button><button type="button" id="generator-save" class="btn primary small">✓ Recept goedkeuren en bewaren</button></div>
+  <p class="hint">Bewaren voegt het recept aan je lokale bibliotheek en je planning toe. Je kunt alle velden en stappen aanpassen. Alleen expliciet gedetecteerde waarden worden ingevuld.</p>
+ </div>
  <p class="recipe-message" id="recipe-message" role="status">Bestaande planning en bereidingsevaluaties blijven behouden.</p>
  </details>
 <div class="dish-grid" id="dishes"></div>
@@ -375,7 +403,10 @@ function initControls(){
  updateDateUi();
  window.addEventListener('pageshow',updateAutoDate);
  window.addEventListener('focus',updateAutoDate);
- const sel=$('preset');Object.keys(examples).forEach(name=>{const o=document.createElement('option');o.value=name;o.textContent=name;sel.append(o)});
+ const sel=$('preset');renderPresetOptions();
+ $('preset-category').addEventListener('change',renderPresetOptions);
+ $('preset-search').addEventListener('input',renderPresetOptions);
+ renderEquipmentOptions();
  sel.addEventListener('change',e=>{const value=e.target.value;if(value){sel.value='';addDish(examples[value],`${value} toegevoegd`);}});
  $('add').addEventListener('click',()=>addDish({},'Nieuw gerecht toegevoegd! Pas hieronder de naam aan.'));
  $('reset').addEventListener('click',()=>{if(confirm('Voorbeeld herstellen? Je huidige gerechten en instellingen worden vervangen.')){state=initial();persist();initValuesOnly();renderAll();toast('Voorbeeld hersteld');}});
@@ -387,7 +418,7 @@ function initControls(){
  $('dishes').addEventListener('input',ev=>{
   const field=ev.target.closest('[data-field]');if(!field||field.dataset.field==='phase')return;
   const card=field.closest('[data-id]');const d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
-  d[field.dataset.field]=field.value;persist();renderOutputs();
+  d[field.dataset.field]=field.value;persist();renderOutputs();if(['phase2Temp','phase2Minutes','transitionMins'].includes(field.dataset.field))refreshAdvice();
  });
  $('dishes').addEventListener('change',ev=>{
   const field=ev.target.closest('[data-field]');if(!field)return;const card=field.closest('[data-id]');const d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
@@ -401,7 +432,7 @@ function initControls(){
    }
    persist();renderOutputs();return;
   }
-  d[field.dataset.field]=field.value;persist();if(['mode','kamado','meater'].includes(field.dataset.field))renderAll();else renderOutputs();
+  d[field.dataset.field]=field.value;persist();if(['mode','kamado','meater','category','method','grate','grate2'].includes(field.dataset.field))renderAll();else{renderOutputs();refreshAdvice();}
  });
  $('dishes').addEventListener('click',ev=>{
   const button=ev.target.closest('[data-action]');if(!button)return;const card=button.closest('[data-id]');if(!card)return;const id=card.dataset.id;
@@ -425,6 +456,33 @@ function addDish(data,message){
 }
 function initValuesOnly(){ $('meal-date').value=state.date;updateDateUi();$('meal-time').value=state.mealTime;$('available-from').value=state.availableFrom;$('large-preheat').value=state.preheatLarge;$('small-preheat').value=state.preheatSmall; }
 const field=(id,key,label,value,type='text',min='',max='',extra='')=>`<div class="field ${extra}"><label for="${id}-${key}">${label}</label><input id="${id}-${key}" data-field="${key}" type="${type}" value="${escape(value)}" ${min!==''?`min="${min}"`:''} ${max!==''?`max="${max}"`:''} ${type==='number'?'inputmode="numeric"':''}></div>`;
+function renderPresetOptions(){
+ const sel=$('preset'),cat=$('preset-category').value,q=$('preset-search').value.toLocaleLowerCase('nl-NL').trim();
+ sel.innerHTML='<option value="">Kies passend recept…</option>';
+ Object.keys(examples).filter(k=>(cat==='all'||(examples[k].category||categoryGuess(k))===cat)&&k.toLocaleLowerCase('nl-NL').includes(q)).forEach(k=>{
+  const opt=document.createElement('option');opt.value=k;opt.textContent=k;sel.appendChild(opt);
+ });
+}
+function renderEquipmentOptions(){
+ $('equipment-options').innerHTML=['large','small'].map(k=>'<div><strong style="font-size:12px">'+(k==='large'?'Grote':'Kleine')+' kamado</strong><div class="equipment-checks">'+Object.entries({...GRATES,deflector:'Hitteschild'}).map(([id,name])=>'<label><input type="checkbox" data-equipment="'+k+'" value="'+id+'" '+((state.equipment[k]||[]).includes(id)?'checked':'')+'> '+escape(name)+'</label>').join('')+'</div></div>').join('');
+ $('equipment-options').querySelectorAll('input').forEach(el=>el.addEventListener('change',()=>{
+  const k=el.dataset.equipment;
+  state.equipment[k]=[...$('equipment-options').querySelectorAll('input[data-equipment="'+k+'"]:checked')].map(x=>x.value);
+  persist();refreshAdvice();renderOutputs();
+ }));
+}
+function equipmentAdvice(d){
+ const inventory=state.equipment?.[d.kamado]||[];
+ const indirect=d.method!=='direct',combo=d.method==='combo'||d.method==='directindirect';
+ const chosen=GRATES[d.grate]||GRATES.rvs,second=GRATES[d.grate2]||GRATES.cast;
+ const missing=[d.grate,...(combo?[d.grate2]:[]),...(indirect?['deflector']:[])].filter(x=>!inventory.includes(x));
+ const phase=METHODS[d.method]||METHODS.indirect;
+ const narrative=d.grate==='cast'?'Gietijzer geeft sterke grillcontactwarmte; eerst goed voorverwarmen.':d.grate==='plancha'?'Plancha houdt kleine of kwetsbare ingrediënten bij elkaar.':d.grate==='pizza'?'Gebruik een pizzasteen met geschikte hitteschildopstelling, voorkom thermische schok.':'RVS is veelzijdig en geschikt voor veel gerechten.';
+ return '<strong>🔥 '+escape(phase)+'</strong> · '+escape(chosen)+(indirect?' + hitteschild':'')+(combo?' → '+escape(second)+' (fase 2: '+escape(d.phase2Temp)+'°C)':'')+'<br>'+escape(narrative)+(combo?'<br>Ombouw/opstoken: '+minutes(d.transitionMins)+' min extra in planning.':'')+
+  (missing.length?'<br><span style="color:#ffcf9c">⚠ Beschikbaarheid niet bevestigd: '+escape(missing.map(x=>GRATES[x]||(x==='deflector'?'hitteschild':x)).join(', '))+'. Vink je spullen aan bij 01.</span>':'<br><span style="color:#9bdfc4">✓ Benodigde accessoires staan als aanwezig ingesteld.</span>')+
+  '<br>Advies, geen garantie: controleer opstelling, kerntemperatuur en voedselveiligheid.';
+}
+function refreshAdvice(){for(const d of state.dishes){const el=$('advice-'+d.id);if(el)el.innerHTML=equipmentAdvice(d)}}
 function renderDishes(){
  const status=$('js-status');
  if(status){status.classList.add('active');status.textContent=`✓ Interactieve bediening actief · ${state.dishes.length} ${state.dishes.length===1?'gerecht':'gerechten'}. Tik op + Gerecht toevoegen om een extra gerecht bovenaan te plaatsen.`;}
@@ -449,9 +507,14 @@ function renderDishes(){
      <option value="resting" ${d.phase==='resting'?'selected':''}>Van de BBQ · rusten</option>
      <option value="done" ${d.phase==='done'?'selected':''}>Klaar om te serveren</option>
     </select><small class="hint">Kies ‘Op de BBQ gelegd’ op het moment dat je begint; de tijd wordt onthouden.</small></div>
+   <div class="field span2"><label>Categorie</label><select data-field="category">${Object.entries(CATEGORIES).map(([k,v])=>`<option value="${k}" ${d.category===k?'selected':''}>${escape(v)}</option>`).join('')}</select></div>
+   <div class="field span2"><label>Bereidingswijze</label><select data-field="method">${Object.entries(METHODS).map(([k,v])=>`<option value="${k}" ${d.method===k?'selected':''}>${escape(v)}</option>`).join('')}</select></div>
+   <div class="field span2"><label>Rooster / bakoppervlak</label><select data-field="grate">${Object.entries(GRATES).map(([k,v])=>`<option value="${k}" ${d.grate===k?'selected':''}>${escape(v)}</option>`).join('')}</select></div>
+   ${(d.method==='combo'||d.method==='directindirect')?`<div class="field span2"><label>Rooster tweede fase</label><select data-field="grate2">${Object.entries(GRATES).map(([k,v])=>`<option value="${k}" ${d.grate2===k?'selected':''}>${escape(v)}</option>`).join('')}</select></div>${field(d.id,'phase2Temp','BBQ-temp. fase 2 °C',d.phase2Temp,'number',50,450)}${field(d.id,'phase2Minutes','Garen fase 2 (min)',d.phase2Minutes,'number',1,10000)}${field(d.id,'transitionMins','Ombouw / opstoken (min)',d.transitionMins,'number',0,180)}` :''}
    ${field(d.id,'notes','Notities / bereidingswijze',d.notes,'text','','','span4')}
   </div>
   <div class="schedule-note" id="schedule-${escape(d.id)}"></div><div class="linked-info" id="meater-link-${escape(d.id)}" aria-live="polite"></div>
+ <div class="advice" id="advice-${escape(d.id)}">${equipmentAdvice(d)}</div>
  ${renderRecipeEditor(d)}${renderReviewEditor(d)}
  </article>`).join('');
 }

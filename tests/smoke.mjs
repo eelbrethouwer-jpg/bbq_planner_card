@@ -243,6 +243,19 @@ try{
   click(remove);assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,0,'detected prep can be removed');
   click($('generator-prep-add'));assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,1,'manual prep can be added');
 
+
+  $('recipe-text').value='Pizzadeeg met lange rijs\n\nVoorbereiding\nÉén dag van te voren: kneed het deeg en laat het afgedekt in de koelkast rijzen.\n\nBereiding\nBak op de kamado.';
+  click($('recipe-analyze'));
+  inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'Één dag van te voren is recognized regardless of accent and spacing');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'1');
+
+  $('recipe-text').value='Bavette met marinade\nTwee dagen vooraf: marineer het vlees afgedekt in de koelkast.\nBereiding\nGrill direct.';
+  click($('recipe-analyze'));
+  inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'two days beforehand is recognized');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'2');
+
   $('recipe-text').value='Pizza recept\nBereiding\nKneed 12 uur van tevoren het deeg niet, maar meng bloem met water.';
   click($('recipe-analyze'));
   assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,0,'12h cue does not invent a specific previous calendar day');

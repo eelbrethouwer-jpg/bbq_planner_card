@@ -1468,7 +1468,7 @@ const v45PendingPhotos=new Map();
 let v45SelectedDish=null;
 function validV45Photo(s){return typeof s==='string'&&s.length<=30000&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(s);}
 function v45ActualMinutes(d){
- const a=cleanTimestamp(d.startedAt),b=cleanTimestamp(d.restAt)||cleanTimestamp(d.doneAt);
+ const a=cleanTimestamp(d.startedAt),b=cleanTimestamp(d.restAt)||(minutes(d.rest)===0?cleanTimestamp(d.doneAt):null);
  if(!a||!b||b<=a)return null;
  const duration=Math.round((b-a)/60000);
  return duration>=1&&duration<=10000?duration:null;

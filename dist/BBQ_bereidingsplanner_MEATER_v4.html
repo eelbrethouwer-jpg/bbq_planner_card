@@ -489,19 +489,20 @@ const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category
 /* V4.6: expliciete tijdsaanduidingen uit recepten herkennen; nooit een kloktijd verzinnen. */
 function v46InferPrepFromText(raw){
  const text=String(raw||'').slice(0,35000).replace(/\r/g,''),lines=text.split('\n'),found=[];
- const relative=/(?:\b(?:de\s+)?(?:avond|dag)\s+(?:er\s*voor|ervoor|tevoren|van\s+te\s*voren|vooraf|voordien|v[oó]or\s+de\s+bereiding)\b|\b(?:een|1|twee|2|drie|3)\s+dagen?\s+(?:er\s*voor|ervoor|tevoren|van\s+tevoren|vooraf)\b|\b(?:24|48|72)\s*uur\s+(?:van\s+tevoren|vooraf|ervoor)\b)/i;
+ const relative=/(?:\b(?:de\s+)?(?:avond|dag)\s+(?:er\s*voor|ervoor|tevoren|van\s+te\s*voren|vooraf|voordien|v[oó]or\s+de\s+bereiding)\b|\b(?:een|1|twee|2|drie|3)\s+dagen?\s+(?:er\s*voor|ervoor|tevoren|van\s+te\s*voren|vooraf|v[oó]or\s+de\s+bereiding)\b|\b(?:24|48|72)\s*uur\s+(?:van\s+te\s*voren|vooraf|ervoor)\b)/i;
  const duration=/(?:\b(24|48|72)\s*uur\b.{0,85}\b(marineren|pekelen|rijzen|koel|rusten)\b|\b(marineer|marineren|pekel|pekelen|laat|rust|rijs|rijzen)\b.{0,85}\b(24|48|72)\s*uur\b)/i;
  const heading=/^(?:#{1,4}\s*)?(?:voorbereiding|bereiding(?:sdag|swijze)?|ingrediënten|ingredienten|rusten|serveren|stap\s+\d+|dag\s+zelf|op\s+de\s+dag\s+zelf)\s*:?\s*$/i;
  const clean=s=>s.replace(/^\s*(?:#{1,4}\s*|[-*•]\s*|\d+[.)]\s*)/,'').trim();
  for(let index=0;index<lines.length;index++){
   const line=clean(lines[index]);if(!line)continue;
-  const match=line.match(relative),hours=line.match(duration);
+  const scan=line.replace(/één/gi,'een');
+  const match=scan.match(relative),hours=scan.match(duration);
   if(!match&&!hours||/\b(?:niet\s+nodig|hoef\s+je\s+niets|geen\s+voorbereiding)\b/i.test(line))continue;
   let daysBefore=1;
-  const nums=line.match(/\b(een|één|1|twee|2|drie|3)\s+dagen?\s+(?:ervoor|er\s*voor|van\s+te\s*voren|tevoren|vooraf|v[oó]or\s+de\s+bereiding)\b/i);
+  const nums=scan.match(/\b(een|1|twee|2|drie|3)\s+dagen?\s+(?:ervoor|er\s*voor|van\s+te\s*voren|tevoren|vooraf|v[oó]or\s+de\s+bereiding)\b/i);
   if(nums)daysBefore=({een:1,'één':1,twee:2,drie:3})[nums[1].toLowerCase()]||Number(nums[1])||1;
   else{const explicit=line.match(/\b(24|48|72)\s*uur\b/i);if(explicit)daysBefore=Number(explicit[1])/24;}
-  const suffix=clean(match?line.replace(relative,'').replace(/^[\s:;,–-]+/,''):line);
+  const suffix=clean(match?scan.replace(relative,'').replace(/^[\s:;,–-]+/,''):line);
   const fragments=[suffix].filter(Boolean);
   if((!suffix||suffix.length<38)&&index+1<lines.length){
    for(let j=index+1;j<Math.min(index+5,lines.length);j++){

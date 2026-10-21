@@ -175,6 +175,10 @@ try{
   assert.equal(pulled.cook,540);
   assert.equal(pulled.rest,60);
   assert.equal(pulled.recipeSteps.length,9,'nine structured recipe stages saved');
+  assert.equal(pulled.prepTasks.length,1,'built-in pulled pork includes the night-before preparation');
+  assert.equal(pulled.prepTasks[0].daysBefore,1);
+  assert.equal(pulled.prepTasks[0].time,'','no invented evening clock time in built-in preset');
+  assert.match(doc.getElementById('v46-prep-timeline').textContent,/Procureur schoonmaken en kruiden/,'night-before pulled pork prep appears in separate timeline');
   assert.match(pulled.recipeIngredients,/2 kg procureur/);
   assert.match(pulled.recipeIngredients,/12 zachte witte bolletjes/);
   assert.match(pulled.recipePrep,/hitteschild/);
@@ -210,6 +214,39 @@ try{
   assert.equal($('generator-fields').querySelector('[data-gfield="core"]').value,'92');
   assert.equal($('generator-fields').querySelector('[data-gfield="cook"]').value,'540');
   assert.equal($('generator-fields').querySelector('[data-gfield="rest"]').value,'60');
+
+  // v4.6: generator should recognize explicit before-the-event cues, but never invent an exact hour.
+  $('recipe-text').value='Pulled pork met voorbereiding\nIngrediënten\n2 kg procureur\n\nVoorbereiding\nDe avond ervoor:\nDep procureur droog, snijd overtollig vet weg en wrijf het vlees in met rub. Pak goed in en bewaar in de koelkast.\n\nBereiding\nBBQ temperatuur 120 °C indirect. Bereidingstijd 9 uur. Rusttijd 1 uur.';
+  click($('recipe-analyze'));
+  let inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'night before section is recognized as advance preparation');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'1');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="time"]').value,'','unknown clock time remains blank');
+  assert.match(inferred[0].querySelector('[data-gprep-field="notes"]').value,/procureur droog/i,'recipe detail preserved');
+  const clock=inferred[0].querySelector('[data-gprep-field="time"]');
+  clock.value='20:15';clock.dispatchEvent(new window.Event('input',{bubbles:true}));
+  assert.equal(clock.value,'20:15','manual exact time is editable');
+  click($('generator-save'));
+  const newRecipe=JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).find(x=>x.name==='Pulled pork met voorbereiding');
+  assert.equal(newRecipe.prepTasks.length,1,'generated prep saved to cookbook');
+  assert.equal(newRecipe.prepTasks[0].time,'20:15','edited time persisted');
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes.some(x=>x.name==='Pulled pork met voorbereiding'&&x.prepTasks[0].daysBefore===1),'generated prep also saved with planned dish');
+  assert.match($('v46-prep-timeline').textContent,/Kruiden of marineren/,'generated day-before prep appears in schedule');
+
+  $('recipe-text').value='Gemarineerde zalm\nIngrediënten\n400 g zalm\n\nVoorbereiding\nLaat vis 24 uur marineren in de koelkast en dek af.\n\nBereiding\nGrill de vis bij 160 °C.';
+  click($('recipe-analyze'));
+  inferred=$('generator-preps').querySelectorAll('[data-gprep]');
+  assert.equal(inferred.length,1,'24h marinating is recognized');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="daysBefore"]').value,'1');
+  assert.equal(inferred[0].querySelector('[data-gprep-field="time"]').value,'');
+  const remove=inferred[0].querySelector('[data-gprep-remove]');
+  click(remove);assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,0,'detected prep can be removed');
+  click($('generator-prep-add'));assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,1,'manual prep can be added');
+
+  $('recipe-text').value='Pizza recept\nBereiding\nKneed 12 uur van tevoren het deeg niet, maar meng bloem met water.';
+  click($('recipe-analyze'));
+  assert.equal($('generator-preps').querySelectorAll('[data-gprep]').length,0,'12h cue does not invent a specific previous calendar day');
+
   $('recipe-text').value='Zonder temperaturen\nIngrediënten\n2 kg procureur\nBereiding\nKruid het vlees en gaar langzaam.';
   click($('recipe-analyze'));
   assert.equal($('generator-fields').querySelector('[data-gfield="grill"]').value,'','missing BBQ temp stays blank');

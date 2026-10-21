@@ -1477,7 +1477,8 @@ function v45Historical(d){
  const rs=savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)&&Number.isFinite(r.actualMinutes)&&r.actualMinutes>=1&&r.actualMinutes<=10000);
  if(rs.length<2)return null;
  const a=rs.slice(-7).map(r=>r.actualMinutes).sort((x,y)=>x-y);
- return {count:rs.length,time:a[Math.floor(a.length/2)]};
+ const mid=Math.floor(a.length/2),median=a.length%2?a[mid]:Math.round((a[mid-1]+a[mid])/2);
+ return {count:rs.length,time:median};
 }
 function v45Probe(d){
  if(!['pro','plus'].includes(d.meater))return {ok:false,note:'Geen MEATER gekozen'};

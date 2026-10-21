@@ -1,6 +1,6 @@
-/* BBQ Regisseur v4.6.0 — only the public GitHub Pages origin gets an offline shell.
+/* BBQ Regisseur v4.7.0 — only the public GitHub Pages origin gets an offline shell.
    Never cache live sensor messages, credentials or HA user storage. */
-const CACHE='bbq-regisseur-v4.6.0';
+const CACHE='bbq-regisseur-v4.7.0';
 const ROOT=self.registration.scope;
 const SHELL=['','index.html','dist/BBQ_bereidingsplanner_MEATER_v4.html','manifest.webmanifest','assets/app-icon.svg'].map(x=>new URL(x,ROOT).href);
 self.addEventListener('install',event=>{

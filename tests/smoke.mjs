@@ -12,6 +12,7 @@ const dom=new JSDOM(html,{
   pretendToBeVisual:true,
   beforeParse(window){
     window.Element.prototype.scrollIntoView=()=>{};
+    window.scrollTo=()=>{};
     window.URL.createObjectURL=()=> 'blob:https://planner.test.invalid/mock';
     window.URL.revokeObjectURL=()=>{};
     window.confirm=()=>true;
@@ -31,6 +32,47 @@ try{
   assert.equal(errors.length,0,'startup JavaScript errors');
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
+
+  // v4.7: all controls remain in DOM but are reorganized into single-screen navigation.
+  const nav=$('v47-nav');
+  assert.ok(nav,'five-screen mobile navigation exists');
+  assert.equal(nav.querySelectorAll('[data-v47-tab]').length,5,'five navigation destinations');
+  assert.equal(doc.querySelectorAll('[data-v47-page]:not([hidden])').length,1,'only one full screen visible at a time');
+  assert.equal(doc.querySelector('[data-v47-page]:not([hidden])').dataset.v47Page,'overview','default overview');
+  assert.ok($('metrics').closest('#v47-overview'),'metrics mounted on overview');
+  assert.ok($('fire-times').closest('#v47-overview'),'kamado ignition visible in overview');
+  assert.ok($('recipe-importer').closest('#v47-recipes'),'recipe generator retained on recipes screen');
+  assert.ok($('library-panel').closest('#v47-recipes'),'book library retained on recipes screen');
+  assert.ok($('v45-shopping').closest('#v47-more'),'shopping retained in more screen');
+  assert.ok($('v46-pantry-list').closest('#v47-more'),'pantry retained in more screen');
+  assert.ok($('v46-board').closest('#v47-cooking'),'interactive board in cooking screen');
+  assert.ok($('probe-pro').closest('#v47-cooking'),'MEATER probe in cooking screen');
+  assert.ok($('probe-plus').closest('#v47-cooking'),'other MEATER probe in cooking screen');
+  click(nav.querySelector('[data-v47-tab="planning"]'));
+  assert.equal(doc.querySelector('[data-v47-page]:not([hidden])').dataset.v47Page,'planning','planning opens');
+  assert.ok($('dishes').closest('#v47-planning'),'dish cards in planning');
+  assert.equal(JSON.parse(JSON.stringify([...$('dishes').querySelectorAll('article.dish')].map(el=>el.querySelector('.v47-detail').hidden))).every(Boolean),true,'dish details start collapsed');
+  const toggle=doc.querySelector('#dishes [data-v47-dish-toggle]');
+  click(toggle);
+  assert.equal(toggle.getAttribute('aria-expanded'),'true','dish detail expands');
+  assert.equal(toggle.closest('article.dish').querySelector('.v47-detail').hidden,false);
+  assert.equal(JSON.parse(window.localStorage.getItem('bbq-v47-expanded-v1')).length,1,'expanded dish persists');
+  click(toggle);
+  assert.equal(toggle.getAttribute('aria-expanded'),'false','dish detail collapses');
+  assert.equal(window.localStorage.getItem('bbq-v47-expanded-v1'),'[]','collapsed dish persists');
+  click($('v47-fullscreen')); // button exists on hidden cooking tab but opens existing cook dialog
+  assert.ok($('v45-cook-screen').classList.contains('open'),'focus cooking button uses existing live dialog');
+  click($('v45-close'));
+  click(nav.querySelector('[data-v47-tab="recipes"]'));
+  assert.ok(!$('v47-recipes').hidden,'recipes screen visible');
+  click(nav.querySelector('[data-v47-tab="more"]'));
+  assert.ok(!$('v47-more').hidden,'more screen visible');
+  assert.equal(window.localStorage.getItem('bbq-v47-tab'),'more','tab selection survives reload');
+  click(nav.querySelector('[data-v47-tab="overview"]'));
+  assert.ok(!$('v47-overview').hidden,'overview restored');
+  assert.match($('v47-live-label').textContent,/geen verse live/i,'fresh live status never invented');
+  assert.equal(errors.length,0,'no script errors during mobile navigation');
+
 
   // v4.6: multiple courses, task board, timers, pantry and strict opt-in notifications.
   assert.ok($('v46-control'),'BBQ Regisseur is present');
@@ -320,11 +362,11 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route+'?v=4.6.0'),'HTML redirect points at versioned planner');
-  assert.ok(entry.includes('href="'+route+'?v=4.6.0"'),'accessible versioned fallback link');
+  assert.ok(entry.includes('url='+route+'?v=4.7.0'),'HTML redirect points at versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v=4.7.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('OK v4.6: planning, courses, tasks, pantry, timers, recipes, reviews, MEATER graphs, offline and Pages');
+  console.log('OK v4.7: five-screen nav, compact dish cards and v4.6 cooking functions preserved');
 }finally{
   window.close();
 }
@@ -334,6 +376,7 @@ function launchWithPlan(plan){
  const instance=new JSDOM(html,{url:'https://planner-migration.test.invalid/',runScripts:'dangerously',pretendToBeVisual:true,
   beforeParse(w){
    w.Element.prototype.scrollIntoView=()=>{};
+   w.scrollTo=()=>{};
    w.print=()=>{};w.confirm=()=>true;
    w.localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(plan));
   }});

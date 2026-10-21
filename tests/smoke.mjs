@@ -54,7 +54,7 @@ try{
   assert.equal(ribeyeCard.querySelector('[data-field="method"]').value,'combo','ribeye uses indirect/direct');
   assert.match(doc.querySelector('#steps').textContent,/Bouw Ribeye 500 g om naar fase 2/,'changeover appears in step timeline');
   assert.match(doc.querySelector('#timeline').textContent,/Fase 1/,'timeline shows phase 1');
-  assert.match(doc.querySelector('#timeline').textContent,/Fase 2/,'timeline shows phase 2');
+  assert.ok(doc.querySelector('#timeline .bar[title*="Fase 2"]'),'timeline shows phase 2, including short bars labeled by tooltip');
   ribeyeCard.querySelector('[data-field="transitionMins"]').value='20';
   ribeyeCard.querySelector('[data-field="transitionMins"]').dispatchEvent(new window.Event('input',{bubbles:true}));
   assert.ok(doc.querySelector('#steps').textContent.includes('20 min'),'changeover minutes appear');

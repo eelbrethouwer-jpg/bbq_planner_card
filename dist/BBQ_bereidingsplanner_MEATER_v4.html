@@ -640,6 +640,7 @@ function deleteLibraryRecipe(name){
  const i=localRecipes.findIndex(r=>dishKey(r.name)===dishKey(name));
  if(i<0)return;
  localRecipes.splice(i,1);
+ if(!builtInRecipeNames.has(name))delete examples[name];
  recipeDeletions.push({name,updatedAt:new Date().toISOString()});
  const keep=mergeCookbooks({recipes:localRecipes,deleted:recipeDeletions},{});
  applyLibraryState(keep);queueLibrarySync();

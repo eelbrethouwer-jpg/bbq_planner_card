@@ -62,11 +62,11 @@ try{
   click(picked.querySelector('[data-v48-action="import"]'));
   assert.equal(count(),plannedBefore,'import into library does not schedule dish');
   let lib=JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1'));
-  let entry=lib.find(x=>x.name===title);
-  assert.ok(entry,'curated recipe saved in library');
-  assert.equal(entry.recipeSource,'https://bbq-junkie.nl/bbq-recepten/texas-style-buikspek/');
-  assert.equal(entry.prepTasks[0].daysBefore,1,'overnight preparation carried over');
-  assert.ok(entry.photo.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'external source image link retained after import');
+  let catalogRecipe=lib.find(x=>x.name===title);
+  assert.ok(catalogRecipe,'curated recipe saved in library');
+  assert.equal(catalogRecipe.recipeSource,'https://bbq-junkie.nl/bbq-recepten/texas-style-buikspek/');
+  assert.equal(catalogRecipe.prepTasks[0].daysBefore,1,'overnight preparation carried over');
+  assert.ok(catalogRecipe.photo.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'external source image link retained after import');
   assert.equal([...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek')).querySelector('[data-v48-action="import"]').disabled,true,'cannot overwrite imported recipe');
   click([...$('v48-grid').querySelectorAll('.v48-card')].find(x=>x.textContent.includes('Texas Style Buikspek')).querySelector('[data-v48-action="plan"]'));
   assert.equal(count(),plannedBefore+1,'explicit plan action adds dish');

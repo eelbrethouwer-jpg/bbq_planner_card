@@ -229,6 +229,67 @@ const PUBLIC_SITE_URL='https://eelbrethouwer-jpg.github.io/bbq_planner_card/';
 const $=id=>document.getElementById(id);
 const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const examples={
+  "Pulled pork op brood":{
+    "name": "Pulled pork op brood",
+    "kamado": "large",
+    "cook": 540,
+    "rest": 60,
+    "core": "92",
+    "grill": 120,
+    "notes": "2 kg procureur · varken · 12 broodjes. Low & slow indirect op 120 °C, RVS-rooster + hitteschild, appel/kers rookhout. Bereiding 7–11 uur (of langer; stall), plus minstens 60 min rust; kern 92 °C is alleen een MEATER-herinnering: vanaf 88 °C priktest tot boterzacht (vaak 92–96 °C). Coleslaw zonder ui.",
+    "recipeIngredients": "2 kg procureur (varkensnek)\n20 eetlepels BBQ-rub (19 voor het vlees, 1 voor het injectiemengsel)\n20 eetlepels BBQ-saus (circa 10 bij 70 °C kern; restant voor het serveren)\n450 ml appelsap\n150 ml appelazijn\nColeslaw (bij voorkeur zonder ui; hoeveelheid niet opgegeven)\n12 zachte witte bolletjes\nRookhout: appel of kers (hoeveelheid niet opgegeven)\nBenodigd: kernthermometer/MEATER, injectiespuit, plantenspuit, kwast, folie, hitteschild en RVS-rooster, schaal",
+    "recipePrep": "De avond vooraf: procureur droogdeppen, loshangende vlees-/vetstukken en dikke buitenste vetlaag wegsnijden. Wrijf met circa 19 eetlepels rub in; in vershoudfolie een nacht gekoeld bewaren.\nBereidingsdag: meng 450 ml appelsap en 150 ml appelazijn; doe 400 ml in een SCHONE plantenspuit. Meng de resterende circa 200 ml met 1 eetlepel rub en injecteer op verschillende plekken. Gebruik na contact met rauw vlees het injectiemengsel niet koud als serveersaus.\nBereid de grote kamado indirect voor: hitteschild/platesetter en RVS-rooster, 120 °C. Voeg appel- of kersenrookhout toe. Plaats de MEATER in het dikste deel, weg van vet/bot.",
+    "recipeCook": "Fase 1 — 120 °C INDIRECT: leg de procureur op het RVS-rooster, met hitteschild ertussen. Rook/gaar langzaam tot circa 70 °C kern. Besproei volgens de bron ongeveer elke 30 minuten met het apart gehouden appel-azijnmengsel. De stall kan lang duren.\nFase 2 — BIJ 70 °C KERN: bestrijk met circa de helft van de BBQ-saus; laat daarna nog ongeveer 90 minuten indirect doorgaren zodat de bark zich ontwikkelt.\nFase 3 — NA DIE 90 MINUTEN: neem het vlees kort van de kamado en pak het strak in aluminiumfolie. Gaar bij 120 °C indirect verder. Begin rond 88 °C kern met de priktest. De prikker moet vrijwel zonder weerstand ingaan; dit kan pas rond 92–96 °C gebeuren. MEATER-doel 92 °C is een controlepunt, géén garantie dat het vlees klaar is.\nTotale bereiding voor 2 kg: ±7–11 uur, bij stevige stall langer. Er is geen directe grillfase. Grill- en kerntijden blijven schattingen.",
+    "recipeRest": "Haal het boterzachte vlees van de kamado. Open de folie voorzichtig boven een schaal en bewaar de vleessappen. Pak opnieuw in en laat minstens 60 minuten rusten. Bij langere wachttijd veilig warmhouden op minimaal 60 °C met temperatuurcontrole; vertrouw niet op een koelbox zonder te meten.",
+    "recipeSlice": "Meng de opgevangen vleessappen met een paar eetlepels BBQ-saus en eventueel wat vers, niet met rauw vlees in aanraking gekomen appel-azijnmengsel. Trek de procureur met twee vorken of vleesklauwen uit elkaar. Meng naar smaak de saus en het vleessap door het vlees. Verdeel over 12 zachte bolletjes, met coleslaw zonder ui en BBQ-saus. Serveer warm.",
+    "recipeSteps": [
+      {
+        "trigger": "Avond vooraf",
+        "title": "Vlees schoonmaken en kruiden",
+        "detail": "Dep 2 kg procureur droog. Snijd losse stukjes vlees en grote buitenste vetplakken weg. Gebruik circa 19 eetlepels BBQ-rub rondom; wikkel in folie en bewaar een nacht in de koelkast."
+      },
+      {
+        "trigger": "Bereidingsdag · vóór aansteken",
+        "title": "Appelsapmengsel maken en injecteren",
+        "detail": "Meng 450 ml appelsap met 150 ml appelazijn. Doe 400 ml in een schone plantenspuit. Meng de overige circa 200 ml met 1 eetlepel rub. Injecteer hiermee op meerdere plaatsen. Gooi rauw-vlees-contactresten weg of verhit ze vóór eventueel later gebruik."
+      },
+      {
+        "trigger": "Voorverwarmen · ±30–45 min advies",
+        "title": "Kamado indirect opbouwen",
+        "detail": "Plaats hitteschild/platesetter en RVS-rooster op de grote kamado. Stabiliseer op circa 120 °C. Voeg een bescheiden hoeveelheid appel- of kersenrookhout toe (het bronrecept specificeert geen aantal chunks). Haal de procureur uit de folie, plaats midden op het rooster en steek de thermometer in het dikste deel."
+      },
+      {
+        "trigger": "Tot ongeveer 70 °C kern",
+        "title": "Rookfase op 120 °C indirect",
+        "detail": "Gaar met gesloten deksel op circa 120 °C. Besproei volgens het recept ongeveer iedere 30 minuten met het apart gehouden appel-azijnmengsel. Reken op de stall: rond deze fase kan de kerntemperatuur lange tijd nauwelijks stijgen. Laat de bark ontwikkelen."
+      },
+      {
+        "trigger": "Bij ongeveer 70 °C kern",
+        "title": "BBQ-saus aanbrengen",
+        "detail": "Bestrijk rondom met ongeveer de helft van de BBQ-saus (circa 10 eetlepels). Houd de opstelling indirect bij 120 °C en laat vervolgens ongeveer 1,5 uur verder garen."
+      },
+      {
+        "trigger": "Na circa 1,5 uur extra",
+        "title": "Strak inpakken in aluminiumfolie",
+        "detail": "Neem de procureur kort van de kamado. Pak strak in aluminiumfolie; werk voorzichtig met hete sappen en gebruik hittebestendige handschoenen. Leg terug op 120 °C indirect, zonder hitteschild of rooster te wijzigen."
+      },
+      {
+        "trigger": "Vanaf ongeveer 88 °C kern",
+        "title": "Doorgaren en malsheid testen",
+        "detail": "Controleer vanaf 88 °C kern regelmatig met een satéprikker in het dikste deel. Het vlees is klaar als deze vrijwel zonder weerstand door het vlees glijdt. Dat kan rond 88 °C zijn, maar ook pas rond 92–96 °C. Het ingestelde doel van 92 °C is geen automatische eindbeslissing."
+      },
+      {
+        "trigger": "Na bereiken van boterzachte gaarheid",
+        "title": "Sappen opvangen en minstens 1 uur rusten",
+        "detail": "Haal het vlees van de BBQ, open voorzichtig boven een schaal en vang alle vleessappen op. Pak opnieuw in en laat minimaal 60 minuten rusten. Houd bij langdurig rusten het vlees aantoonbaar boven 60 °C of koel het snel terug."
+      },
+      {
+        "trigger": "Na de rust · vlak vóór serveren",
+        "title": "Pullen en broodjes maken",
+        "detail": "Trek het vlees met vorken of klauwen uit elkaar, meng met opgevangen sappen en een paar eetlepels BBQ-saus. Voeg alleen extra appel-azijnmengsel toe als het niet met rauw vlees is verontreinigd, of eerst goed is verhit. Schep op 12 zachte broodjes met coleslaw zonder ui."
+      }
+    ]
+  },
   'Ribeye 500 g':{name:'Ribeye 500 g',kamado:'large',cook:55,rest:8,core:'54',grill:120,notes:'Reverse sear: 110–120°C indirect en kort 230–260°C direct. Controleer de kern.'},
   'Bavette':{name:'Bavette',kamado:'large',cook:25,rest:10,core:'52',grill:230,notes:'Indicatief; controleer de kern met een thermometer.'},
   'Picanha':{name:'Picanha',kamado:'large',cook:50,rest:15,core:'52',grill:160,notes:'Tijd hangt sterk af van dikte en gekozen methode.'},
@@ -243,7 +304,7 @@ const examples={
   'Cakejes':{name:'Mini-cakejes',kamado:'small',cook:25,rest:10,core:'',grill:175,notes:''}
 };
 let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
-const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSource:data.recipeSource??'',meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
+const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
 const initial=()=>({date:today(),mealTime:'18:30',availableFrom:'16:30',preheatLarge:30,preheatSmall:25,smart:{enabled:true,mode:'fixed'},dishes:[makeDish(examples.Bavette),makeDish(examples.Krieltjes),makeDish(examples.Maïskolven)]});
 let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();}catch{state=initial();}
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -767,7 +828,12 @@ function renderRecipeSteps(c){
  }
  if(c.serve!=null)push(c.serve,'all','🍽️ Serveer het eten','Alle gerechten samen',[['Eetmoment','Controleer dat ieder gerecht werkelijk gaar is en serveer met schoon bestek.']]);
  steps.sort((a,b)=>a.time-b.time);
- $('steps').innerHTML=steps.length?steps.map(s=>'<details class="step"><summary><span class="step-time '+(s.kamado==='small'?'sm':'')+'">'+fmt(s.time)+'</span><span class="step-summary-text"><strong>'+escape(s.title)+'</strong><span class="hint" style="display:block">'+escape(s.short)+'</span></span></summary><div class="step-detail">'+s.parts.map(p=>'<h4>'+escape(p[0])+'</h4><p>'+richText(p[1])+'</p>').join('')+'</div></details>').join(''):'<div class="empty">Voeg gerechten toe om je draaiboek te maken.</div>';
+ const timedHtml=steps.length?steps.map(s=>'<details class="step"><summary><span class="step-time '+(s.kamado==='small'?'sm':'')+'">'+fmt(s.time)+'</span><span class="step-summary-text"><strong>'+escape(s.title)+'</strong><span class="hint" style="display:block">'+escape(s.short)+'</span></span></summary><div class="step-detail">'+s.parts.map(p=>'<h4>'+escape(p[0])+'</h4><p>'+richText(p[1])+'</p>').join('')+'</div></details>').join(''):'<div class="empty">Voeg gerechten toe om je draaiboek te maken.</div>';
+ const detailedHtml=c.dishes.filter(d=>Array.isArray(d.recipeSteps)&&d.recipeSteps.length).map(d=>{
+  const parts=d.recipeSteps.slice(0,30).map((s,i)=>'<details class="step recipe-stage"><summary><span class="step-time">Stap '+(i+1)+'</span><span class="step-summary-text"><strong>'+escape(s.title||'Bereidingsstap')+'</strong><span class="hint" style="display:block">'+escape(s.trigger||'Volg de gaarheid')+' · geen vaste kloktijd</span></span></summary><div class="step-detail"><h4>Zo pak je dit aan</h4><p>'+richText(s.detail||'')+'</p></div></details>').join('');
+  return '<div style="grid-column:1/-1;margin-top:14px;border-top:1px solid #526167;padding-top:14px"><strong>📖 Uitgebreide receptstappen: '+escape(d.name)+'</strong><p class="hint">Deze stappen volgen de kerntemperatuur en handelingen, niet een geschatte kloktijd. Controleer het vlees tijdens de bereiding.</p></div>'+parts;
+ }).join('');
+ $('steps').innerHTML=timedHtml+detailedHtml;
 }
 function presetOption(name){const sel=$('preset');if(!sel||[...sel.options].some(o=>o.value===name))return;const o=document.createElement('option');o.value=name;o.textContent='Eigen · '+name;sel.append(o)}
 function textRecipe(text){

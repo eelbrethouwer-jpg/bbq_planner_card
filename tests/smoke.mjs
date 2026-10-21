@@ -69,6 +69,28 @@ try{
   assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,1,'reviews survive plan reset');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).length>0,'custom recipes survive plan reset');
 
+  // Nieuwe ingebouwde pulled-porkpreset: negen uitklapbare stappen met kerntemperatuurtriggers.
+  const pulledOption=[...$('preset').options].find(o=>o.value==='Pulled pork op brood');
+  assert.ok(pulledOption,'Pulled pork op brood is available in the preset selector');
+  $('preset').value='Pulled pork op brood';
+  $('preset').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(count(),4,'pulled pork preset can be added without replacing old dishes');
+  const savedPlan=JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1'));
+  const pulled=savedPlan.dishes.find(d=>d.name==='Pulled pork op brood');
+  assert.ok(pulled,'pulled pork persisted inside local plan');
+  assert.equal(pulled.grill,120);
+  assert.equal(pulled.core,'92');
+  assert.equal(pulled.cook,540);
+  assert.equal(pulled.rest,60);
+  assert.equal(pulled.recipeSteps.length,9,'nine structured recipe stages saved');
+  assert.match(pulled.recipeIngredients,/2 kg procureur/);
+  assert.match(pulled.recipeIngredients,/12 zachte witte bolletjes/);
+  assert.match(pulled.recipePrep,/hitteschild/);
+  assert.match(pulled.recipeCook,/88 °C/);
+  assert.equal(doc.querySelectorAll('#steps details.recipe-stage').length,9,'nine recipe stages are expandable in section 04');
+  assert.match(doc.querySelector('#steps .recipe-stage').textContent,/Avond vooraf/,'not clock-based, shows a trigger');
+  assert.match(doc.querySelector('#steps .recipe-stage:last-child').textContent,/col(eslaw|eslaw)/i);
+
   $('recipe-url').value='not a valid url';
   click($('recipe-read'));assert.match($('recipe-message').textContent,/geldige http/,'invalid URL handled locally');
 

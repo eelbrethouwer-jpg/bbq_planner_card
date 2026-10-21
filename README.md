@@ -21,6 +21,20 @@ Een mobiele BBQ-bereidingsplanner voor **één grote en één kleine kamado**, m
 
 **Let op:** handmatige bereidingstijden zijn schattingen; MEATER-waarden zijn echte metingen uit Home Assistant met mogelijke vertraging. De planner is geen vervanging voor voedselveiligheidscontroles. Live-informatie verschijnt alleen in de Home Assistant-dashboardkaart.
 
+## Openbare website om met vrienden te delen
+
+Je kunt deze planner ook **zonder Home Assistant** als website gebruiken, op iPhone of Android.
+Het publieke websiteadres is **https://eelbrethouwer-jpg.github.io/bbq_planner_card/** zodra GitHub Pages is ingeschakeld.
+
+**Eenmalig activeren:** Open [Settings → Pages](https://github.com/eelbrethouwer-jpg/bbq_planner_card/settings/pages), kies **Deploy from a branch**, stel **main** en **/(root)** in en klik op **Save**. Zie [WEBSITE.md](WEBSITE.md) voor de volledige uitleg.
+
+De vaste webpagina `index.html` opent automatisch de bestaande zelfstandige HTML-planner onder `dist/`, zodat de Home Assistant-code en de openbare website dezelfde planner blijven gebruiken.
+
+- Met **↗ Deel website** kun je vanaf een iPhone via het deelmenu (bijvoorbeeld WhatsApp) de openbare link doorsturen.
+- Iedereen beheert **zijn eigen** gerechten, recepten en reviews in de lokale browseropslag. Er is nog geen accountsysteem of synchronisatie.
+- De openbare website leest **geen** Home Assistant- of MEATER-gegevens. De bestaande ingelogde HA-dashboardkaart blijft de enige live-bron.
+- De deelknop deelt alleen het **websiteadres**, nooit jouw eigen planning of sensorwaarden.
+
 ## Installatie via HACS (custom repository)
 
 1. Open HACS in Home Assistant > menu met drie puntjes > **Aangepaste repositories**.

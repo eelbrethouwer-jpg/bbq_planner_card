@@ -12,6 +12,8 @@ const dom=new JSDOM(html,{
   pretendToBeVisual:true,
   beforeParse(window){
     window.Element.prototype.scrollIntoView=()=>{};
+   w.scrollTo=()=>{};
+    window.scrollTo=()=>{};
     window.URL.createObjectURL=()=> 'blob:https://planner.test.invalid/mock';
     window.URL.revokeObjectURL=()=>{};
     window.confirm=()=>true;
@@ -361,8 +363,8 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route+'?v=4.6.0'),'HTML redirect points at versioned planner');
-  assert.ok(entry.includes('href="'+route+'?v=4.6.0"'),'accessible versioned fallback link');
+  assert.ok(entry.includes('url='+route+'?v=4.7.0'),'HTML redirect points at versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v=4.7.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
   console.log('OK v4.7: five-screen nav, compact dish cards and v4.6 cooking functions preserved');

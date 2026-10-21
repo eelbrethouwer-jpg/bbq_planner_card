@@ -269,7 +269,22 @@ try{
  assert.equal(planned.window.document.getElementById('meal-date').value,future,'explicit planned dates survive reload');
  assert.match(planned.window.document.getElementById('date-mode').textContent,/Handmatig/);
 }finally{planned.window.close();}
-console.log('OK: legacy date migration, persistent manual future date, older recipe fields preserved');
+// v4.5 optimizer must separate overlapping incompatible dishes, never silently edit the plan.
+const distribution=launchWithPlan({date:localToday,dateMode:'manual',mealTime:'18:30',availableFrom:'12:00',
+ preheatLarge:30,preheatSmall:25,dishes:[
+  {id:'smoke-one',name:'Indirect gerecht',kamado:'large',method:'indirect',grate:'rvs',grill:120,cook:60,rest:0,mode:'auto'},
+  {id:'smoke-two',name:'Direct gerecht',kamado:'large',method:'direct',grate:'cast',grill:250,cook:60,rest:0,mode:'auto'}
+ ]});
+try{
+ const d=distribution.window.document;
+ assert.deepEqual(Array.from(JSON.parse(distribution.window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes,x=>x.kamado),['large','large'],'kamado recommendation does not auto-modify');
+ const apply=d.getElementById('v45-apply');
+ assert.ok(apply,'optimizer proposes a fix for overlapping incompatible dishes');
+ apply.click();
+ const updated=JSON.parse(distribution.window.localStorage.getItem('kamado-bereidingsplanner-v1'));
+ assert.notEqual(updated.dishes[0].kamado,updated.dishes[1].kamado,'explicit applying optimizer separates conflicting dishes');
+}finally{distribution.window.close();}
+console.log('OK: optimizer is opt-in and preserves legacy plan support');
 
 /* Independent HA bridge tests with a mocked authenticated WebSocket connection.
    This is not live HA or Safari testing. */

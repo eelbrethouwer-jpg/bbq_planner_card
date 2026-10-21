@@ -91,7 +91,8 @@
 .recipe-message,.recipe-past{font-size:12px;color:#b4c9cc;margin:8px 0}
 .step-detail{background:#0e2429;border-left:2px solid #f2a561;border-radius:8px;padding:11px;margin:9px 0}
 .step-detail h4{margin:8px 0 3px;color:#ffcea0;font-size:13px}.step-detail p{margin:0 0 10px;color:#d0dbd8;font-size:13px;line-height:1.6}
-.steps details.step>summary{cursor:pointer;display:flex;gap:9px;align-items:center;list-style:none}
+.steps details.step{display:block;grid-template-columns:none}
+.steps details.step>summary{cursor:pointer;display:flex;gap:9px;align-items:center;list-style:none;width:100%}
 .steps details.step>summary::-webkit-details-marker{display:none}
 .steps details.step>summary::after{content:'＋';font-size:20px;color:#f2a561;margin-left:auto}
 .steps details.step[open]>summary::after{content:'−'}

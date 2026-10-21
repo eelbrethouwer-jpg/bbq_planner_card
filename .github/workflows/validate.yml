@@ -31,3 +31,13 @@ jobs:
           grep -q 'renderRecipeSteps(c)' dist/BBQ_bereidingsplanner_MEATER_v4.html
           grep -q 'saveReview(id,card)' dist/BBQ_bereidingsplanner_MEATER_v4.html
           grep -q 'lines(\x27ambient\x27)' dist/BBQ_bereidingsplanner_MEATER_v4.html || grep -q "lines('ambient')" dist/BBQ_bereidingsplanner_MEATER_v4.html
+
+
+  ui-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install DOM test dependency
+        run: npm install --no-save jsdom@26
+      - name: Exercise planning, recipes, reviews and accordions
+        run: node tests/smoke.mjs

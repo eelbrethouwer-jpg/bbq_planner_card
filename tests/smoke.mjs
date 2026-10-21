@@ -201,7 +201,7 @@ try{
   click(doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"] [data-library-action="delete"]'));
   assert.ok(!doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"]'),'deleted recipe hidden');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-deletions-v1')).some(x=>x.name==='Ribeye proefrecept bewerkt'),'deletion tombstone persisted');
-  assert.ok(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length===1,'reviews are never erased by cookbook edits');
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length===2,'reviews are never erased by cookbook edits');
   assert.ok(![...$('preset').options].some(o=>o.value==='Ribeye proefrecept bewerkt'),'deleted cookbook entry removed from selector');
   assert.ok([...$('preset').options].some(o=>o.value==='Pulled pork op brood'),'built in recipes remain');
   click($('library-export'));
@@ -226,7 +226,7 @@ try{
   assert.deepEqual(Array.from(readLibrary(),r=>r.name),['Meegenomen van iPhone'],'replace removes other personal recipes');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-deletions-v1')).some(r=>r.name==='BBQ proefgerecht'),'replace creates deletion sync tombstones');
   assert.ok([...$('preset').options].some(x=>x.value==='Pulled pork op brood'),'built-ins preserved after replacing local cookbook');
-  assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,1,'review data preserved after library replacement');
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,2,'review data preserved after library replacement');
 
   $('recipe-url').value='not a valid url';
   click($('recipe-read'));assert.match($('recipe-message').textContent,/geldige http/,'invalid URL handled locally');
@@ -237,7 +237,7 @@ try{
   assert.ok(entry.includes('href="'+route+'"'),'accessible fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('OK v4.4: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');
+  console.log('OK v4.5: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');
 }finally{
   window.close();
 }

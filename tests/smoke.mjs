@@ -37,8 +37,7 @@ try{
   assert.match($('v46-board').textContent,/Steek|Leg/,'generated schedule tasks appear');
   assert.ok(!$('v46-multi').checked,'legacy single serve time stays default');
   assert.ok(!$('v46-notify').checked,'mobile notifications require explicit opt-in');
-  const original=JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).dishes[0].serveSlot;
-  assert.equal(original,'main','existing dishes start as main course');
+  assert.equal(doc.querySelector('#dishes article.dish [data-v46-course]').value,'main','existing dishes start as main course');
   $('v46-multi').checked=true;$('v46-multi').dispatchEvent(new window.Event('change',{bubbles:true}));
   assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v46MultiServe,true);
   let course=doc.querySelector('#dishes article.dish [data-v46-course]');

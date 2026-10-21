@@ -274,7 +274,7 @@ try{
   assert.ok(entry.includes('href="'+route+'?v=4.6.0"'),'accessible versioned fallback link');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
-  console.log('OK v4.5: planning, recipes, editable stages, local reviews, MEATER graphs/offline behavior and Pages');
+  console.log('OK v4.6: planning, courses, tasks, pantry, timers, recipes, reviews, MEATER graphs, offline and Pages');
 }finally{
   window.close();
 }
@@ -377,7 +377,19 @@ try {
   assert.ok(card._cookbookUnsub,'HA cookbook subscription connected');
   assert.ok(card._reviewsUnsub,'HA review-history subscription connected');
 
+  const services=[];
+  card.hass={states:{},connection,callService:async (domain,service,data)=>{services.push({domain,service,data});}};
+  await card._sendNotification({service:'notify.mobile_app_bbq_iphone',message:'Kern bereikt',key:'notify-test-1'});
+  assert.equal(services.length,1,'valid opted-in notification can reach HA mobile notify service');
+  assert.equal(services[0].domain,'notify');
+  assert.equal(services[0].service,'mobile_app_bbq_iphone');
+  await card._sendNotification({service:'notify.mobile_app_bbq_iphone',message:'Kern bereikt',key:'notify-test-1'});
+  assert.equal(services.length,1,'duplicate notifications are suppressed by bridge');
+  await card._sendNotification({service:'switch.turn_on',message:'Do not send',key:'notify-test-2'});
+  assert.equal(services.length,1,'bridge cannot call other domains or switch the kamado');
+
+
   card.remove();
   assert.equal(subscriptions.size,0,'all HA user-storage subscriptions cleaned up');
 }finally{parentDom.window.close();}
-console.log('OK v4.5: secure HA user-storage photos and review duration bridge');
+console.log('OK v4.6: HA user data and opt-in notification bridge');

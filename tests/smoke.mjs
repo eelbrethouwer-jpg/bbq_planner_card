@@ -31,6 +31,18 @@ try{
   assert.equal(errors.length,0,'startup JavaScript errors');
   assert.match($('js-status').textContent,/Interactieve bediening actief/);
   assert.equal(count(),3,'start with three default dishes');
+  // v4.5: mobile cooking panel and practical preparation tools.
+  assert.ok($('v45-coach-content').textContent,'coaching UI is rendered without falsely claiming live readings');
+  assert.ok($('v45-shopping'),'shopping UI exists');
+  assert.ok($('v45-kamado'),'kamado advisor exists');
+  click($('v45-open'));
+  assert.ok($('v45-cook-screen').classList.contains('open'),'mobile cooking screen opens');
+  assert.match($('v45-cook-body').textContent,/Geen recente live meting|Geen verse live|Geen MEATER gekozen/i,'no invented live temperatures');
+  assert.equal($('v45-cook-body').querySelectorAll('[data-v45-step]').length,2,'next and previous step controls exist');
+  click($('v45-close'));assert.ok(!$('v45-cook-screen').classList.contains('open'),'mobile cooking screen closes');
+  $('v45-people').value='6';$('v45-people').dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v45People,6,'shopping person count persists');
+
 
   assert.equal($('meal-date').value,localToday,'auto date starts on today');
   assert.match($('date-mode').textContent,/Automatisch/);
@@ -84,18 +96,32 @@ try{
   const card=doc.querySelector('#dishes article.dish');
   assert.equal(card.querySelector('[data-field="name"]').value,'BBQ proefgerecht');
   card.querySelector('[data-review="finalCore"]').value='63';
+  card.querySelector('[data-review="actualMinutes"]').value='55';
   card.querySelector('[data-review="comment"]').value='Volgende keer korter op de BBQ';
   click(card.querySelector('[data-action="review"]'));
   let rs=JSON.parse(window.localStorage.getItem('kamado-reviews-v1'));
   assert.equal(rs.length,1,'one review persisted');
   assert.equal(rs[0].finalCore,63);
+  assert.equal(rs[0].actualMinutes,55,'actual BBQ duration saved for later learning');
   assert.equal(rs[0].lastMeasured,null,'no invented live MEATER values');
   assert.ok(rs[0].id,'review gets a stable sync id');
   assert.match($('review-sync-status').textContent,/Bereidingshistorie lokaal|lokaal bewaard/i,'standalone review remains local');
   assert.match(doc.querySelector('#dishes .review-editor').textContent,/Volgende keer korter op de BBQ/);
+  const another=doc.querySelector('#dishes article.dish');
+  another.querySelector('[data-review="actualMinutes"]').value='65';
+  another.querySelector('[data-review="comment"]').value='Tweede sessie duurt langer';
+  click(another.querySelector('[data-action="review"]'));
+  rs=JSON.parse(window.localStorage.getItem('kamado-reviews-v1'));
+  assert.equal(rs.length,2,'a second review remains distinct');
+  assert.match($('v45-learning').textContent,/mediane duur/i,'two real durations activate history advice');
+  assert.match($('v45-shopping').textContent,/vis/i,'shopping list includes parsed recipe ingredients');
+  const receipt=$('v45-shopping').querySelector('input[data-v45-check]');
+  assert.ok(receipt,'grocery checkbox exists');
+  receipt.checked=true;receipt.dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.ok(Object.values(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v45ShopDone).some(Boolean),'shopping checked state persists');
 
   click($('reset'));assert.equal(count(),3,'reset restores default plan');
-  assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,1,'reviews survive plan reset');
+  assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,2,'reviews survive plan reset');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).length>0,'custom recipes survive plan reset');
 
   // Nieuwe ingebouwde pulled-porkpreset: negen uitklapbare stappen met kerntemperatuurtriggers.
@@ -277,7 +303,8 @@ try {
   };
   card.hass={states:{},connection};
 
-  const pork={name:'Pulled pork op brood',grill:120,updatedAt:'2026-10-20T10:00:00.000Z'};
+  const photo='data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+  const pork={name:'Pulled pork op brood',grill:120,photo,updatedAt:'2026-10-20T10:00:00.000Z'};
   card._saveCookbook({version:1,recipes:[pork],deleted:[]});
   await card._syncQueue;
   assert.deepEqual(Array.from(servers.bbq_planner_cookbook_v1.recipes,x=>x.name).sort(),['Pulled pork op brood','Zalm'],'HA merge preserves existing server recipes');
@@ -286,17 +313,19 @@ try {
   await card._syncQueue;
   assert.deepEqual(Array.from(servers.bbq_planner_cookbook_v1.recipes,x=>x.name),['Pulled pork op brood'],'HA deletion prevents stale recipe resurrection');
   assert.ok(servers.bbq_planner_cookbook_v1.deleted.some(x=>x.name==='Zalm'),'HA sync stores tombstones');
+  assert.equal(servers.bbq_planner_cookbook_v1.recipes[0].photo,photo,'small recipe photo survives HA cookbook sync');
 
-  const porkReview={name:'Pulled pork op brood',date:'21-10-2026',createdAt:'2026-10-21T18:00:00.000Z',rating:5,finalCore:94,grill:120,targetCore:'92',thermometer:'pro',lastMeasured:94,ambient:121,comment:'Mooie bark en sappig'};
+  const porkReview={name:'Pulled pork op brood',date:'21-10-2026',createdAt:'2026-10-21T18:00:00.000Z',rating:5,finalCore:94,grill:120,targetCore:'92',thermometer:'pro',lastMeasured:94,ambient:121,actualMinutes:545,photo,comment:'Mooie bark en sappig'};
   card._saveReviews({version:1,reviews:[porkReview]});
   await card._syncQueue;
   assert.equal(servers.bbq_planner_reviews_v1.reviews.length,2,'HA review sync merges local and remote history');
   assert.ok(servers.bbq_planner_reviews_v1.reviews.some(x=>x.name==='Zalm'),'existing remote review preserved');
   assert.ok(servers.bbq_planner_reviews_v1.reviews.some(x=>x.name==='Pulled pork op brood'&&x.finalCore===94),'new cooking review synced including final core');
+  assert.ok(servers.bbq_planner_reviews_v1.reviews.some(x=>x.name==='Pulled pork op brood'&&x.actualMinutes===545&&x.photo===photo),'photo and real cooking duration survive HA review sync');
   assert.ok(card._cookbookUnsub,'HA cookbook subscription connected');
   assert.ok(card._reviewsUnsub,'HA review-history subscription connected');
 
   card.remove();
   assert.equal(subscriptions.size,0,'all HA user-storage subscriptions cleaned up');
 }finally{parentDom.window.close();}
-console.log('OK v4.4: secure HA user-storage cookbook and cooking-review sync bridge');
+console.log('OK v4.5: secure HA user-storage photos and review duration bridge');

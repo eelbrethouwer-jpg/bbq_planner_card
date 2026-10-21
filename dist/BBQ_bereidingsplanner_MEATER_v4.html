@@ -235,7 +235,7 @@
    <div class="formgrid">
     <div class="field"><label for="meal-date">Datum</label><input type="date" id="meal-date" required><div class="date-helper"><button type="button" class="btn small" id="date-today">↺ Vandaag gebruiken</button><span id="date-mode" class="hint" aria-live="polite"></span></div></div>
     <div class="field"><label for="meal-time">Alles serveren om</label><input type="time" id="meal-time" required></div>
-    <div class="field"><label for="available-from">Ik kan beginnen vanaf</label><input type="time" id="available-from" required></div>
+    <div class="field"><label for="available-from">Ik kan op de BBQ-dag beginnen vanaf</label><input type="time" id="available-from" required><small class="hint">Geldt voor de BBQ-dag; voorbereiding op eerdere dagen plan je per gerecht.</small></div>
    </div>
    <div class="divider"></div>
    <details><summary style="cursor:pointer;font-weight:700;color:#f2a561">🧰 Beschikbare roosters en accessoires instellen</summary><p class="hint">Vink alleen aan wat je daadwerkelijk hebt. Niet ingevuld = onbekend; roosteradviezen blijven voorstellen.</p><div class="setup-grid" id="equipment-options"></div></details>
@@ -473,7 +473,35 @@ const examples={
 };
 const builtInRecipeNames=new Set(Object.keys(examples));
 let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
-const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category:CATEGORIES[data.category]?data.category:categoryGuess(data.name),method:METHODS[data.method]?data.method:methodGuess(data.name),grate:GRATES[data.grate]?data.grate:grateGuess(data.name,data.method||methodGuess(data.name)),grate2:GRATES[data.grate2]?data.grate2:'cast',phase2Temp:data.phase2Temp??(data.method==='combo'||methodGuess(data.name)==='combo'?250:180),phase2Minutes:data.phase2Minutes??6,transitionMins:data.transitionMins??(data.method==='combo'||methodGuess(data.name)==='combo'?15:0),kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',photo:validV45Photo(data.photo)?data.photo:'',coachStep:Number.isInteger(Number(data.coachStep))?Math.max(0,Math.min(29,Number(data.coachStep))):0,serveSlot:['starter','main','dessert'].includes(data.serveSlot)?data.serveSlot:'main',v46BasePeople:Number(data.v46BasePeople)||0,v46TimerEndsAt:Math.max(0,Number(data.v46TimerEndsAt)||0),meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
+const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category:CATEGORIES[data.category]?data.category:categoryGuess(data.name),method:METHODS[data.method]?data.method:methodGuess(data.name),grate:GRATES[data.grate]?data.grate:grateGuess(data.name,data.method||methodGuess(data.name)),grate2:GRATES[data.grate2]?data.grate2:'cast',phase2Temp:data.phase2Temp??(data.method==='combo'||methodGuess(data.name)==='combo'?250:180),phase2Minutes:data.phase2Minutes??6,transitionMins:data.transitionMins??(data.method==='combo'||methodGuess(data.name)==='combo'?15:0),kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',photo:validV45Photo(data.photo)?data.photo:'',coachStep:Number.isInteger(Number(data.coachStep))?Math.max(0,Math.min(29,Number(data.coachStep))):0,serveSlot:['starter','main','dessert'].includes(data.serveSlot)?data.serveSlot:'main',v46BasePeople:Number(data.v46BasePeople)||0,v46TimerEndsAt:Math.max(0,Number(data.v46TimerEndsAt)||0),prepTasks:v46PrepClean(data.prepTasks),meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
+
+/* Voorbereidingen volgen kalenderdagen, ook rond winter-/zomertijd. */
+function v46PrepClean(input){
+ if(!Array.isArray(input))return [];
+ return input.slice(0,20).map((x,i)=>{
+  if(!x||typeof x!=='object'||Array.isArray(x))return null;
+  const title=String(x.title||'').trim().slice(0,120);
+  if(!title)return null;
+  const rawTime=String(x.time||''),valid=/^([01]\d|2[0-3]):[0-5]\d$/.test(rawTime);
+  const days=Math.max(0,Math.min(14,Math.round(Number(x.daysBefore)||0)));
+  const duration=Math.max(0,Math.min(600,Math.round(Number(x.duration)||0)));
+  return {id:String(x.id||'prep-'+i).slice(0,90),title,daysBefore:days,time:valid?rawTime:'19:00',duration,notes:String(x.notes||'').slice(0,1500)};
+ }).filter(Boolean);
+}
+function v46PrepDate(task,date=state.date){
+ const value=dateAt(date,task.time);
+ if(value===null)return null;
+ const d=new Date(value);d.setDate(d.getDate()-task.daysBefore);
+ return d.getTime();
+}
+function v46When(value){
+ if(!Number.isFinite(value))return 'onbekende datum';
+ return new Date(value).toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' om '+fmt(value);
+}
+function v46PrepTasks(base){
+ return base.dishes.flatMap(d=>v46PrepClean(d.prepTasks).map(t=>({...t,dishId:d.id,dishName:d.name,kamado:d.kamado,timeAt:v46PrepDate(t),titleFull:t.title+' · '+d.name}))).filter(t=>Number.isFinite(t.timeAt)).sort((a,b)=>a.timeAt-b.timeAt);
+}
+
 const initial=()=>({date:today(),dateMode:'auto',equipment:{large:[],small:[]},mealTime:'18:30',availableFrom:'16:30',preheatLarge:30,preheatSmall:25,smart:{enabled:true,mode:'fixed'},dishes:[makeDish(examples.Bavette),makeDish(examples.Krieltjes),makeDish(examples.Maïskolven)]});
 let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();if(state.dateMode!=='manual'&&state.dateMode!=='auto'){state.dateMode=state.date>today()?'manual':'auto';}if(state.dateMode==='auto')state.date=today();if(!state.equipment||typeof state.equipment!=='object')state.equipment={large:[],small:[]};
 for(const d of state.dishes){
@@ -485,6 +513,7 @@ for(const d of state.dishes){
  if(d.phase2Minutes==null)d.phase2Minutes=6;
  if(d.transitionMins==null)d.transitionMins=d.method==='combo'?15:0;
  if(!Array.isArray(d.recipeSteps))d.recipeSteps=[];
+  d.prepTasks=v46PrepClean(d.prepTasks);
 }}catch{state=initial();}
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const n=(value,fallback=0)=>Number.isFinite(Number(value))&&value!==''?Math.max(0,Number(value)):fallback;
@@ -525,7 +554,20 @@ const calc=()=>{
  const first=allStarts.length?Math.min(...allStarts):null;
  let alerts=[];
  const available=dateAt(state.date,state.availableFrom);
- if(first!=null&&available!=null&&first<available){const late=Math.ceil((available-first)/60000);alerts.push({type:'urgent',message:`Om deze planning te halen moet je al om <strong>${fmt(first)}${dayHint(first,ready)}</strong> starten. Dat is ${late} min vóór je opgegeven begintijd (${state.availableFrom}). ${dishes.every(d=>d.mode==='auto')?`Overweeg het eten te verschuiven naar ongeveer <strong>${fmt(addm(ready,late))}</strong>.`:'Pas de serveertijd of vaste starttijden aan.'}`});}
+ if(first!=null&&available!=null&&first<available){
+   const late=Math.ceil((available-first)/60000),passed=first<Date.now();
+   alerts.push({type:passed?'urgent':'notice',message:
+     '<strong>'+(passed?'Benodigde starttijd verstreken':'Vooruitblik op de BBQ-dag')+':</strong> eerste BBQ-actie gepland op <strong>'+escape(v46When(first))+
+     '</strong>, maar je kunt beginnen op <strong>'+escape(v46When(available))+'</strong> ('+late+' min verschil). '+
+     (passed?'Deze geplande tijd is nu verstreken.':'Dit is een verschil binnen de gekozen toekomstige datum; je bent vandaag niet te laat.')+' '+
+     (dishes.every(d=>d.mode==='auto')?'Overweeg op die dag eerder te beginnen of het diner circa '+fmt(addm(ready,late))+' te serveren.':'Pas je ingestelde tijden aan.')
+   });
+  }
+  const prepDone=state.v46Done||{};
+  for(const p of v46PrepTasks({dishes})){
+   if(p.timeAt<Date.now()&&p.timeAt>=Date.now()-14*86400000&&!prepDone[state.date+'|'+p.dishId+':prep:'+p.id])
+    alerts.push({type:'notice',message:'<strong>Voorbereiding niet afgevinkt:</strong> '+escape(p.titleFull)+' stond gepland op '+escape(v46When(p.timeAt))+'. Controleer of deze stap nog veilig en haalbaar is.'});
+  }
  for(const d of dishes){if(d.mode==='manual'&&d.offset!==0&&d.start!=null){alerts.push({type:d.offset>0?'urgent':'notice',message:`<strong>${escape(d.name)}</strong> is met de vaste starttijd <strong>${Math.abs(d.offset)} minuten ${d.offset>0?'te laat':'te vroeg'}</strong> klaar t.o.v. ${fmt(d.serveAt)}.`});}}
  for(const group of [large,small]){
   const segments=group.flatMap(d=>phaseSegments(d).map(p=>({...p,dish:d}))),warned=new Set();
@@ -869,11 +911,11 @@ function renderDishes(){
 }
 function renderFire(c){$('fire-times').innerHTML=[['large','Grote kamado','big'],['small','Kleine kamado','small']].map(([k,label,cls])=>`<div class="fireline"><div class="details"><div class="fire-emoji">${k==='large'?'🔥':'♨️'}</div><div><strong>${label}</strong><small>${c.fires[k]==null?'Nog geen gerechten':'Aansteken'+dayHint(c.fires[k],c.serve)}</small></div></div><span class="fire-value ${cls}">${fmt(c.fires[k])}</span></div>`).join('')}
 function renderMetrics(c){const count=c.dishes.length,earliest=c.first!=null?fmt(c.first):'—';const last=c.dishes.length?Math.max(...c.dishes.filter(d=>d.end!=null).map(d=>d.end),c.serve??0):null;
- const conflicts=c.alerts.filter(a=>a.type==='urgent').length;
- $('metrics').innerHTML=`<div class="metric"><div class="metric-label">Gerechten</div><div class="metric-value">${count}</div><div class="metric-foot">Op ${[...new Set(c.dishes.map(d=>d.kamado))].length} kamado(s)</div></div><div class="metric"><div class="metric-label">Eerste handeling</div><div class="metric-value amber">${earliest}</div><div class="metric-foot">${dayHint(c.first,c.serve)||'Aansteken / starten'}</div></div><div class="metric"><div class="metric-label">${state.v46MultiServe?'Hoofdgerecht':'Samen eten'}</div><div class="metric-value green">${escape(state.mealTime||'—')}</div><div class="metric-foot">${c.serve==null?'Kies een geldige datum':escape(new Date(c.serve).toLocaleDateString('nl-NL',{day:'numeric',month:'long'}))}</div></div><div class="metric"><div class="metric-label">Aandachtspunten</div><div class="metric-value" style="${conflicts?'color:var(--red)':''}">${conflicts}</div><div class="metric-foot">${conflicts?'Mogelijke planningsproblemen':'Geen kritieke conflicten'}</div></div>`;
+ const conflicts=c.alerts.filter(a=>a.type==='urgent').length,totalAlerts=c.alerts.length;
+ $('metrics').innerHTML=`<div class="metric"><div class="metric-label">Gerechten</div><div class="metric-value">${count}</div><div class="metric-foot">Op ${[...new Set(c.dishes.map(d=>d.kamado))].length} kamado(s)</div></div><div class="metric"><div class="metric-label">Eerste handeling</div><div class="metric-value amber">${earliest}</div><div class="metric-foot">${dayHint(c.first,c.serve)||'Aansteken / starten'}</div></div><div class="metric"><div class="metric-label">${state.v46MultiServe?'Hoofdgerecht':'Samen eten'}</div><div class="metric-value green">${escape(state.mealTime||'—')}</div><div class="metric-foot">${c.serve==null?'Kies een geldige datum':escape(new Date(c.serve).toLocaleDateString('nl-NL',{day:'numeric',month:'long'}))}</div></div><div class="metric"><div class="metric-label">Aandachtspunten</div><div class="metric-value" style="${conflicts?'color:var(--red)':''}">${totalAlerts}</div><div class="metric-foot">${conflicts?conflicts+' kritieke aandachtspunten':totalAlerts?'Planningadvies voor komende datum':'Geen aandachtspunten'}</div></div>`;
 }
 function renderDishSchedule(c){for(const d of c.dishes){const el=document.getElementById('schedule-'+d.id);if(!el)continue;const off=d.offset;const tag=d.mode==='auto'?'<span class="tag">✓ Klaar op serveertijd</span>':(off===0?'<span class="tag">✓ Precies op tijd</span>':`<span class="tag ${off>0?'late':'warn'}">${Math.abs(off)} min ${off>0?'te laat':'eerder klaar'}</span>`);el.innerHTML=`<div><small>Start op de kamado</small><div class="time">${fmt(d.start)}<span style="font-size:11px;color:var(--muted)">${dayHint(d.start,c.serve)}</span></div></div><div><small>${d.rest>0?'Van rooster / rusten':'Gerecht gereed'}</small><div class="time">${fmt(d.cookEnd)}</div></div>${tag}`;}}
-function renderAlerts(c){const alerts=[...c.alerts];if(c.dishes.length===0)alerts.push({type:'notice',message:'Voeg minimaal één gerecht toe om je planning te zien.'});$('alerts').innerHTML=alerts.map(a=>`<div class="alert ${a.type==='urgent'?'urgent':''}">⚠ ${a.message}</div>`).join('');}
+function renderAlerts(c){const alerts=[...c.alerts];if(c.dishes.length===0)alerts.push({type:'notice',message:'Voeg minimaal één gerecht toe om je planning te zien.'});$('alerts').innerHTML=alerts.map(a=>`<div class="alert ${a.type==='urgent'?'urgent':''}">${a.type==='urgent'?'⚠':'ℹ'} ${a.message}</div>`).join('');}
 function renderTimeline(c){const target=$('timeline');const ds=c.dishes.filter(d=>d.start!=null&&d.cookEnd!=null);if(!ds.length){target.innerHTML='<div class="empty">Geen gerechten om weer te geven.</div>';$('timeline-footer').textContent='';return;}
  let earliest=Math.min(...ds.map(d=>d.start),...Object.values(c.fires).filter(t=>t!=null)),latest=Math.max(c.serve??0,...ds.map(d=>d.end));
  const start=addm(earliest,-10),end=addm(latest,10),range=Math.max(1,end-start);

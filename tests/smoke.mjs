@@ -134,9 +134,7 @@ try{
   $('preset-search').value='Ribeye v4.2';$('preset-search').dispatchEvent(new window.Event('input',{bubbles:true}));
   assert.ok([...$('preset').options].some(o=>o.value==='Ribeye v4.2 proefrecept'),'saved custom recipes searchable');
   $('preset-search').value='';$('preset-search').dispatchEvent(new window.Event('input',{bubbles:true}));
-  $('recipe-text').value='Pulled Pork in het kort\\nVlees Procureur\\nBBQ temperatuur ±120 °C indirect\\nKerntemperatuur Richtlijn ±92–96 °C + priktest\\nBereidingstijd 2 kg ±7–11 uur\\nRusttijd minimaal 1 uur\\n\\nIngrediënten\\n– 2 kilogram procureur\\n– 12 bolletjes\\n\\nBereiding\\nMaak de kamado indirect klaar. Gaar het vlees totdat het boterzacht is.';
-  // JavaScript string above contains escaped newlines in source, normalized below.
-  $('recipe-text').value=$('recipe-text').value.replace(/\\\\n/g,'\\n');
+  $('recipe-text').value='Pulled Pork in het kort\nVlees Procureur\nBBQ temperatuur ±120 °C indirect\nKerntemperatuur Richtlijn ±92–96 °C + priktest\nBereidingstijd 2 kg ±7–11 uur\nRusttijd minimaal 1 uur\n\nIngrediënten\n– 2 kilogram procureur\n– 12 bolletjes\n\nBereiding\nMaak de kamado indirect klaar. Gaar het vlees totdat het boterzacht is.';
   click($('recipe-analyze'));
   assert.equal($('generator-fields').querySelector('[data-gfield="name"]').value,'Pulled Pork');
   assert.equal($('generator-fields').querySelector('[data-gfield="category"]').value,'varken');

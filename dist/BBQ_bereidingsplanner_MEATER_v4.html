@@ -353,7 +353,17 @@ const examples={
 let serial=0; const nextId=()=>`gerecht-${Date.now()}-${++serial}`;
 const makeDish=(data={})=>({id:nextId(),name:data.name??'Nieuw gerecht',category:CATEGORIES[data.category]?data.category:categoryGuess(data.name),method:METHODS[data.method]?data.method:methodGuess(data.name),grate:GRATES[data.grate]?data.grate:grateGuess(data.name,data.method||methodGuess(data.name)),grate2:GRATES[data.grate2]?data.grate2:'cast',phase2Temp:data.phase2Temp??(data.method==='combo'||methodGuess(data.name)==='combo'?250:180),phase2Minutes:data.phase2Minutes??6,transitionMins:data.transitionMins??(data.method==='combo'||methodGuess(data.name)==='combo'?15:0),kamado:data.kamado??'large',cook:data.cook??30,rest:data.rest??10,core:data.core??'',grill:data.grill??180,mode:data.mode??'auto',fixedStart:data.fixedStart??'17:30',notes:data.notes??'',recipeIngredients:data.recipeIngredients??'',recipePrep:data.recipePrep??'',recipeCook:data.recipeCook??'',recipeRest:data.recipeRest??'',recipeSlice:data.recipeSlice??'',recipeSteps:Array.isArray(data.recipeSteps)?data.recipeSteps.slice(0,30).map(s=>({title:String(s.title||'').slice(0,180),trigger:String(s.trigger||'').slice(0,200),detail:String(s.detail||'').slice(0,2500)})) : [],recipeSource:data.recipeSource??'',meater:data.meater??'none',phase:data.phase??'waiting',startedAt:data.startedAt??null,restAt:data.restAt??null,doneAt:data.doneAt??null});
 const initial=()=>({date:today(),dateMode:'auto',equipment:{large:[],small:[]},mealTime:'18:30',availableFrom:'16:30',preheatLarge:30,preheatSmall:25,smart:{enabled:true,mode:'fixed'},dishes:[makeDish(examples.Bavette),makeDish(examples.Krieltjes),makeDish(examples.Maïskolven)]});
-let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();if(state.dateMode!=='manual'&&state.dateMode!=='auto'){state.dateMode=state.date>today()?'manual':'auto';}if(state.dateMode==='auto')state.date=today();if(!state.equipment||typeof state.equipment!=='object')state.equipment={large:[],small:[]};}catch{state=initial();}
+let state; try{const raw=localStorage.getItem(KEY);const p=raw?JSON.parse(raw):null;state=p&&Array.isArray(p.dishes)?p:initial();if(state.dateMode!=='manual'&&state.dateMode!=='auto'){state.dateMode=state.date>today()?'manual':'auto';}if(state.dateMode==='auto')state.date=today();if(!state.equipment||typeof state.equipment!=='object')state.equipment={large:[],small:[]};
+for(const d of state.dishes){
+ if(!CATEGORIES[d.category])d.category=categoryGuess(d.name);
+ if(!METHODS[d.method])d.method=methodGuess(d.name);
+ if(!GRATES[d.grate])d.grate=grateGuess(d.name,d.method);
+ if(!GRATES[d.grate2])d.grate2='cast';
+ if(d.phase2Temp==null)d.phase2Temp=d.method==='combo'?250:180;
+ if(d.phase2Minutes==null)d.phase2Minutes=6;
+ if(d.transitionMins==null)d.transitionMins=d.method==='combo'?15:0;
+ if(!Array.isArray(d.recipeSteps))d.recipeSteps=[];
+}}catch{state=initial();}
 const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const n=(value,fallback=0)=>Number.isFinite(Number(value))&&value!==''?Math.max(0,Number(value)):fallback;
 const minutes=v=>Math.min(10000,n(v));
@@ -450,6 +460,14 @@ function initControls(){
   const card=field.closest('[data-id]');const d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
   d[field.dataset.field]=field.value;persist();renderOutputs();if(['phase2Temp','phase2Minutes','transitionMins'].includes(field.dataset.field))refreshAdvice();
  });
+ $('dishes').addEventListener('input',ev=>{
+  const step=ev.target.closest('[data-recipe-step]'),holder=ev.target.closest('[data-dish-stage]'),card=ev.target.closest('[data-id]');
+  if(!step||!holder||!card)return;
+  const d=state.dishes.find(x=>x.id===card.dataset.id),i=Number(holder.dataset.dishStage);
+  if(!d||!d.recipeSteps?.[i])return;
+  d.recipeSteps[i][step.dataset.recipeStep]=step.value.slice(0,2500);
+  persist();renderOutputs();
+ });
  $('dishes').addEventListener('change',ev=>{
   const field=ev.target.closest('[data-field]');if(!field)return;const card=field.closest('[data-id]');const d=state.dishes.find(x=>x.id===card?.dataset.id);if(!d)return;
   if(field.dataset.field==='phase'){
@@ -469,6 +487,15 @@ function initControls(){
   if(button.dataset.action==='remove'){state.dishes=state.dishes.filter(d=>d.id!==id);persist();renderAll();toast('Gerecht verwijderd')}
   if(button.dataset.action==='duplicate'){const d=state.dishes.find(d=>d.id===id);if(d)addDish({...d,name:d.name+' (2)'},'Gerecht gekopieerd')}
    if(button.dataset.action==='review')saveReview(id,card);
+   if(button.dataset.action.startsWith('step-')){
+    const d=state.dishes.find(d=>d.id===id);if(!d)return;
+    const list=d.recipeSteps||(d.recipeSteps=[]),i=Number(button.closest('[data-dish-stage]')?.dataset.dishStage);
+    if(button.dataset.action==='step-add'&&list.length<30)list.push({title:'Nieuwe stap',trigger:'Handmatig',detail:''});
+    if(button.dataset.action==='step-remove'&&Number.isInteger(i))list.splice(i,1);
+    if(button.dataset.action==='step-up'&&i>0)[list[i-1],list[i]]=[list[i],list[i-1]];
+    if(button.dataset.action==='step-down'&&i<list.length-1)[list[i+1],list[i]]=[list[i],list[i+1]];
+    persist();renderAll();
+   }
  });
 }
 function addDish(data,message){
@@ -867,7 +894,7 @@ async function uploadPlanJson(ev){
   if(clean.dateMode==='auto')clean.date=today();
   clean.equipment={large:Array.isArray(plan.equipment?.large)?plan.equipment.large.filter(g=>GRATES[g]||g==='deflector'):[],small:Array.isArray(plan.equipment?.small)?plan.equipment.small.filter(g=>GRATES[g]||g==='deflector'):[]};
   if(plan.smart&&typeof plan.smart==='object')clean.smart={enabled:plan.smart.enabled!==false,mode:plan.smart.mode==='flex'?'flex':'fixed'};
-  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),recipeIngredients:String(x.recipeIngredients??'').slice(0,6000),recipePrep:String(x.recipePrep??'').slice(0,6000),recipeCook:String(x.recipeCook??'').slice(0,10000),recipeRest:String(x.recipeRest??'').slice(0,4000),recipeSlice:String(x.recipeSlice??'').slice(0,4000),recipeSource:String(x.recipeSource??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
+  clean.dishes=plan.dishes.map(x=>makeDish({name:String(x.name??'Gerecht').slice(0,150),kamado:x.kamado==='small'?'small':'large',cook:minutes(x.cook),rest:minutes(x.rest),core:String(x.core??'').slice(0,8),grill:n(x.grill),mode:x.mode==='manual'?'manual':'auto',fixedStart:String(x.fixedStart??'17:30').slice(0,5),notes:String(x.notes??'').slice(0,500),category:CATEGORIES[x.category]?x.category:categoryGuess(x.name),method:METHODS[x.method]?x.method:methodGuess(x.name),grate:GRATES[x.grate]?x.grate:grateGuess(x.name,x.method),grate2:GRATES[x.grate2]?x.grate2:'cast',phase2Temp:n(x.phase2Temp,180),phase2Minutes:minutes(x.phase2Minutes??6),transitionMins:minutes(x.transitionMins??0),recipeSteps:Array.isArray(x.recipeSteps)?x.recipeSteps.slice(0,30):[],recipeIngredients:String(x.recipeIngredients??'').slice(0,6000),recipePrep:String(x.recipePrep??'').slice(0,6000),recipeCook:String(x.recipeCook??'').slice(0,10000),recipeRest:String(x.recipeRest??'').slice(0,4000),recipeSlice:String(x.recipeSlice??'').slice(0,4000),recipeSource:String(x.recipeSource??'').slice(0,500),meater:['pro','plus'].includes(x.meater)?x.meater:'none',phase:['waiting','cooking','resting','done'].includes(x.phase)?x.phase:'waiting',startedAt:cleanTimestamp(x.startedAt),restAt:cleanTimestamp(x.restAt),doneAt:cleanTimestamp(x.doneAt)}));
   state=clean;persist();initValuesOnly();renderAll();toast('Planning geladen');
  }catch(e){alert('Kan planning niet laden: '+e.message);}
 }
@@ -911,7 +938,8 @@ function renderRecipeEditor(d){
  const r=recipeDetails(d),pairs=[['recipeIngredients','Ingrediënten','ingredients'],['recipePrep','Voorbereiding','prep'],['recipeCook','Bereiding','cook'],['recipeRest','Rusten','rest'],['recipeSlice','Aansnijden / serveren','slice']];
  const fields=pairs.map(x=>'<div class="field"><label>'+x[1]+'</label><textarea data-field="'+x[0]+'" rows="3" maxlength="10000">'+escape(r[x[2]])+'</textarea></div>').join('');
  const url=/^https?:\/\//i.test(d.recipeSource||'')?'<p class="recipe-message">Bron: <a rel="noopener noreferrer" target="_blank" href="'+escape(d.recipeSource)+'">'+escape(d.recipeSource)+'</a></p>':'';
- return '<details class="recipe-editor"><summary>📖 Uitgebreid recept bewerken</summary>'+url+'<p class="hint">De teksten verschijnen bij stap 04 in het draaiboek. Wijzigingen worden lokaal bewaard.</p><div class="recipe-edit-grid">'+fields+'</div></details>';
+ const stageFields=(d.recipeSteps||[]).map((s,i)=>'<div class="generator-stage" data-dish-stage="'+i+'"><label>Stap '+(i+1)+' · titel<input data-recipe-step="title" value="'+escape(s.title||'')+'"></label><label>Wanneer<input data-recipe-step="trigger" value="'+escape(s.trigger||'')+'"></label><label>Instructies<textarea rows="3" data-recipe-step="detail">'+escape(s.detail||'')+'</textarea></label><button class="btn small" type="button" data-action="step-up">↑</button> <button class="btn small" type="button" data-action="step-down">↓</button> <button class="btn small danger" type="button" data-action="step-remove">Verwijder</button></div>').join('');
+ return '<details class="recipe-editor"><summary>📖 Uitgebreid recept bewerken</summary>'+url+'<p class="hint">De teksten verschijnen bij stap 04. Je kunt ook individuele stappen bewerken, ordenen en toevoegen.</p><div class="recipe-edit-grid">'+fields+'</div><div><strong>Losse receptstappen ('+(d.recipeSteps||[]).length+')</strong>'+stageFields+'<button type="button" class="btn small" data-action="step-add">＋ Stap toevoegen</button></div></details>';
 }
 function renderReviewEditor(d){
  const rs=savedReviews.filter(r=>dishKey(r.name)===dishKey(d.name)).slice(-3).reverse();
@@ -1109,9 +1137,7 @@ function importRecipe(){
  grill:Math.min(450,Math.max(50,n($('recipe-temp').value,180))),core:$('recipe-core').value,
  notes:'Geïmporteerd recept. Controleer gaarheid en instellingen.',recipeSource:source,
  recipeIngredients:r.ingredients,recipePrep:r.prep,recipeCook:r.cook,recipeRest:r.rest,recipeSlice:r.slice};
- const i=localRecipes.findIndex(x=>dishKey(x.name)===dishKey(name));if(i>=0)localRecipes.splice(i,1);
- localRecipes.push(dish);if(localRecipes.length>80)localRecipes.shift();
- examples[name]=dish;presetOption(name);store(RECIPE_KEY,localRecipes);
+ saveLocalRecipe(dish);
  addDish(dish,'Recept toegevoegd en lokaal bewaard');
  message.textContent='Recept toegevoegd! De bereidingsstappen staan onder 04 en zijn te wijzigen op de gerechtkaart.';
 }

@@ -1,19 +1,33 @@
 {
-  "name": "BBQ-planner v4.7 – Kamado Navigatie",
+  "id": "./",
+  "name": "BBQ Planner – Kamado Command Center",
   "short_name": "BBQ Planner",
-  "description": "Offline recepten en planning voor grote en kleine kamado",
+  "description": "Plan gerechten, temperatuur, recepten en serveertijd voor je grote en kleine kamado.",
   "start_url": "./dist/BBQ_bereidingsplanner_MEATER_v4.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
   "background_color": "#0c1318",
-  "theme_color": "#122b2c",
+  "theme_color": "#101a20",
   "lang": "nl",
+  "categories": [
+    "food",
+    "lifestyle"
+  ],
   "icons": [
     {
       "src": "assets/app-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

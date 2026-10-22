@@ -39,3 +39,14 @@ Bij import van een recept-URL gelden de normale CORS-beperkingen van de bronwebs
 - Controleer of **Settings → Pages** is geactiveerd op `main` en `/(root)`.
 - Controleer of `index.html` en de `dist/`-map op `main` aanwezig zijn.
 - De installatie via HACS blijft afzonderlijk verlopen en wordt niet aangepast door de Pages-instelling.
+
+## iPhone-app (v4.9.0)
+De publieke website is een **Progressive Web App**. Open de publieke URL in **Safari**, tik op **Delen → Zet op beginscherm**, zet indien getoond **Open als webapp** aan en bevestig **Voeg toe**. Start daarna via het icoon op het beginscherm. De app draait in standalone-modus zonder Safari-balken.
+
+In **Meer → BBQ Planner als eigen app** staan installatie-instructies, een knop om de link te delen en een updatecontrole. Als er een nieuwe service worker wacht, kan de gebruiker de update bewust activeren. Alle bestaande vijf navigatieschermen blijven behouden.
+
+Het app-icoon, manifest, CSS en service worker staan in de root van de GitHub Pages-site. Cache bevat alleen statische appbestanden, nooit live MEATER-metingen of externe receptfoto's. Offline is alleen de reeds geladen publieke app met lokaal opgeslagen gegevens bruikbaar; dit is **geen** offline Home Assistant/MEATER-verbinding. iOS-versies en installatiemethoden kunnen verschillen.
+
+**Belangrijk over gegevens:** Safari/PWA op dezelfde publieke herkomst delen doorgaans websiteopslag, maar de Home Assistant-dashboardkaart gebruikt een andere herkomst en eigen gesynchroniseerde gebruikersopslag. Er is geen automatische migratie. Bewaar je planning via de JSON-export voordat je van toegangsmethode wisselt, en wis geen websitegegevens als je recepten wilt behouden.
+
+**Updates:** publiceer de gewijzigde bestanden naar de GitHub Pages-branch. Open de geïnstalleerde app met internet; controleer updates via Meer. GitHub Pages kan enige tijd nodig hebben om een publicatie zichtbaar te maken. Native iOS-pushmeldingen vanuit de openbare app zijn niet geïmplementeerd; voor meldingen blijft de bestaande Home Assistant-route beschikbaar.

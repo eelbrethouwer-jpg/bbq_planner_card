@@ -4,7 +4,7 @@ const CACHE='bbq-regisseur-v4.9.0';
 const ROOT=self.registration.scope;
 const PATH=new URL(ROOT).pathname;
 const PAGES=['','index.html','dist/BBQ_bereidingsplanner_MEATER_v4.html'];
-const ASSETS=['manifest.webmanifest','assets/app-icon.svg','assets/apple-touch-icon.png'];
+const ASSETS=['manifest.webmanifest','assets/app-icon.svg','assets/apple-touch-icon.png','assets/icon-512.png'];
 const SHELL=[...PAGES,...ASSETS].map(x=>new URL(x,ROOT).href);
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));

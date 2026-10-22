@@ -372,8 +372,10 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route+'?v=4.8.0'),'HTML redirect points at versioned planner');
-  assert.ok(entry.includes('href="'+route+'?v=4.8.0"'),'accessible versioned fallback link');
+  const publishedVersion=html.match(/<title>[^<]*?v(\d+\.\d+\.\d+)<\/title>/)?.[1];
+  assert.ok(publishedVersion,'release version is present in the planner title');
+  assert.ok(entry.includes('url='+route+'?v='+publishedVersion),'HTML redirect points at current versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v='+publishedVersion+'"'),'accessible fallback link targets current planner');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
   // v4.8: cards from a curated source catalog, opt-in import only.

@@ -29,6 +29,7 @@ jobs:
           cp dist/bbq_planner_card.js /tmp/bbq-planner-bridge.mjs
           node --check /tmp/bbq-planner-bridge.mjs
           node --check sw.js
+          node tests/pwa-smoke.mjs
       - name: Controleer releasefuncties
         run: |
           grep -q 'renderRecipeSteps(c)' dist/BBQ_bereidingsplanner_MEATER_v4.html

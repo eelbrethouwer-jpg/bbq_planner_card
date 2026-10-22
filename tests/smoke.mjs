@@ -48,7 +48,17 @@ try{
   assert.ok($('v46-board').closest('#v47-cooking'),'interactive board in cooking screen');
   assert.ok($('probe-pro').closest('#v47-cooking'),'MEATER probe in cooking screen');
   assert.ok($('probe-plus').closest('#v47-cooking'),'other MEATER probe in cooking screen');
-  click(nav.querySelector('[data-v47-tab="planning"]'));
+  // v4.9: iPhone installation instructions stay interactive even outside GitHub Pages.
+  click(nav.querySelector('[data-v47-tab="more"]'));
+  assert.ok($('v49-install'),'install explanation control exists');
+  assert.equal($('v49-install-steps').hidden,true,'installation instructions default collapsed');
+  click($('v49-install'));
+  assert.equal($('v49-install-steps').hidden,false,'Safari install instructions expand');
+  assert.equal($('v49-install').getAttribute('aria-expanded'),'true');
+  click($('v49-install'));
+  assert.equal($('v49-install-steps').hidden,true,'Safari install instructions collapse');
+  assert.equal($('v49-update').disabled,true,'native update checks disabled outside public origin');
+    click(nav.querySelector('[data-v47-tab="planning"]'));
   assert.equal(doc.querySelector('[data-v47-page]:not([hidden])').dataset.v47Page,'planning','planning opens');
   assert.ok($('dishes').closest('#v47-planning'),'dish cards in planning');
   assert.equal(JSON.parse(JSON.stringify([...$('dishes').querySelectorAll('article.dish')].map(el=>el.querySelector('.v47-detail').hidden))).every(Boolean),true,'dish details start collapsed');
@@ -362,8 +372,10 @@ try{
 
   const entry=fs.readFileSync('index.html','utf8');
   const route='./dist/BBQ_bereidingsplanner_MEATER_v4.html';
-  assert.ok(entry.includes('url='+route+'?v=4.8.0'),'HTML redirect points at versioned planner');
-  assert.ok(entry.includes('href="'+route+'?v=4.8.0"'),'accessible versioned fallback link');
+  const publishedVersion=html.match(/<title>[^<]*?v(\d+\.\d+\.\d+)<\/title>/)?.[1];
+  assert.ok(publishedVersion,'release version is present in the planner title');
+  assert.ok(entry.includes('url='+route+'?v='+publishedVersion),'HTML redirect points at current versioned planner');
+  assert.ok(entry.includes('href="'+route+'?v='+publishedVersion+'"'),'accessible fallback link targets current planner');
   assert.ok(fs.existsSync('dist/BBQ_bereidingsplanner_MEATER_v4.html'),'site target exists');
   assert.equal(errors.length,0,errors.join('\n'));
   // v4.8: cards from a curated source catalog, opt-in import only.

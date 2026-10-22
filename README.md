@@ -117,3 +117,14 @@ De gecombineerde MEATER-grafiek toont uitsluitend meetpunten die zijn binnengeko
 ## Veiligheid
 
 Bereidingstijden en MEATER-ETA's zijn indicaties. Controleer veilige kerntemperaturen volgens het gerecht, gebruik een geschikt meetpunt en ga niet uitsluitend op de planner af. Publiceer nooit Home Assistant-toegangstokens, wachtwoorden of persoonlijke netwerkgegevens in deze publieke repository.
+
+## v4.9.0 iPhone App Edition (releasekandidaat)
+
+- Echte standalone PWA-weergave na toevoegen via Safari: eigen vlam-icoon, iOS metadata, veilige schermranden en compacte mobiele opmaak.
+- Bestaande vijf navigatietabs blijven intact: Overzicht, Planning, Koken, Recepten en Meer. Alle gerecht-/review-/MEATER-logica is behouden.
+- Installatiehulp, openbare app-link en handmatige updatecontrole op **Meer**. Updates zijn bewust te activeren; de app herlaadt alleen na een gekozen update.
+- Versiegebonden offline-cache alleen voor de publieke site, geen caching van sensoren, accounts, Home Assistant-berichten of foto's van derden.
+- Publieke PWA biedt **geen live MEATER-data** en geen automatische synchronisatie met de Home Assistant-dashboardkaart. Bestaande optionele HA-meldingen blijven in de kaart aanwezig.
+- Testen: `tests/pwa-smoke.mjs` controleert appassets, manifest en updatebeleid; `tests/smoke.mjs` test nu ook het openen/sluiten van de installatiehulp. GitHub Actions valideert code en regressies.
+
+Installatie: zie [WEBSITE.md](WEBSITE.md). Publiceer GitHub Pages op `main` na het samenvoegen van de releasebranch.

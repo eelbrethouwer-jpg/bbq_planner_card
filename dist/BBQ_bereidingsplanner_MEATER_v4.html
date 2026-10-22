@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#101a20">
-<title>Kamado Command Center · BBQ bereidingsplanner + MEATER v4.7.0</title>
+<title>Kamado Command Center · BBQ bereidingsplanner + MEATER v4.8.0</title>
 <style>
 :root{--bg:#0c1318;--panel:#142129;--panel2:#1b2a32;--stroke:#304049;--text:#f5f1e8;--muted:#a5b4b8;--amber:#f2a561;--amber2:#b96b31;--green:#6dd3ad;--red:#f39489;--shadow:0 18px 50px #0003;--radius:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 90% 600px at 86% -10%,#2c3c31 0,transparent 75%),var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:3px}a{color:var(--amber)}.shell{max-width:1230px;margin:0 auto;padding:30px 22px 60px}.eyebrow{display:inline-flex;align-items:center;gap:7px;color:var(--amber);font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}.brandicon{display:inline-grid;place-items:center;border:1px solid #f2a56158;background:#f2a56110;width:36px;height:36px;border-radius:12px;font-size:19px}.intro{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:12px 0 28px}.intro h1{margin:7px 0;font-size:clamp(30px,5vw,52px);line-height:1.08;letter-spacing:-.043em;font-weight:800}.intro h1 span{color:var(--amber)}.sub{max-width:600px;color:var(--muted);font-size:15px;margin:0}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;gap:8px;align-items:center;justify-content:center;border-radius:11px;padding:11px 14px;font-weight:730;border:1px solid var(--stroke);background:var(--panel2);color:var(--text);white-space:nowrap;transition:transform .12s,background .12s}.btn:hover{background:#283a43;transform:translateY(-1px)}.btn.primary{background:var(--amber);color:#201a14;border-color:var(--amber)}.btn.primary:hover{background:#ffd1a7}.btn.ghost{background:transparent}.btn.small{font-size:13px;padding:9px 11px}.btn.danger{border-color:#ce6e634a;color:#ffc3bc;background:#5a302c33}.layout-top{display:grid;grid-template-columns:1.55fr 1fr;gap:16px}.panel{border:1px solid var(--stroke);border-radius:var(--radius);background:linear-gradient(154deg,#17262c,#111e25);box-shadow:var(--shadow)}.setup{padding:22px}.side{padding:20px;background:radial-gradient(ellipse at 110% -10%,#39523b99,transparent 85%),linear-gradient(150deg,#1b302b,#142128)}.sec-title{font-size:18px;font-weight:820;margin:0 0 5px;letter-spacing:-.015em}.sec-sub{margin:0 0 18px;color:var(--muted);font-size:13px}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px;min-width:0}.field>label{font-size:12px;color:var(--muted);font-weight:650}.field input,.field select,.field textarea{width:100%;background:#0e1b22;color:var(--text);border:1px solid #39484f;border-radius:9px;min-height:42px;padding:9px 11px;font-size:14px;color-scheme:dark}.field input[type=number]{font-variant-numeric:tabular-nums}.hint{font-size:11px;color:#869ba2;line-height:1.45}.setup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}.divider{height:1px;background:var(--stroke);margin:19px 0}.fireline{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:12px 0}.fireline .details{display:flex;align-items:center;gap:10px}.fire-emoji{width:34px;height:34px;border:1px solid #ffffff1c;border-radius:12px;display:grid;place-items:center;background:#ffffff09}.fireline strong{font-size:14px}.fireline small{font-size:12px;color:var(--muted);display:block}.fire-value{font-weight:850;font-size:16px;font-variant-numeric:tabular-nums}.fire-value.big{color:var(--amber)}.fire-value.small{color:var(--green)}.side-note{margin-top:19px;padding:11px 12px;border:1px solid #ffffff1b;border-radius:10px;background:#0002;color:#bcd2c7;font-size:12px}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 30px}.metric{background:#152229;border:1px solid var(--stroke);border-radius:14px;padding:17px 17px 15px}.metric .metric-label{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:800}.metric .metric-value{font-size:27px;font-weight:850;letter-spacing:-.035em;margin-top:7px;font-variant-numeric:tabular-nums}.metric .metric-foot{font-size:12px;color:var(--muted);margin-top:1px}.metric .metric-value.amber{color:var(--amber)}.metric .metric-value.green{color:var(--green)}.section-header{display:flex;gap:15px;align-items:center;justify-content:space-between;margin:0 0 15px}.section-header h2{font-size:24px;letter-spacing:-.025em;margin:0}.section-header p{font-size:13px;color:var(--muted);margin:3px 0 0}.section-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dish-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.dish{background:linear-gradient(145deg,#1b2b31,#142027);border:1px solid var(--stroke);border-radius:16px;padding:17px}.dish-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:15px}.dish-index{display:inline-flex;align-items:center;gap:7px;color:#aec1c4;font-size:12px;font-weight:750}.dot{width:8px;height:8px;background:var(--amber);border-radius:50%;display:inline-block}.dot.sm{background:var(--green)}.dish .grid-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 10px}.dish .span2{grid-column:span 2}.dish .span4{grid-column:span 4}.dish .schedule-note{border-top:1px solid var(--stroke);margin-top:16px;padding-top:12px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px}.schedule-note .time{font-size:21px;font-weight:850;font-variant-numeric:tabular-nums}.schedule-note small{display:block;color:var(--muted);font-size:11px}.tag{font-size:12px;color:#b7e6d3;background:#2a5b4933;border:1px solid #61b99c3e;padding:4px 9px;border-radius:999px;align-self:center}.tag.warn{color:#ffd1b9;background:#99552c35;border-color:#99552c70}.tag.late{color:#ffb5ad;background:#a5413933;border-color:#c9675e66}.tag.neutral{color:var(--muted);background:#ffffff0c;border-color:#ffffff1b}.card-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}.move-btn{border:none;background:transparent;color:var(--muted);font-size:12px;padding:6px}.move-btn:hover{color:var(--text)}.dish-title{font-size:14px;font-weight:700}.empty{border:1px dashed #627075;border-radius:14px;padding:30px;color:var(--muted);text-align:center}.alerts{display:grid;gap:9px;margin:18px 0}.alert{background:#43312550;border:1px solid #b78a546b;color:#f5d9b6;border-radius:11px;padding:12px 15px;font-size:13px}.alert.urgent{background:#552d2b66;border-color:#ae645d80;color:#ffd2ca}.alert strong{color:#fff3dd}.plan-panel{padding:20px;margin-top:27px}.legend{display:flex;gap:15px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.legend span{display:flex;align-items:center;gap:6px}.swatch{display:inline-block;width:14px;height:7px;border-radius:2px;background:var(--amber)}.swatch.green{background:var(--green)}.swatch.rest{background:#74848d}.timeline-scroll{overflow-x:auto;margin:19px 0 0;padding:0 2px 9px}.timeline-inner{min-width:735px}.timeline-row{display:grid;grid-template-columns:170px 1fr;align-items:center;min-height:45px}.timeline-label{font-size:12px;font-weight:730;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.timeline-label small{font-size:11px;display:block;font-weight:500;color:var(--muted)}.timeline-chart{height:40px;position:relative;border-left:1px solid #45515a;background-image:linear-gradient(to right,#ffffff09 1px,transparent 1px);background-size:20% 100%}.timeline-axis .timeline-chart{height:26px;background:none;border-left:0}.axis-tick{position:absolute;top:1px;transform:translateX(-50%);font-size:11px;color:#9eb4b9;font-variant-numeric:tabular-nums;white-space:nowrap}.axis-tick:first-child{transform:translateX(0)}.axis-tick:last-child{transform:translateX(-100%)}.group-head{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:800;margin-top:15px;padding-bottom:7px;border-bottom:1px solid #ffffff12}.group-head strong{color:var(--text)}.pill-dot{height:8px;width:8px;background:var(--amber);border-radius:50%}.pill-dot.small{background:var(--green)}.bar{height:19px;position:absolute;top:10px;border-radius:5px;overflow:hidden;display:flex;align-items:center;padding:0 5px;font-size:10px;font-weight:800;white-space:nowrap;color:#11221b;min-width:3px}.bar.grill-big{background:linear-gradient(90deg,#da8950,#ffc28b)}.bar.grill-small{background:linear-gradient(90deg,#4aab8c,#9ceacb)}.bar.rest{background:#82949f;color:#142229}.line-serve{position:absolute;width:2px;background:#f5f1e8;top:2px;bottom:1px;z-index:3;pointer-events:none}.line-serve:before{content:"";position:absolute;top:-4px;left:-3px;width:8px;height:8px;background:#f5f1e8;border-radius:50%}.timeline-footer{font-size:12px;color:var(--muted);margin-top:9px}.timeline-footer strong{color:var(--text)}.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.step{display:grid;grid-template-columns:65px 1fr;gap:12px;align-items:start;background:#17252b;border:1px solid #2b3b43;border-radius:12px;padding:11px 13px}.step-time{font-size:16px;font-weight:850;font-variant-numeric:tabular-nums;color:var(--amber)}.step-time.sm{color:var(--green)}.step-body strong{display:block;font-size:13px}.step-body p{margin:2px 0 0;color:var(--muted);font-size:12px}.daylabel{font-size:10px;display:block;color:var(--muted);font-weight:500}.footer{border-top:1px solid #ffffff1a;margin-top:29px;padding-top:20px;display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.footer p{margin:0;max-width:740px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:11px 17px;background:#dfaa73;color:#1e1b16;border-radius:12px;font-size:13px;font-weight:750;box-shadow:0 12px 35px #0006;z-index:99;display:none}.toast.on{display:block}.sr-only{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}
@@ -245,6 +245,32 @@ body.v47-ready .intro .eyebrow{font-size:10px}
 @media(max-width:375px){.v47-nav button{font-size:9px}.v47-hero strong{font-size:20px}.v47-dish-toggle{width:100%}}
 @media print{.v47-nav,.v47-actions{display:none!important}body.v47-ready .shell{padding-bottom:0!important}body.v47-ready main>:not(#v47-pages){display:none!important}}
 
+
+/* v4.8 recipe discovery — images are linked, not stored as image copies. */
+.v48-catalog{margin:0 0 20px;max-width:100%}.v48-heading{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:12px 0 18px}
+.v48-heading h3{font-size:22px;margin:5px 0 9px}.v48-source{font-size:12px;color:#c9ded7;white-space:nowrap}
+.v48-source a,.v48-card a,.v48-open-source{color:#f7bc89;text-underline-offset:3px}
+.v48-filters{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:8px;margin:12px 0;align-items:end}
+.v48-filters label{display:flex;flex-direction:column;gap:5px;color:#cbdad6;font-size:12px;font-weight:600}
+.v48-filters select,.v48-filters input[type=search]{width:100%;min-height:44px;border-radius:9px;border:1px solid #56716d;background:#0f242a;color:#fff;padding:9px;min-width:0;font:inherit}
+.v48-filters .v48-check{display:flex;flex-direction:row;gap:9px;align-items:center;padding:8px;grid-column:1/-1;cursor:pointer;font-size:13px}
+.v48-check input{accent-color:#e9a66b;width:19px;height:19px}
+.v48-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:13px}
+.v48-card{overflow:hidden;background:#172b2f;border:1px solid #3c5b56;border-radius:15px;display:flex;flex-direction:column;min-width:0}
+.v48-cover{position:relative;aspect-ratio:16/9;background:radial-gradient(circle at 50% 15%,#4c6556,#20333a);overflow:hidden}
+.v48-cover img{display:block;width:100%;height:100%;object-fit:cover}
+.v48-photo-alt{display:flex;height:100%;align-items:center;justify-content:center;font-size:48px}.v48-photo-alt[hidden]{display:none!important}
+.v48-tag{position:absolute;bottom:9px;left:9px;background:#101c21ee;color:#f6e9d9;font-size:11px;padding:5px 8px;border-radius:8px;font-weight:700}
+.v48-card-content{padding:13px;display:flex;flex-direction:column;gap:8px;flex:1}
+.v48-card h4{margin:0;font-size:16px;line-height:1.3}.v48-meta{display:flex;gap:6px;flex-wrap:wrap}
+.v48-meta span{display:inline-block;border:1px solid #49645d;border-radius:7px;color:#ccded7;padding:5px 7px;font-size:11px}
+.v48-card .v48-desc{font-size:12px;color:#c9d8d1;line-height:1.55;margin:0;flex:1}
+.v48-actions{display:flex;gap:7px;align-items:stretch;flex-wrap:wrap}.v48-actions button{flex:1;min-height:43px;white-space:normal}
+.v48-detail{padding:12px 13px;border-top:1px solid #46615a;background:#102429;font-size:12px;line-height:1.6}
+.v48-detail p{margin:7px 0;white-space:pre-wrap}.v48-detail strong{color:#f0bd86}.v48-detail[hidden]{display:none}
+.v48-empty{padding:20px;border:1px dashed #536a69;border-radius:12px;color:#c6d7d2}
+@media(max-width:740px){.v48-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.v48-filters label:first-child{grid-column:1/-1}.v48-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.v48-card-content{padding:10px}.v48-card h4{font-size:14px}.v48-actions{flex-direction:column}}
+@media(max-width:400px){.v48-grid{grid-template-columns:1fr}.v48-actions{flex-direction:row}}
 </style>
 </head>
 <body>
@@ -291,7 +317,21 @@ body.v47-ready .intro .eyebrow{font-size:10px}
  </section>
  <section id="v47-recipes" class="v47-page" data-v47-page="recipes" hidden aria-labelledby="v47-heading-recipes">
   <div class="v47-page-head"><div><p class="v47-kicker">JE KOOKBOEK</p><h2 id="v47-heading-recipes">Receptenbibliotheek</h2></div><button type="button" class="btn small" data-v47-go="planning">＋ Gerecht</button></div>
-  <div id="v47-recipes-mount"></div>
+  <section id="v48-catalog" class="v48-catalog" aria-label="BBQ Junkie inspiratiecatalogus">
+  <div class="v48-heading"><div><p class="v47-kicker">NIEUW · v4.8.0</p><h3>🔥 BBQ Receptencatalogus</h3><p class="hint">Bekijk ideeën met foto's en bereidingstijden. Niets wordt automatisch in je eigen bibliotheek opgeslagen.</p></div><span class="v48-source">Bron: <a href="https://bbq-junkie.nl/bbq-recepten/" target="_blank" rel="noopener noreferrer">BBQ Junkie ↗</a></span></div>
+  <div class="v48-filters">
+   <label>Zoeken<input id="v48-search" type="search" placeholder="Zoek gerecht, type, ingrediënt..." autocomplete="off"></label>
+   <label>Type gerecht<select id="v48-cat"><option value="all">Alle typen</option><option value="rund">🐄 Rund</option><option value="varken">🐖 Varken</option><option value="gevogelte">🐓 Kip</option><option value="groenten">🥦 Groenten</option><option value="dessert">🍰 Dessert</option><option value="overig">🌭 Overig</option></select></label>
+   <label>Maximale BBQ-tijd<select id="v48-time"><option value="all">Alle tijden</option><option value="30">Tot 30 minuten</option><option value="60">Tot 1 uur</option><option value="180">Tot 3 uur</option><option value="long">Langer dan 3 uur</option></select></label>
+   <label>Bereidingswijze<select id="v48-method"><option value="all">Direct en indirect</option><option value="direct">Direct</option><option value="indirect">Indirect</option></select></label>
+   <label class="v48-check"><input id="v48-no-onion" type="checkbox"> Zonder ui genoemd</label>
+  </div>
+  <p id="v48-count" class="hint" aria-live="polite"></p>
+  <div id="v48-grid" class="v48-grid"></div>
+  <p id="v48-feedback" role="status" aria-live="polite" class="hint"></p>
+  <p class="hint">De eerste catalogus bevat een geselecteerde set recepten, geen live spiegel van alle recepten op de website. Foto’s worden vanaf de bron geladen (internet nodig); originele bereidingsuitleg blijft op BBQ Junkie. Controleer recepten, kerntemperaturen en eventuele ingrediënten zoals kant-en-klare rubs zelf.</p>
+ </section>
+ <div id="v47-recipes-mount"></div>
  </section>
  <section id="v47-more" class="v47-page" data-v47-page="more" hidden aria-labelledby="v47-heading-more">
   <div class="v47-page-head"><div><p class="v47-kicker">GEREEDSCHAP & INSTELLINGEN</p><h2 id="v47-heading-more">Meer mogelijkheden</h2></div></div>
@@ -1780,7 +1820,7 @@ $('recipe-add').addEventListener('click',importRecipe);
 /* v4.5.0. No sample measurements are ever labelled live. */
 const v45PendingPhotos=new Map();
 let v45SelectedDish=null;
-function validV45Photo(s){return typeof s==='string'&&s.length<=30000&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(s);}
+function validV45Photo(s){return typeof s==='string'&&((s.length<=30000&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(s))||(/^https:\/\/bbq-junkie\.nl\/wp-content\/uploads\/[0-9]{4}\/[0-9]{2}\/[a-z0-9-]+\.(?:jpg|jpeg|webp)$/i.test(s)&&s.length<=300));}
 function v45ActualMinutes(d){
  const a=cleanTimestamp(d.startedAt),b=cleanTimestamp(d.restAt)||(minutes(d.rest)===0?cleanTimestamp(d.doneAt):null);
  if(!a||!b||b<=a)return null;
@@ -2392,7 +2432,114 @@ function v47Init(){
  v47Go(saved);v47Refresh(calc());
 }
 
-initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();
+
+/* v4.8: beknopte eigen samenvattingen, geen gekopieerde volledige receptartikelen.
+   Foto's komen rechtstreeks van de oorspronkelijke aanbieder; niet lokaal gecachet. */
+const V48_RECIPES=[
+ ["Texas Style Buikspek","varken",20,300,60,1100,120,"93","indirect","texas-style-buikspek","2024/12/texas-style-buikspek",4,"1,2 kg buikspek zonder zwoerd\n3 el zeezout\n6 el zwarte peper\n1 el paprikapoeder\n1 el knoflookgranulaat\n1 el mosterd","De avond tevoren droog kruiden en onafgedekt gekoeld laten staan.","Indirect low & slow roken; malsheid vanaf circa 90 °C testen. Laat na het garen gecontroleerd rusten.","De bereiding beslaat inclusief een nacht koelkasttijd circa 18 uur; reken op variatie door een stall."],
+ ["Ribeye, Groene Asperges & Smashed Potatoes","rund",30,20,10,60,220,"","direct","ribeye-groene-asperges-smashed-potatoes","2026/05/ribeye-groene-asperges-smashed-potatoes",2,"400 g ribeye\n400 g krieltjes\n300 g groene asperges\n1 el steak-kruiden\n1 el olijfolie\nzeezout\nzwarte peper","Krieltjes voorkoken en asperges schoonmaken. Gebruik een plancha of gietijzer.","Ribeye direct grillen en laten rusten terwijl je de krieltjes platdrukt en asperges grilt.","Kerntemperatuur van de steak afhankelijk van je gewenste gaarheid; meet met MEATER."],
+ ["Hot Honey Chickenwings","gevogelte",15,50,5,70,150,"75","indirect","hot-honey-chickenwings","2026/07/hot-honey-chickenwings",4,"500 g kippenvleugels\n20 g BBQ-rub\n4 el hot honey","Kruid de vleugels en bereid de kamado indirect voor.","Rook indirect, lak richting einde met hot honey en laat kort rusten.","Controleer kip altijd op minimaal 75 °C kerntemperatuur."],
+ ["Omgekeerde Ananas Cake","dessert",30,60,10,100,170,"","indirect","omgekeerde-ananas-cake","2026/06/omgekeerde-ananas-cake",8,"0,5 ananas\n250 g zelfrijzend bakmeel\n225 g roomboter\n125 g suiker\n100 g yoghurt\n3 eieren\n2 tl vanille-extract\n3 el donkere basterdsuiker","Vet een skillet in, leg de ananas op de suikerlaag en meng het cakebeslag.","Bak de skillet indirect tot de cake gaar is; controleer met een schone prikker.","Bakduur en oven-/kamadotemperatuur zijn richtlijnen; controleer zelf de cake."],
+ ["Varkensrack met Kruiden-Parmezaankorst","varken",30,90,15,135,140,"62","indirect","varkensrack-met-kruiden-parmezaan-korst","2026/06/varkensrack-kruiden-parmezaan-korst",4,"1 kg varkensrack\n2 el Dijonmosterd\n2 tenen knoflook\n4 takjes oregano\n4 takjes rozemarijn\n2 takjes salie\n2 takjes tijm\n40 g Parmezaanse kaas\n20 g paneermeel\nzout en peper","Kerf de vetlaag in; maak de korst van verse kruiden, knoflook, kaas en paneermeel.","Gaar indirect met rookhout tot een passend kerndoel; rust voor het aansnijden.","62 °C is het receptdoel voor roze varkensvlees; pas de kerntemperatuur aan op je persoonlijke voedselveiligheidseisen."],
+ ["Jalapeño Popper Pig Shots","varken",60,60,5,185,150,"","indirect","jalapeno-popper-pig-shots","2026/06/jalapeno-popper-pig-shots",8,"1 rookworst\n12 plakken ontbijtspek\n200 g zuivelspread\n100 g cheddar\n2 jalapeño's\n1 el BBQ-rub","Maak van plakjes rookworst en spek kleine cups en vul ze met het kaas-jalapeñomengsel; zet ze gekoeld weg.","Rook de gevulde cups indirect en serveer warm.","De totale tijd omvat ook opstijven in de koelkast; maak de cups desgewenst de avond ervoor."],
+ ["Cheesy Garlic Hotdogs","overig",15,10,0,25,200,"","indirect","cheesy-garlic-hotdogs","2026/09/cheesy-garlic-hotdogs",4,"4 hotdogs\n4 hotdogbroodjes\n60 g kruidenboter\n80 g geraspte kaas","Beleg opengesneden broodjes met kruidenboter en kaas; verwarm de kamado met twee zones.","Smelt de kaas indirect en grill de worstjes kort direct.","Gebruik gare hotdogs en warm ze volgens de verpakking door."],
+ ["Smoked Creamcheese","overig",10,60,0,70,110,"","indirect","smoked-creamcheese","2026/09/smoked-creamcheese",4,"300 g roomkaas\n2 el BBQ-rub\nTortillachips","Maak een ondiep ruitpatroon in de roomkaas en bestrooi met rub.","Rook de roomkaas indirect op aluminiumfolie en serveer direct met chips.","Bewaar verse roomkaas gekoeld voordat hij op de BBQ gaat."],
+ ["Gegrilde Perzik","dessert",15,10,0,25,180,"","direct","gegrilde-perzik","2018/08/gegrilde-perzik",4,"6 rijpe perziken\n8 el Griekse yoghurt\n1 tl vanille-extract\nPistachenoten","Halveer de perziken en verwijder de pit; maak vanilleyoghurt.","Grill de snijkant van de perziken direct en serveer warm met yoghurt en pistache.","Let op met suiker: die kan bij hoge hitte snel verbranden."],
+ ["Gegrilde Bimi met Citroen & Knoflook","groenten",10,15,0,25,180,"","direct","gegrilde-bimi","2024/05/gegrilde-bimi",4,"400 g bimi\n1 citroen\n2 tenen knoflook\n2 el olijfolie\n2 tl zeezout","Meng een dressing van citroenrasp, sap, knoflook, olie en zout en verdeel over de bimi.","Grill de bimi direct, keer regelmatig en serveer nog knapperig.","Prima bijgerecht tijdens het rusten van vlees."],
+ ["Iberico Secreto met Mojo Verde","varken",30,10,5,45,230,"62","direct","iberico-secreto-met-mojo-verde","2026/08/iberico-secreto-mojo-verde",2,"500 g Iberico secreto\n10 g zeezout\n10 g zwarte peper\n10 g knoflookgranulaat\n30 g peterselie\n30 g koriander\n4 tenen knoflook\n1 groene peper\n1 tl komijn\n100 ml olijfolie\n40 ml wittewijnazijn","Maak de groene salsa en kruid het vlees.","Grill secreto direct op een hete kamado, laat rusten en serveer met Mojo Verde.","Een kern van 62 °C is het receptadvies voor medium; kies zelf een veilige doeltemperatuur."]
+].map((row,i)=>{
+ const [label,category,prep,cook,rest,total,grill,core,method,slug,photoFile,persons,ingredients,preparation,methodText,note]=row;
+ const name='BBQ Junkie · '+label,url='https://bbq-junkie.nl/bbq-recepten/'+slug+'/';
+ const photo='https://bbq-junkie.nl/wp-content/uploads/'+photoFile+'-recept-500x281.jpg';
+ return {id:i+1,name,label,category,prep,cook,rest,total,grill,core,method,url,photo,persons,ingredients,preparation,methodText,note,
+  noOnionMentioned:!/\b(?:ui|uien|lente-ui|bosui|sjalot)\b/i.test(ingredients)};
+});
+function v48RecipeData(item){
+ const caution='Samenvatting voor je eigen planner; bekijk het volledige oorspronkelijke recept via '+item.url;
+ return {
+  name:item.name,category:item.category,kamado:'large',method:item.method,
+  grate:item.method==='direct'?'rvs':'rvs',grill:item.grill,core:item.core,cook:item.cook,rest:item.rest,
+  notes:'Bron: BBQ Junkie. Voor '+item.persons+' personen. '+caution,
+  photo:item.photo,recipeSource:item.url,recipeIngredients:item.ingredients,
+  recipePrep:item.preparation,recipeCook:item.methodText,recipeRest:item.rest?('Rusten circa '+item.rest+' minuten.'):'',
+  recipeSlice:'Controleer gaarheid en serveer zoals in het bronrecept.',
+  recipeSteps:[{title:'Voorbereiden',trigger:'Voor de BBQ',detail:item.preparation},
+   {title:'BBQ-bereiding',trigger:'Geplande bereiding · controleer kerntemperatuur',detail:item.methodText},
+   {title:'Serveren en voedselveiligheid',trigger:'Na bereiding en eventuele rust',detail:item.note+' '+caution}],
+  prepTasks:item.id===1?[{id:'catalog-overnight-rub',title:'Buikspek vooraf kruiden',daysBefore:1,time:'',duration:0,notes:'Kruid het buikspek en laat een nacht veilig in de koelkast staan; exacte begintijd zelf invullen.'}]:[],
+  v46BasePeople:item.persons
+ };
+}
+function v48Match(item){
+ const search=($('v48-search').value||'').toLocaleLowerCase('nl-NL').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const norm=s=>String(s).toLocaleLowerCase('nl-NL').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const cat=$('v48-cat').value,tm=$('v48-time').value,method=$('v48-method').value;
+ if(search&&!norm(item.label+' '+item.category+' '+item.ingredients+' '+item.note).includes(search))return false;
+ if(cat!=='all'&&item.category!==cat)return false;
+ if(tm==='long'&&item.cook<=180)return false;
+ if(tm!=='all'&&tm!=='long'&&item.cook>Number(tm))return false;
+ if(method!=='all'&&item.method!==method)return false;
+ if($('v48-no-onion').checked&&!item.noOnionMentioned)return false;
+ return true;
+}
+function v48Render(){
+ const host=$('v48-grid');if(!host)return;
+ const found=V48_RECIPES.filter(v48Match);
+ $('v48-count').textContent=found.length+' van '+V48_RECIPES.length+' geselecteerde recepten · alleen bekijken, nog niets geïmporteerd.';
+ host.innerHTML=found.length?found.map(item=>{
+  const saved=localRecipes.some(r=>dishKey(r.name)===dishKey(item.name));
+  const expanded=v48Opened===item.id;
+  return '<article class="v48-card" data-v48-id="'+item.id+'">'+
+  '<div class="v48-cover"><img src="'+escape(item.photo)+'" alt="'+escape(item.label)+' — receptfoto BBQ Junkie" loading="lazy" referrerpolicy="no-referrer">'+
+  '<div class="v48-photo-alt" hidden aria-label="Foto tijdelijk niet beschikbaar">🔥</div><span class="v48-tag">📷 BBQ Junkie</span></div>'+
+  '<div class="v48-card-content"><h4>'+escape(item.label)+'</h4>'+
+  '<div class="v48-meta"><span>'+escape(CATEGORIES[item.category]||item.category)+'</span><span>🔥 BBQ '+item.cook+' min</span><span>⏱️ Totaal '+v48Format(item.total)+'</span><span>'+item.grill+' °C</span></div>'+
+  '<p class="v48-desc">'+escape(item.note)+'</p>'+
+  '<div class="v48-actions"><button class="btn small" type="button" data-v48-action="detail" aria-expanded="'+expanded+'">'+(expanded?'⌃ Sluiten':'👀 Bekijken')+'</button>'+
+  '<button class="btn small '+(saved?'':'primary')+'" type="button" data-v48-action="import" '+(saved?'disabled':'')+'>'+ (saved?'✓ In bibliotheek':'＋ Toevoegen aan bibliotheek')+'</button>'+
+  '<button class="btn small" type="button" data-v48-action="plan" '+(saved?'':'disabled')+'>📅 Plan gerecht</button></div></div>'+
+  '<div class="v48-detail" '+(expanded?'':'hidden')+'>'+
+  '<strong>Voorbereiding '+item.prep+' min · BBQ '+item.cook+' min · Rust '+item.rest+' min</strong>'+
+  '<p>Inclusief eventuele wachttijd: '+v48Format(item.total)+' · richttemperatuur '+item.grill+' °C · '+(item.core?'kernadvies '+item.core+' °C':'geen vast kerndoel')+'</p>'+
+  '<strong>Ingrediënten (bron: '+item.persons+' personen)</strong><p>'+escape(item.ingredients)+'</p>'+
+  '<strong>Voorbereiden</strong><p>'+escape(item.preparation)+'</p>'+
+  '<strong>BBQ-bereiding</strong><p>'+escape(item.methodText)+'</p>'+
+  '<p>'+escape(item.note)+'</p>'+
+  '<p><a href="'+escape(item.url)+'" target="_blank" rel="noopener noreferrer">↗ Volledige receptuitleg op BBQ Junkie</a></p>'+
+  '<p class="hint">Gebaseerd op de bron. Foto’s worden extern geladen; kookdata zijn geen live metingen.</p></div></article>';
+ }).join(''):'<div class="v48-empty">Geen recepten gevonden met deze filters. Wis een filter of gebruik een ruimere bereidingstijd.</div>';
+ host.querySelectorAll('img').forEach(img=>img.addEventListener('error',()=>{
+  img.hidden=true;const fallback=img.parentElement.querySelector('.v48-photo-alt');if(fallback)fallback.hidden=false;
+ },{once:true}));
+}
+function v48Format(minutes){const h=Math.floor(minutes/60),m=minutes%60;return h?(h+'u'+(m?' '+m+'m':'')):m+' min';}
+let v48Opened=null;
+function v48Init(){
+ ['v48-search','v48-cat','v48-time','v48-method','v48-no-onion'].forEach(id=>{
+  $(id).addEventListener(id==='v48-search'?'input':'change',v48Render);
+ });
+ $('v48-grid').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-v48-action]'),card=btn?.closest('[data-v48-id]');if(!btn||!card)return;
+  const item=V48_RECIPES.find(x=>x.id===Number(card.dataset.v48Id));if(!item)return;
+  if(btn.dataset.v48Action==='detail'){v48Opened=v48Opened===item.id?null:item.id;v48Render();return;}
+  const existing=localRecipes.find(x=>dishKey(x.name)===dishKey(item.name));
+  if(btn.dataset.v48Action==='import'){
+   if(existing){$('v48-feedback').textContent='Recept staat al in je bibliotheek. Bestaande gegevens worden niet overschreven.';return;}
+   if(localRecipes.length>=80){$('v48-feedback').textContent='De bibliotheek bevat al 80 recepten. Verwijder eerst een oud recept of maak een JSON-back-up.';return;}
+   const ok=saveLocalRecipe(v48RecipeData(item));
+   $('v48-feedback').textContent=ok?'✓ '+item.label+' toegevoegd aan je persoonlijke receptenbibliotheek. Foto blijft gelinkt aan BBQ Junkie.':'Opslaan niet gelukt; controleer je bibliotheek.';
+   v48Render();return;
+  }
+  if(btn.dataset.v48Action==='plan'){
+   if(!existing){$('v48-feedback').textContent='Voeg dit recept eerst toe aan je bibliotheek.';return;}
+   addDish(existing,'✓ '+item.label+' toegevoegd aan de BBQ-planning');
+   v47Go('planning');v48Opened=null;v48Render();
+  }
+ });
+ v48Render();
+}
+
+initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();v48Init();
 })();
 </script>
 </body>

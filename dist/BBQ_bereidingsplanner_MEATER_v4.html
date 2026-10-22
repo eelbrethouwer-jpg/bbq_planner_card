@@ -2648,10 +2648,13 @@ function v49Init(){
  });
  navigator.serviceWorker.ready.then(reg=>{
   registration=reg;markWaiting(reg);
-  reg.addEventListener('updatefound',()=>{
-   const installing=reg.installing;if(!installing)return;
-   installing.addEventListener('statechange',()=>{if(installing.state==='installed'&&navigator.serviceWorker.controller)markWaiting(reg)});
-  });
+  const watch=installing=>{
+   if(!installing)return;
+   const onState=()=>{if(installing.state==='installed'&&navigator.serviceWorker.controller)markWaiting(reg);};
+   installing.addEventListener('statechange',onState);onState();
+  };
+  watch(reg.installing);
+  reg.addEventListener('updatefound',()=>watch(reg.installing));
  }).catch(()=>setStatus('Offline-installatie nog niet gereed; laad de pagina online opnieuw.'));
 }
 

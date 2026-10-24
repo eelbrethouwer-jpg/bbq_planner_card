@@ -21,7 +21,7 @@ assert.ok(manifest.start_url.includes('BBQ_bereidingsplanner_MEATER_v4.html'));
 assert.ok(manifest.icons.some(i=>i.src==='assets/apple-touch-icon.png'));
 assert.ok(manifest.icons.some(i=>i.src==='assets/icon-512.png'&&i.sizes==='512x512'));
 assert.match(sw,/assets\/icon-512\.png/);
-assert.match(sw,/bbq-regisseur-v4\.9\.0/);
+assert.match(sw,/bbq-regisseur-v4\.9\.1/);
 assert.match(sw,/SKIP_WAITING/);
 assert.doesNotMatch(sw,/skipWaiting\(\)\s*\)\s*;\s*\}\)/);
 assert.match(sw,/url\.origin!==self\.location\.origin/);

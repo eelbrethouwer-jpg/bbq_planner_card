@@ -1,6 +1,6 @@
-/* BBQ Planner v4.9.0 — offline shell for GitHub Pages ONLY.
+/* BBQ Planner v4.9.1 — offline shell for GitHub Pages ONLY.
    Do not cache Home Assistant traffic, private sensor payloads or external recipe images. */
-const CACHE='bbq-regisseur-v4.9.0';
+const CACHE='bbq-regisseur-v4.9.1';
 const ROOT=self.registration.scope;
 const PATH=new URL(ROOT).pathname;
 const PAGES=['','index.html','dist/BBQ_bereidingsplanner_MEATER_v4.html'];

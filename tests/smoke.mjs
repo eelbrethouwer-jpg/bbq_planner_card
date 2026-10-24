@@ -258,6 +258,48 @@ try{
   $('preset-search').value='Ribeye v4.2';$('preset-search').dispatchEvent(new window.Event('input',{bubbles:true}));
   assert.ok([...$('preset').options].some(o=>o.value==='Ribeye v4.2 proefrecept'),'saved custom recipes searchable');
   $('preset-search').value='';$('preset-search').dispatchEvent(new window.Event('input',{bubbles:true}));
+  // v4.9.1 regression: a common recipe uses prose "temperatuur van ongeveer X graden".
+  click(nav.querySelector('[data-v47-tab="recipes"]'));
+  $('recipe-text').value='Big Smash Burgers\nBereidingstijd 10 minuten\n\nBereiding\nSteek de BBQ aan en ga hierbij voor directe hitte en een temperatuur van ongeveer 230 graden. Bak de burgers op de plancha.';
+  click($('recipe-analyze'));
+  assert.equal($('generator-fields').querySelector('[data-gfield="grill"]').value,'230','BBQ temp in ordinary instructions recognized');
+  assert.equal($('generator-fields').querySelector('[data-gfield="cook"]').value,'10','BBQ cook duration recognized');
+  click($('generator-save'));
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).some(x=>x.name==='Big Smash Burgers'),'approved Big Smash stays saved in library');
+  assert.ok(doc.querySelector('#library-items [data-library-name="Big Smash Burgers"]'),'approved Big Smash shown under Mijn recepten');
+  assert.equal(doc.querySelector('[data-v47-page]:not([hidden])').dataset.v47Page,'recipes','approving retains recipes page');
+  assert.match($('recipe-message').textContent,/Mijn receptenbibliotheek/,'confirmation points to saved recipe');
+  // Missing data must give nearby, actionable feedback rather than an invisible message.
+  $('recipe-text').value='Recept zonder tijd en temperatuur\n\nBereiding\nKruid de ingrediënten en bak ze op de BBQ.';
+  click($('recipe-analyze'));
+  click($('generator-save'));
+  assert.match($('generator-feedback').textContent,/BBQ-temperatuur/,'visible validation next to approve');
+  assert.equal($('generator-fields').querySelector('[data-gfield="grill"]').getAttribute('aria-invalid'),'true','missing field explicitly marked');
+  assert.ok(!JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).some(x=>x.name==='Recept zonder tijd en temperatuur'),'incomplete recipe not silently stored with invented temperature');
+  // Safari may commit the latest value on the button tap, without an input event.
+  $('generator-fields').querySelector('[data-gfield="grill"]').value='180';
+  click($('generator-save'));
+  assert.match($('generator-feedback').textContent,/bereidingstijd/,'next missing value is shown');
+  $('generator-fields').querySelector('[data-gfield="cook"]').value='25';
+  click($('generator-save'));
+  assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).some(x=>x.name==='Recept zonder tijd en temperatuur'),'latest DOM values saved without separate input event');
+  // Storage denial must not create a false success or change the in-memory library.
+  $('recipe-text').value='Niet-opgeslagen testrecept\nBBQ temperatuur 190 °C\nBereidingstijd 30 minuten\n\nBereiding\nLeg het gerecht op de BBQ.';
+  click($('recipe-analyze'));
+  const storageSet=window.Storage.prototype.setItem;
+  window.Storage.prototype.setItem=function(key,value){
+    if(key==='kamado-recipe-book-v1')throw new Error('Simulated Safari storage quota denial');
+    return storageSet.call(this,key,value);
+  };
+  try{
+    click($('generator-save'));
+    assert.match($('generator-feedback').textContent,/Opslaan mislukt/,'storage failure is explicit');
+    assert.ok($('generator-preview').classList.contains('visible'),'draft retained on storage failure');
+    assert.ok(!doc.querySelector('#library-items [data-library-name="Niet-opgeslagen testrecept"]'),'failed write does not leak into library');
+  }finally{window.Storage.prototype.setItem=storageSet;}
+  click($('generator-save'));
+  assert.ok(doc.querySelector('#library-items [data-library-name="Niet-opgeslagen testrecept"]'),'retry after storage recovery succeeds');
+
   $('recipe-text').value='Pulled Pork in het kort\nVlees Procureur\nBBQ temperatuur ±120 °C indirect\nKerntemperatuur Richtlijn ±92–96 °C + priktest\nBereidingstijd 2 kg ±7–11 uur\nRusttijd minimaal 1 uur\n\nIngrediënten\n– 2 kilogram procureur\n– 12 bolletjes\n\nBereiding\nMaak de kamado indirect klaar. Gaar het vlees totdat het boterzacht is.';
   click($('recipe-analyze'));
   assert.equal($('generator-fields').querySelector('[data-gfield="name"]').value,'Pulled Pork');

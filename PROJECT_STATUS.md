@@ -38,3 +38,12 @@ Controleer actuele GitHub-main/release/CI en vraag welke concrete functie of bug
 - Nieuwe chat: lees dit bestand, controleer de GitHub-werkelijkheid en vat alleen relevante context samen.
 - Afsluiting: wat uitgevoerd is, wat getest is, wat onzeker is, open punten en volgende actie. Werk dit statusbestand bij als de werkelijkheid is veranderd.
 - Markeer expliciet **Geverifieerd / Aanname / Advies / Openstaand**. Claim geen implementatie, installatie, test of publicatie zonder bevestiging.
+
+## Werk in uitvoering — v5.0.0 (24 oktober 2026)
+- **Branch:** `feature/v5-cooking-experience`. Geen merge naar `main`, geen nieuwe GitHub-release.
+- **Nieuw:** welkom, sessiewizard, receptselectie, planning, checklist, compact live-kookdashboard, vier knoppen onderaan, herbruikbare v4-calculator, veilige backup bij nieuwe sessie.
+- **Broncode:** `dist/bbq-v5.js` en `dist/bbq-v5.css`; bestaande `dist/BBQ_bereidingsplanner_MEATER_v4.html` gebruikt deze bestanden met een kleinschalige brug naar de v4-engine.
+- **Tests:** `tests/v5-smoke.mjs` toegevoegd; CI-uitslag van de uiteindelijke branchcommit controleren (tussenliggende commits kunnen tijdelijk rode runs tonen).
+- **Beperkingen:** MEATER uitsluitend live in Home Assistant, geen automatische sync publieke PWA↔HA, live stappen en kooktijden blijven advies, geen volledig nieuwe reviewinterface.
+- **Acceptatie:** na groene CI handmatig iPhone Safari/PWA en Home Assistant testen, dan pas pull request goedkeuren en release publiceren.
+- Zie `RELEASE_v5.0.0.md` voor het concrete overzicht en resterende handmatige testen.

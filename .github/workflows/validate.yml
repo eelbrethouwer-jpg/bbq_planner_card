@@ -28,6 +28,7 @@ jobs:
           node --check /tmp/bbq-planner.js
           cp dist/bbq_planner_card.js /tmp/bbq-planner-bridge.mjs
           node --check /tmp/bbq-planner-bridge.mjs
+          node --check dist/bbq-v5.js
           node --check sw.js
           node tests/pwa-smoke.mjs
       - name: Controleer releasefuncties
@@ -44,4 +45,6 @@ jobs:
       - name: Install DOM test dependency
         run: npm install --no-save jsdom@26
       - name: Exercise planning, recipes, reviews and accordions
-        run: node tests/smoke.mjs
+        run: |
+          node tests/smoke.mjs
+          node tests/v5-smoke.mjs

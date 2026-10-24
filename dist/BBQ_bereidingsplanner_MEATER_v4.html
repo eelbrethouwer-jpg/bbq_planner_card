@@ -305,6 +305,7 @@ body{overscroll-behavior-y:contain}
 @media(display-mode:standalone){body.v47-ready .shell{padding-top:calc(13px + env(safe-area-inset-top,0px))}}
 @media print{.v49-install{display:none!important}}
 </style>
+<link rel="stylesheet" href="./bbq-v5.css?v=5.0.0">
 </head>
 <body>
 <div class="shell">
@@ -580,6 +581,7 @@ body{overscroll-behavior-y:contain}
  <div class="v45-controls"><label>Gerecht <select id="v45-dish-select" style="width:auto;max-width:240px"></select></label></div><div id="v45-cook-body"></div></div>
 </div>
 <div class="toast" role="status" id="toast"></div>
+<script src="./bbq-v5.js?v=5.0.0"></script>
 <script>
 (()=>{'use strict';
 const KEY='kamado-bereidingsplanner-v1';
@@ -2733,6 +2735,21 @@ function v49Init(){
 }
 
 initControls();renderAll();initLibraryUi();initReviewSync();v45Init();v46Init();v47Init();v48Init();v49Init();
+if(typeof window.initBBQV5==='function'){
+  window.initBBQV5({
+    getState:()=>state,
+    calculate:()=>calc(),
+    getRecipes:()=>examples,
+    getPrepTasks:()=>v46PrepTasks(calc()),
+    getTasks:()=>v46Tasks(calc()),
+    getRecipeDetails:d=>recipeDetails(d),
+    getProbe:d=>v45Probe(d),
+    makeDish:data=>makeDish(data),
+    commit:()=>{persist();renderAll();},
+    showLegacy:tab=>v47Go(tab),
+    syncLegacy:()=>{initValuesOnly();renderAll();}
+  });
+}
 })();
 </script>
 </body>

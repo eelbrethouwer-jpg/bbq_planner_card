@@ -77,6 +77,8 @@ window.initBBQV5=function(b){
       const steps=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
       steps.forEach((r,i)=>{
         if(!/avond|dag(?:en)?\s*(?:ervoor|vooraf)|nacht|vooraf/i.test(r.trigger||''))return;
+        // A separately scheduled preparation already covers the same preceding day.
+        if(Array.isArray(d.prepTasks)&&d.prepTasks.some(t=>Number(t.daysBefore)>0))return;
         const id=s.date+'|'+d.id+':recipe:'+i;
         if(!idSet.has(id)){tasks.push({id,title:(r.title||'Voorbereiding')+' · '+d.name,when:r.trigger||'Vooraf voorbereiden',detail:r.detail||'',sort:0});idSet.add(id)}
       });
@@ -173,6 +175,9 @@ window.initBBQV5=function(b){
     if(next==='cooking'){d.startedAt=t;d.restAt=null;d.doneAt=null}
     else if(next==='resting'){d.restAt=t;d.doneAt=null}
     else if(next==='done'){d.doneAt=t}
+    // Explicit phase changes also complete the matching legacy timeline task.
+    const suffix=next==='cooking'?'on':next==='resting'||(next==='done'&&!(Number(d.rest)>0))?'off':next==='done'?'serve':null;
+    if(suffix){const s=state(),key=s.date+'|'+d.id+':'+suffix;s.v46Done=s.v46Done||{};s.v5Actual=s.v5Actual||{};s.v46Done[key]=true;s.v5Actual[key]=t}
   }
   function toggleDone(id,checked){
     const s=state();s.v46Done=s.v46Done||{};s.v5Actual=s.v5Actual||{};
@@ -215,7 +220,7 @@ window.initBBQV5=function(b){
     const el=e.target.closest('[data-v5-act]');if(!el)return;
     const act=el.dataset.v5Act;
     if(act==='new'){start();return}
-    if(act==='resume'){meta.active=true;meta.stage=meta.stage==='finished'?'setup':meta.stage||'setup';saveMeta();goto(meta.stage);return}
+    if(act==='resume'){const fromLegacy=!meta.active;meta.active=true;meta.stage=fromLegacy||meta.stage==='finished'?'setup':meta.stage||'setup';saveMeta();goto(meta.stage);return}
     if(act==='home'||act==='select'||act==='setup'||act==='prep'){if(act!=='home'&&act!=='select'&&!dishes().length)return;goto(act);return}
     if(act==='live'){if(!dishes().length){goto('select');return}meta.active=true;goto('live');return}
     if(act==='finish'){

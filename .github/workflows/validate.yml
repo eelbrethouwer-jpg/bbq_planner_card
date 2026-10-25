@@ -52,7 +52,8 @@ jobs:
           node tests/v501-smoke.mjs
 
   mobile-browser:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 ondersteunt ubuntu 26.04 nog niet; pin mobiele browserchecks op 24.04.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Installeer browser voor mobiele viewporttest

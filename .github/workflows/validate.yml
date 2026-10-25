@@ -29,6 +29,7 @@ jobs:
           cp dist/bbq_planner_card.js /tmp/bbq-planner-bridge.mjs
           node --check /tmp/bbq-planner-bridge.mjs
           node --check dist/bbq-v5.js
+          node --check dist/bbq-v501.js
           node --check sw.js
           node tests/pwa-smoke.mjs
       - name: Controleer releasefuncties
@@ -48,3 +49,4 @@ jobs:
         run: |
           node tests/smoke.mjs
           node tests/v5-smoke.mjs
+          node tests/v501-smoke.mjs

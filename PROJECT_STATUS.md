@@ -47,3 +47,13 @@ Controleer actuele GitHub-main/release/CI en vraag welke concrete functie of bug
 - **Beperkingen:** MEATER uitsluitend live in Home Assistant, geen automatische sync publieke PWA↔HA, live stappen en kooktijden blijven advies, geen volledig nieuwe reviewinterface.
 - **Acceptatie:** na groene CI handmatig iPhone Safari/PWA en Home Assistant testen, dan pas pull request goedkeuren en release publiceren.
 - Zie `RELEASE_v5.0.0.md` voor het concrete overzicht en resterende handmatige testen.
+
+
+## v5.0.1 — mobiele layout en receptbronkeuze (25 oktober 2026)
+- **Werkbranch:** `fix/v5.0.1-mobile-recipes`. Niet als release gepubliceerd.
+- **Functioneel:** Receptenpagina heeft drie duidelijke tabbladen (Genereren / Mijn bibliotheek / BBQ Junkie); bestaande generator, goedkeurknoppen, bibliotheek en broncatalogus worden hergebruikt zonder datamigratie.
+- **Mobiel:** compacte sticky 'Terug naar v5'-actie i.p.v. overlay, aangepaste safe areas en voorspelbare input/grid-breedtes op iPhone. Linkjes naar drie receptbronnen vanuit sessieselectie.
+- **Bron:** `dist/bbq-v501.js`, `dist/bbq-v501.css`, `tests/v501-smoke.mjs`. PWA/cache en HA iframeversie verhogen naar v5.0.1.
+- **Tests:** GitHub Actions op HEAD controleren: syntax, PWA-checks, oude rooktest, v5-flow, nieuwe v501-recepten-flow, HACS-validatie.
+- **Niet bevestigd:** fysieke iPhone Safari-layout, schermlezer, bestaande persoonlijke opslag na PWA-cachewissel, HA-live-MEATER.
+- **Volgende stap:** PR beoordelen, echte iPhone/HA testen, daarna eventueel samenvoegen en een release publiceren. Details: `RELEASE_v5.0.1.md`.

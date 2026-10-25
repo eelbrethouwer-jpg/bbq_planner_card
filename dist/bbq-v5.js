@@ -50,7 +50,7 @@ window.initBBQV5=function(b){
       '<label class="v5-field v5-filter">Zoek gerechten<input id="v5-search" type="search" class="v5-input" placeholder="Bijv. ribeye, pulled pork, zalm..." value="'+escape(recipeSearch)+'"></label>'+
       '<div class="v5-recipes" id="v5-recipe-list">'+recipeGrid()+'</div>'+
       '<div class="v5-card"><h3>Jouw menu ('+dishes().length+')</h3>'+(dishes().length?menuLines():'<p class="v5-muted">Nog geen gerechten geselecteerd.</p>')+'</div>'+
-      '<div class="v5-row">'+action('＋ Eigen recept maken','recipes')+action('← Startscherm','home')+'</div>'+
+      '<div class="v5-row">'+action('✨ Recept genereren','recipe-generate')+action('📚 Mijn bibliotheek','recipes')+action('🔥 BBQ Junkie','recipe-junkie')+action('← Startscherm','home')+'</div>'+
       '<div class="v5-sticky-actions"><div><strong>'+dishes().length+' gerechten gekozen</strong><small>Groot en klein combineren</small></div>'+action('Volgende →','setup','primary',!dishes().length)+'</div>';
   }
   function setup(){
@@ -155,7 +155,8 @@ window.initBBQV5=function(b){
       '<button type="button" data-v5-act="'+act+'"'+(screen===act?' aria-current="page"':'')+'><span class="v5-ico" aria-hidden="true">'+ic+'</span><span>'+label+'</span></button>').join('')+'</nav>';
     root.querySelectorAll('input[data-v5-setting]').forEach(el=>{el.setAttribute('autocomplete','off')});
   }
-  function legacy(tab){
+  function legacy(tab,recipeTab){
+    if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
     b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').style.display='inline-flex';try{window.scrollTo(0,0)}catch(e){}
   }
   function exitLegacy(){
@@ -195,7 +196,7 @@ window.initBBQV5=function(b){
   const root=document.createElement('div');root.id='v5-root';
   const main=document.querySelector('.shell > main');
   if(!main)return;main.parentElement.insertBefore(root,main);
-  const back=document.createElement('button');back.id='v5-back';back.type='button';back.className='v5-btn primary v5-back-legacy';back.textContent='← Terug naar BBQ v5';back.addEventListener('click',exitLegacy);document.body.appendChild(back);
+  const back=document.createElement('button');back.id='v5-back';back.type='button';back.className='v5-btn primary v5-back-legacy';back.textContent='← Terug naar v5';back.addEventListener('click',exitLegacy);main.parentElement.insertBefore(back,main);
   document.body.classList.add('v5-ready');
   root.addEventListener('input',e=>{
     if(e.target?.id==='v5-search'){recipeSearch=e.target.value;const list=$('v5-recipe-list');if(list)list.innerHTML=recipeGrid();}
@@ -227,7 +228,9 @@ window.initBBQV5=function(b){
       if(!window.confirm('BBQ-sessie afronden? Alle recepten, reviews en gegevens blijven bewaard.'))return;
       meta.active=false;meta.stage='finished';saveMeta();goto('home');return;
     }
-    if(act==='recipes'){legacy('recipes');return}
+    if(act==='recipes'){legacy('recipes','library');return}
+    if(act==='recipe-generate'){legacy('recipes','generate');return}
+    if(act==='recipe-junkie'){legacy('recipes','junkie');return}
     if(act==='history'||act==='more'){legacy('more');return}
     if(act==='planning'){legacy('planning');return}
     if(act==='recipe-in-live'){const el=root.querySelector('.v5-card details');if(el){el.open=true;el.scrollIntoView?.({behavior:'smooth',block:'start'})}else{legacy('recipes')}return}

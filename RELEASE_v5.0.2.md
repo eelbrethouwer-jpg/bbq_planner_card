@@ -16,11 +16,11 @@ Op de iPhone binnen de Home Assistant-kaart lopen **Datum**, **Serveren om** en 
 - Nieuw `dist/bbq-v502.css`: lokale styling van deze formuliervelden, zonder globale resets.
 - `dist/BBQ_bereidingsplanner_MEATER_v4.html`: v5.0.2 versie, stylesheet.
 - `sw.js`, `index.html` en `dist/bbq_planner_card.js`: PWA-cache en Home Assistant-iframeversie opgehoogd.
-- `tests/mobile-bounds.mjs`: nieuw Chromium-schermbreedteonderzoek voor 320, 360, 375, 393, 430 en 768 px, zelfstandig en binnen een gesimuleerd HA-iframe; controleren dat vier inputs en hun native HTML-types behouden blijven en niet buiten de kaart uitsteken.
+- `tests/mobile-bounds.mjs`: nieuw Chromium- en WebKit-schermbreedteonderzoek voor 320, 360, 375, 393, 430 en 768 px, zelfstandig en binnen een gesimuleerd HA-iframe; controleren dat vier inputs en hun native HTML-types behouden blijven en niet buiten de kaart uitsteken.
 
 ## Verificatie
 - Syntax, bestaande jsdom-functietests, PWA en HACS-validatie via GitHub Actions.
-- De browsermeting is een **Chromium-simulatie**, geen fysieke iPhone. **Echte iOS Safari en Home Assistant moeten na het samenvoegen nog handmatig worden gecontroleerd.**
+- De browsermeting simuleert mobiel gedrag in **Chromium en WebKit (Safari-engine)**, geen fysieke iPhone. **Echte iOS Safari en Home Assistant moeten na het samenvoegen nog handmatig worden gecontroleerd.**
 - Voor het publiceren de actuele CI-uitslag van de nieuwste commit controleren.
 
 **Titel:** BBQ Planner v5.0.2 — iPhone Picker Layout Fix

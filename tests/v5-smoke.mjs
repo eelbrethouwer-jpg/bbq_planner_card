@@ -6,8 +6,8 @@ import {JSDOM} from 'jsdom';
 const html=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
 const ui=fs.readFileSync('dist/bbq-v5.js','utf8');
 const ux501=fs.readFileSync('dist/bbq-v501.js','utf8');
-const loader='<script src="./bbq-v5.js?v=5.0.2"></script>';
-const loader501='<script src="./bbq-v501.js?v=5.0.2"></script>';
+const loader='<script src="./bbq-v5.js?v=5.0.3"></script>';
+const loader501='<script src="./bbq-v501.js?v=5.0.3"></script>';
 assert.ok(html.includes(loader),'v5 must be loaded ahead of the original planner engine');
 assert.ok(html.includes(loader501),'v5.0.1 enhancer is loaded');
 const documentHtml=html.replace(loader,'<script>'+ui+'</script>').replace(loader501,'<script>'+ux501+'</script>');
@@ -45,6 +45,7 @@ try{
  assert.equal(store().dishes.length,0,'new session resets only planned dishes');
  assert.ok(window.localStorage.getItem('bbq-v5-previous-plan-v1'),'previous plan backed up before replacement');
  assert.equal(session().stage,'select');
+ assert.ok(doc.querySelector('[data-v5-recipe="Warmgerookte zalm op brioche"]'),'smoked salmon preset visible in new v5 session');
  click(doc.querySelector('[data-v5-recipe="Pulled pork op brood"]'));
  assert.equal(store().dishes.length,1);
  assert.equal(store().dishes[0].name,'Pulled pork op brood');

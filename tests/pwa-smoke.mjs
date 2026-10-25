@@ -15,14 +15,14 @@ assert.equal((html.match(/data-v47-tab=/g)||[]).length,5);
 assert.match(html,/meaterBridgeSeen/);
 assert.match(html,/saveLocalRecipe/);
 assert.match(entry,/manifest.webmanifest/);
-assert.match(entry,/v=5\.0\.1/);
+assert.match(entry,/v=5\.0\.2/);
 assert.equal(manifest.display,'standalone');
 assert.ok(manifest.start_url.includes('BBQ_bereidingsplanner_MEATER_v4.html'));
 assert.ok(manifest.icons.some(i=>i.src==='assets/apple-touch-icon.png'));
 assert.ok(manifest.icons.some(i=>i.src==='assets/icon-512.png'&&i.sizes==='512x512'));
 assert.match(sw,/assets\/icon-512\.png/);
-for(const asset of ['bbq-v5.js','bbq-v5.css','bbq-v501.js','bbq-v501.css']){assert.match(html,new RegExp(asset));assert.match(sw,new RegExp(asset));assert.ok(fs.existsSync('dist/'+asset));}
-assert.match(sw,/bbq-regisseur-v5\.0\.1/);
+for(const asset of ['bbq-v5.js','bbq-v5.css','bbq-v501.js','bbq-v501.css','bbq-v502.css']){assert.match(html,new RegExp(asset));assert.match(sw,new RegExp(asset));assert.ok(fs.existsSync('dist/'+asset));}
+assert.match(sw,/bbq-regisseur-v5\.0\.2/);
 assert.match(sw,/SKIP_WAITING/);
 assert.doesNotMatch(sw,/skipWaiting\(\)\s*\)\s*;\s*\}\)/);
 assert.match(sw,/url\.origin!==self\.location\.origin/);
@@ -31,4 +31,4 @@ assert.equal(sw.includes('https://api.'),false);
 assert.ok(fs.existsSync('assets/apple-touch-icon.png'),'real PNG app icon');
 assert.ok(fs.existsSync('assets/icon-512.png'),'512px PNG icon');
 assert.equal(read('assets/app-icon.svg').includes('<svg'),true);
-console.log('OK PWA v5.0.1 static checks');
+console.log('OK PWA v5.0.2 static checks');

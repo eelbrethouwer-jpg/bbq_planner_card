@@ -1,0 +1,83 @@
+/* BBQ Planner v5.0.2 — iOS Safari native picker containment.
+   Native date/time controls can have a minimum intrinsic width that exceeds
+   the enclosing grid cell inside a narrow Home Assistant iframe. Each control
+   now lives in a bordered, size-constrained frame. Do not hide page overflow. */
+#v5-root .v5-serve-card{min-width:0;max-width:100%;overflow:visible}
+#v5-root .v5-serve-fields{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px 12px;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  align-items:stretch;
+}
+#v5-root .v5-serve-fields>.v5-field{
+  display:block;
+  inline-size:100%;
+  min-inline-size:0;
+  max-inline-size:100%;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+}
+#v5-root .v5-serve-fields .v5-input-frame{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  inline-size:100%;
+  min-inline-size:0;
+  max-inline-size:100%;
+  box-sizing:border-box;
+  overflow:hidden;
+  background:#0f2028;
+  border:1px solid #587078;
+  border-radius:10px;
+  margin-top:6px;
+}
+#v5-root .v5-serve-fields .v5-input-frame:focus-within{
+  outline:3px solid #6dd3ad;
+  outline-offset:2px;
+}
+#v5-root .v5-serve-fields .v5-input-frame>.v5-input{
+  box-sizing:border-box;
+  display:block;
+  inline-size:100%;
+  width:100%;
+  max-inline-size:100%;
+  max-width:100%;
+  min-inline-size:0!important;
+  min-width:0!important;
+  min-height:46px;
+  margin:0;
+  padding:10px 12px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#f7f2e9;
+  font-size:16px;
+  line-height:1.4;
+}
+/* Prevent the inner outline from being clipped by its frame. */
+#v5-root .v5-serve-fields .v5-input-frame>.v5-input:focus-visible{outline:none}
+#v5-root .v5-serve-fields input[type=date],
+#v5-root .v5-serve-fields input[type=time]{
+  text-align:center;
+  -webkit-appearance:none;
+  appearance:none;
+}
+#v5-root .v5-serve-fields input[type=date]::-webkit-date-and-time-value,
+#v5-root .v5-serve-fields input[type=time]::-webkit-date-and-time-value{
+  text-align:center;
+  min-height:1em;
+}
+#v5-root .v5-serve-fields input[type=number]{text-align:left}
+@media(max-width:800px){
+  /* Flexbox avoids native date/time min-content expanding a CSS Grid track. */
+  #v5-root .v5-serve-fields{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:15px;
+  }
+  #v5-root .v5-serve-fields>.v5-field{flex:0 1 auto}
+}

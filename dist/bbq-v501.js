@@ -20,13 +20,13 @@ window.initBBQV501=function(){
   const button=document.createElement('button');
   button.type='button';button.className='v501-recipe-choice';button.dataset.v501RecipeTab=item.id;
   button.setAttribute('role','tab');button.id='v501-recipe-tab-'+item.id;
-  button.setAttribute('aria-controls','v501-recipe-panel-'+item.id);
+  button.setAttribute('aria-controls',item.id==='junkie'?'v48-catalog':'v501-recipe-panel-'+item.id);
   const icon=document.createElement('span');icon.className='v501-recipe-icon';icon.setAttribute('aria-hidden','true');icon.textContent=item.icon;
   const label=document.createElement('span');label.textContent=item.label;
   button.append(icon,label);nav.appendChild(button);
   let pane;
   if(item.id==='junkie'){pane=catalog;pane.id='v48-catalog';}
-  else{pane=document.createElement('section');pane.className='v501-recipe-pane';page.insertBefore(pane,catalog);}
+  else{pane=document.createElement('section');pane.id='v501-recipe-panel-'+item.id;pane.className='v501-recipe-pane';page.insertBefore(pane,catalog);}
   pane.setAttribute('role','tabpanel');
   pane.setAttribute('aria-labelledby',button.id);
   pane.setAttribute('tabindex','0');

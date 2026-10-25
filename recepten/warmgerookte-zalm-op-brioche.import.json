@@ -1,0 +1,66 @@
+{
+  "format": "bbq-receptenbibliotheek-v1",
+  "exportedAt": "2026-10-25T21:00:00.000Z",
+  "recipes": [
+    {
+      "name": "Warmgerookte zalm op brioche",
+      "category": "vis",
+      "method": "indirect",
+      "grate": "rvs",
+      "kamado": "large",
+      "grill": 115,
+      "core": "52",
+      "cook": 50,
+      "rest": 5,
+      "notes": "Recept van juli 2026, opnieuw bevestigd in september. 800–1.000 g zalm; 110–120 °C indirect met appel-/kersenrook; circa 40–60 minuten. 50–52 °C was het oorspronkelijke sappige kerndoel, maar is niet volledig doorgegaard. Veiliger: 60 °C volgens Voedingscentrum; FoodSafety.gov adviseert 63 °C. Voor kinderen en andere kwetsbare groepen goed doorgaren. Brioche apart roosteren. Zonder ui.",
+      "recipeIngredients": "Zalmzijde 800–1.000 g\n2 el bruine suiker\n2 el grof zeezout\n1 tl zwarte peper\n1 tl knoflookpoeder\n1 tl gerookt paprikapoeder\n2–3 chunks appel- of kersenrookhout\n\nCITROEN-ROOMKAASCRÈME\n200–300 g roomkaas\n1 citroen (rasp en een beetje sap)\nVerse dille en zwarte peper\n\nHONING-MOSTERDSAUS\n2 el mayonaise\n1 el crème fraîche\n1 tl Dijonmosterd\n1 tl honing\nCitroensap naar smaak\n\nSERVEREN\nBrioche (aantal naar wens)\nKappertjes\nExtra dille, citroenrasp, zwarte peper, een scheutje olijfolie\nGeen ui",
+      "recipePrep": "Controleer de zalm op graatjes en dep droog. Meng bruine suiker, grof zeezout, peper, knoflookpoeder en gerookt paprikapoeder. Wrijf de zalm ermee in en laat 30–45 minuten afgedekt in de koelkast intrekken; veeg overtollig zout/rub weg.\nCitroen-roomkaascrème: meng roomkaas met citroenrasp, een beetje sap, fijngesneden dille en zwarte peper.\nHoning-mosterdsaus: roer 2 el mayonaise, 1 el crème fraîche, 1 tl Dijonmosterd, 1 tl honing en citroensap door elkaar. Bewaar saus en crème gekoeld.",
+      "recipeCook": "Bereid grote kamado indirect voor met hitteschild, RVS-rooster, 110–120 °C en 2–3 chunks appel- of kersenhout. Plaats de zalm met huidkant naar beneden op het rooster en steek de MEATER in het dikste deel. Rook ongeveer 40–60 minuten, afhankelijk van dikte. Het oorspronkelijke sappige recept gebruikt 50–52 °C kern; dat is niet volledig doorgegaard. Voor veiliger doorgaren hanteert Voedingscentrum 60 °C, FoodSafety.gov adviseert 63 °C. Voor jonge kinderen, zwangeren, ouderen en mensen met verminderde weerstand goed doorgaren. Controleer altijd de kerntemperatuur.",
+      "recipeRest": "Haal de zalm van de BBQ en laat ongeveer 5 minuten rusten. Rooster intussen brioche kort met de snijkant naar beneden op de kleine kamado of in een pan; de grote kamado kan indirect blijven. Houd roomkaas en saus gekoeld tot gebruik.",
+      "recipeSlice": "Bestrijk de brioche met citroen-roomkaascrème. Verdeel de warmgerookte zalm over het brood. Werk af met verse dille, kappertjes, citroenrasp, zwarte peper en een drupje olijfolie. Serveer de honing-mosterdsaus in kleine stippen of apart. Zonder ui.",
+      "recipeSteps": [
+        {
+          "trigger": "30–45 minuten vooraf",
+          "title": "Zalm kruiden",
+          "detail": "Dep zalm droog, controleer graatjes. Meng 2 el bruine suiker, 2 el grof zeezout, 1 tl peper, 1 tl knoflookpoeder en 1 tl gerookt paprikapoeder. Wrijf in, laat 30–45 minuten afgedekt gekoeld intrekken, veeg overtollige rub weg."
+        },
+        {
+          "trigger": "Tijdens intrekken",
+          "title": "Citroen-roomkaascrème maken",
+          "detail": "Meng 200–300 g roomkaas met rasp en beetje sap van een citroen, fijngehakte dille en zwarte peper. Bewaar gekoeld."
+        },
+        {
+          "trigger": "Tijdens intrekken",
+          "title": "Honing-mosterdsaus maken",
+          "detail": "Klop 2 el mayonaise, 1 el crème fraîche, 1 tl Dijonmosterd, 1 tl honing en wat citroensap los. Bewaar gekoeld. Gebruik geen ui."
+        },
+        {
+          "trigger": "Voor het roken",
+          "title": "Kamado gereedmaken",
+          "detail": "Plaats hitteschild en RVS-rooster; stabiliseer 110–120 °C indirect. Voeg 2–3 kleine chunks appel- of kersenhout toe. Leg zalm op huidkant en plaats MEATER in dikste deel."
+        },
+        {
+          "trigger": "Circa 40–60 minuten, kern leidend",
+          "title": "Zalm warm roken",
+          "detail": "Rook indirect. Origineel kerndoel 50–52 °C voor sappige maar niet volledig doorgegaarde zalm. Veiliger is 60 °C (Voedingscentrum); FoodSafety.gov adviseert 63 °C. Voor jonge kinderen en kwetsbare groepen goed doorgaren. Duur hangt af van dikte."
+        },
+        {
+          "trigger": "Na het roken",
+          "title": "Zalm laten rusten",
+          "detail": "Haal de zalm voorzichtig van het rooster en laat ongeveer 5 minuten rusten. Gebruik schoon keukengerei."
+        },
+        {
+          "trigger": "Vlak voor serveren",
+          "title": "Brioche roosteren",
+          "detail": "Rooster de brioche kort aan de snijkant op de kleine kamado of in een pan, niet tijdens het roken op de indirecte grote kamado."
+        },
+        {
+          "trigger": "Serveren",
+          "title": "Brioche met zalm en saus opmaken",
+          "detail": "Smeer citroen-roomkaascrème op de brioche, verdeel zalm, dille, kappertjes, citroenrasp en peper. Maak af met wat olijfolie en stippen honing-mosterdsaus. Geen ui."
+        }
+      ],
+      "updatedAt": "2026-10-25T21:00:00.000Z"
+    }
+  ]
+}

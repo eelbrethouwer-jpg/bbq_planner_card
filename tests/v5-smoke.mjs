@@ -5,9 +5,12 @@ import {JSDOM} from 'jsdom';
 
 const html=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
 const ui=fs.readFileSync('dist/bbq-v5.js','utf8');
-const loader='<script src="./bbq-v5.js?v=5.0.0"></script>';
+const ux501=fs.readFileSync('dist/bbq-v501.js','utf8');
+const loader='<script src="./bbq-v5.js?v=5.0.1"></script>';
+const loader501='<script src="./bbq-v501.js?v=5.0.1"></script>';
 assert.ok(html.includes(loader),'v5 must be loaded ahead of the original planner engine');
-const documentHtml=html.replace(loader,'<script>'+ui+'</script>');
+assert.ok(html.includes(loader501),'v5.0.1 enhancer is loaded');
+const documentHtml=html.replace(loader,'<script>'+ui+'</script>').replace(loader501,'<script>'+ux501+'</script>');
 const errors=[];
 const dom=new JSDOM(documentHtml,{
   url:'https://planner.test.invalid/dist/BBQ_bereidingsplanner_MEATER_v4.html',

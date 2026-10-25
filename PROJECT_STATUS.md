@@ -57,3 +57,12 @@ Controleer actuele GitHub-main/release/CI en vraag welke concrete functie of bug
 - **Tests:** GitHub Actions op HEAD controleren: syntax, PWA-checks, oude rooktest, v5-flow, nieuwe v501-recepten-flow, HACS-validatie.
 - **Niet bevestigd:** fysieke iPhone Safari-layout, schermlezer, bestaande persoonlijke opslag na PWA-cachewissel, HA-live-MEATER.
 - **Volgende stap:** PR beoordelen, echte iPhone/HA testen, daarna eventueel samenvoegen en een release publiceren. Details: `RELEASE_v5.0.1.md`.
+
+## v5.0.2 — iPhone datum-/tijdveld buiten de kaart (25 oktober 2026)
+- **GitHub-branch:** `fix/v5.0.2-iphone-native-input-overflow`. Releasekandidaat, niet gepubliceerd.
+- **Gebruikersscreenshot uit HA-app:** datum, serveertijd en 'beschikbaar vanaf' steken zichtbaar uit de rechterrand van de kaart in v5.0.1; getalveld blijft binnen de kaart.
+- **Fix:** `dist/bbq-v5.js` wikkelt de vier oorspronkelijke invoervelden in `v5-input-frame`; `dist/bbq-v502.css` bevat robuuste begrenzing en éénkoloms mobiele flex-layout. Native input types en bestaande state-/change-callbacks blijven onveranderd.
+- **Cache:** PWA `sw.js`, `index.html`, HA iframe `dist/bbq_planner_card.js` zijn op v5.0.2 gezet.
+- **Nieuwe browserregressie:** `tests/mobile-bounds.mjs` controleert invoervelden bij 320–768 px, als PWA en in een nagebootst HA-iframe, in Chromium en WebKit.
+- **Tests:** actuele PR/branch HEAD in GitHub Actions controleren (JavaScript, DOM-tests, PWA, HACS en echte browserlayout). **Echte iOS Safari / HA nog handmatig nodig.**
+- Details: `RELEASE_v5.0.2.md`.

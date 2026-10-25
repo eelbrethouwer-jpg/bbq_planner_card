@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import path from 'node:path';
 import {readFile} from 'node:fs/promises';
-import {chromium} from 'playwright';
+import {chromium,webkit} from 'playwright';
 
 const root=process.cwd();
 const fixture='<!doctype html><html lang="nl"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;padding:12px;background:#121b20"><iframe id="ha" title="HA mobile card simulation" src="/dist/BBQ_bereidingsplanner_MEATER_v4.html" style="display:block;width:100%;height:690px;border:0"></iframe></body></html>';
@@ -19,9 +19,11 @@ const server=http.createServer(async(req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port,origin='http://127.0.0.1:'+port;
-let browser;
 try{
- browser=await chromium.launch({headless:true});
+ for(const [engineName,engine] of [['Chromium',chromium],['WebKit',webkit]]){
+  let browser;
+  try{
+   browser=await engine.launch({headless:true});
  for(const width of [320,360,375,393,430,768]){
   for(const embedded of [false,true]){
    const context=await browser.newContext({viewport:{width,height:812},isMobile:true,hasTouch:true,deviceScaleFactor:2});
@@ -45,7 +47,7 @@ try{
        })
      };
    });
-   const name=(embedded?'HA iframe ':'PWA ')+width+'px';
+   const name=engineName+' '+(embedded?'HA iframe ':'PWA ')+width+'px';
    assert.equal(measure.items.length,4,name+': all serve form inputs');
    assert.deepEqual(measure.items.map(x=>x.type),['date','time','time','number'],name+': preserve native pickers');
    assert.ok(measure.scrollWidth<=measure.viewport+2,name+': no horizontal body overflow '+JSON.stringify(measure));
@@ -65,7 +67,8 @@ try{
    await context.close();
   }
  }
+  } finally {if(browser)await browser.close();}
+ }
 } finally {
- if(browser)await browser.close();
  await new Promise(resolve=>server.close(resolve));
 }

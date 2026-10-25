@@ -50,3 +50,14 @@ jobs:
           node tests/smoke.mjs
           node tests/v5-smoke.mjs
           node tests/v501-smoke.mjs
+
+  mobile-browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installeer browser voor mobiele viewporttest
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Controleer iPhone-formulierbreedtes (Chromium/WebKit) en HA-iframe
+        run: node tests/mobile-bounds.mjs

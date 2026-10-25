@@ -57,11 +57,11 @@ window.initBBQV5=function(b){
     const s=state(),c=b.calculate();
     const alerts=c.alerts||[];
     return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+
-    '<div class="v5-card"><h3>🍽️ Serveermoment</h3><div class="v5-grid">'+
-      '<label class="v5-field">Datum<input class="v5-input" type="date" data-v5-setting="date" value="'+escape(s.date)+'"></label>'+
-      '<label class="v5-field">Serveren om<input class="v5-input" type="time" data-v5-setting="mealTime" value="'+escape(s.mealTime)+'"></label>'+
-      '<label class="v5-field">Beschikbaar vanaf<input class="v5-input" type="time" data-v5-setting="availableFrom" value="'+escape(s.availableFrom)+'"></label>'+
-      '<label class="v5-field">Aantal personen<input class="v5-input" type="number" min="1" max="50" data-v5-setting="v45People" value="'+escape(s.v45People||4)+'"></label>'+
+    '<div class="v5-card v5-serve-card"><h3>🍽️ Serveermoment</h3><div class="v5-grid v5-serve-fields">'+
+      '<label class="v5-field">Datum<span class="v5-input-frame"><input class="v5-input" type="date" data-v5-setting="date" value="'+escape(s.date)+'"></span></label>'+
+      '<label class="v5-field">Serveren om<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="mealTime" value="'+escape(s.mealTime)+'"></span></label>'+
+      '<label class="v5-field">Beschikbaar vanaf<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="availableFrom" value="'+escape(s.availableFrom)+'"></span></label>'+
+      '<label class="v5-field">Aantal personen<span class="v5-input-frame"><input class="v5-input" type="number" min="1" max="50" data-v5-setting="v45People" value="'+escape(s.v45People||4)+'"></span></label>'+
     '</div><p class="v5-muted">Voor een diner met meerdere gangen kun je in de uitgebreide planning aparte serveertijden instellen.</p></div>'+
     '<div class="v5-card"><h3>🔥 Verdeel de gerechten</h3>'+dishes().map(d=>'<div class="v5-dishline"><div><strong>'+escape(d.name)+'</strong><small>±'+escape(d.cook)+' min · BBQ '+escape(d.grill)+' °C</small></div>'+
       '<select class="v5-input" aria-label="Kamado voor '+escape(d.name)+'" data-v5-kamado="'+escape(d.id)+'"><option value="large"'+(d.kamado==='large'?' selected':'')+'>Groot</option><option value="small"'+(d.kamado==='small'?' selected':'')+'>Klein</option></select></div>').join('')+

@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.0.3 — Warmgerookte zalm op brioche (releasekandidaat)
+
+- Teruggevonden zalmrecept (juli/september 2026) als afzonderlijke ingebouwde preset met citroen-roomkaascrème en honing-mosterdsaus, zonder ui.
+- Acht uitklapbare bereidingsstappen, inclusief MEATER-doelkern, rub, rookhout, brioche en beide sauzen.
+- JSON-importbestand voor **Mijn receptenbibliotheek**, zonder bestaande lokale of Home Assistant-recepten automatisch te overschrijven.
+- PWA-cache en HA-iframeversie naar v5.0.3; bestaande algemene zalmpreset blijft behouden.
+- Voedselveiligheidsadvies toegevoegd bij oorspronkelijk kerndoel van 50–52 °C: voor veiliger garen 60 °C (Voedingscentrum), 63 °C (FoodSafety.gov).
+- Tests aangevuld voor aanwezigheid van preset en JSON-importschema. CI en fysieke iPhone/HA-controle volgen op de PR.
+
+Zie [RELEASE_v5.0.3.md](RELEASE_v5.0.3.md). Alleen een **releasekandidaat** totdat de pull request is gemerged en de update is uitgebracht.
+
 ## v4.6.0 — BBQ Regisseur (releasekandidaat)
 
 - **Meerdere serveermomenten:** optioneel voorgerecht, hoofdgerecht en dessert met eigen gangtoewijzing per gerecht; bestaande enkele serveertijd blijft standaard.

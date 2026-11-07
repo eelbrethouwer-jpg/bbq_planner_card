@@ -72,7 +72,7 @@ const intentional={
    reason:'legacy advises later serving; shadow reports infeasible without changing serve slot'},
  S13:{s:sample([item('a',{cook:null})]),code:'DURATION_UNKNOWN',status:'unknown',
    reason:'legacy sanitizes null to zero; shadow retains explicit unknown duration'},
- N03:{s:sample([item('a',{kamado:'unregistered'})]),code:'UNKNOWN_KAMADO',status:'unknown',
+ V03:{s:sample([item('a',{kamado:'unregistered'})]),code:'UNKNOWN_KAMADO',status:'unknown',
    reason:'legacy can calculate a dish not assigned to large/small; shadow rejects unknown resource'}
 };
 for(const [id,fixture] of Object.entries(intentional)){
@@ -85,7 +85,7 @@ for(const [id,fixture] of Object.entries(intentional)){
  if(id==='S13')assert.equal(old.dishes[0].cook,0,'legacy clamps null cook to zero');
  if(id==='S03')assert.ok(old.alerts.some(a=>/Verschillende/.test(a.message)),
    'legacy reports incompatible setup text');
- if(id==='N03'){
+ if(id==='V03'){
    assert.equal(old.alerts.length,0,'legacy does not warn unknown kamado in calc');
    assert.equal(old.fires.large,null,'unknown kamado has no legacy large fire');
    assert.equal(old.fires.small,null,'unknown kamado has no legacy small fire');

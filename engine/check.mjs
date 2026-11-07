@@ -26,8 +26,12 @@ export function plan(input){
     conflicts.push({code,affectedIds,severity,explanation});
   }
   for(const issue of issues)conflict(issue.code,issue.affectedIds||[],'unknown','Unverified source input');
-  const validation=issues.map(issue=>({code:issue.code,field:issue.affectedIds?.[0]??'',
-    ...(issue.affectedIds?.[0]?.split(':')[0]?{dishId:issue.affectedIds[0].split(':')[0]}:{})}));
+  const knownDishIds=new Set(input.dishes.map(d=>d.id));
+  const validation=issues.map(issue=>{
+    const field=issue.affectedIds?.[0]??'';
+    const dishId=[...knownDishIds].find(id=>field===id||field.startsWith(id+':'));
+    return {code:issue.code,field,...(dishId?{dishId}:{})};
+  });
   const slots=new Map(input.serveSlots.map(x=>[x.id,x]));
   const kamados=new Map(input.kamados.map(k=>[k.id,k]));
   const parts=new Map(input.kamados.map(k=>[k.id,[]]));

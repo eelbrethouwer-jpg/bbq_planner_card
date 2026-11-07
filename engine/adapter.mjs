@@ -41,7 +41,11 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
   const rawDishes=Array.isArray(state.dishes)?state.dishes:[];
   const used=new Set(rawDishes.filter(d=>d&&typeof d==='object').map(d=>d.kamado));
   const kamados=['large','small'].map(id=>({
-    id,preheatMin:used.has(id)?numeric(state[id==='large'?'preheatLarge':'preheatSmall'],id+':preheat',validation):null,
+    id,
+    // Preserve valid equipment data even if unused, but unused invalid/absent
+    // equipment must not invalidate an otherwise sound existing legacy plan.
+    preheatMin:numeric(state[id==='large'?'preheatLarge':'preheatSmall'],id+':preheat',
+      used.has(id)?validation:[],{required:used.has(id)}),
     capacity:null
   }));
   const seen=new Set(),dishes=[];

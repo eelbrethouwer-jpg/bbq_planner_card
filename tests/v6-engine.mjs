@@ -130,6 +130,61 @@ caseOf('NEG-DOUBLE-BOOK',()=>{
 });
 caseOf('NEG-FIXED-SHIFT',()=>expected(state([item('a',{mode:'manual',fixedStart:'17:20'})]),
  'infeasible',['FIXED_START_MISSES_SERVE']));
+
+caseOf('S11',()=>{
+ const o=expected(state([item('a',{name:'Ribeye'}),
+  item('b',{name:'Ribeye',kamado:'small'})]),'feasible');
+ assert.equal(o.dishes.length,2);
+ assert.equal(new Set(o.proposedTasks.map(x=>x.id)).size,o.proposedTasks.length);
+});
+caseOf('S14b',()=>{
+ const o=expected(state([item('a',{cook:1200,rest:60})],
+ {availableFrom:'16:30'}),'conditional',['AVAILABILITY_UNVERIFIED']);
+ assert.equal(dOf(o,'a').start,Date.parse('2026-11-13T20:30:00Z'));
+ assert.equal(o.fires.large,Date.parse('2026-11-13T20:00:00Z'));
+ assert.equal(dOf(o,'a').cookEnd,Date.parse('2026-11-14T16:30:00Z'));
+ assert.equal(codes(o).has('PREHEAT_UNAVAILABLE'),false);
+});
+caseOf('N01',()=>{
+ const o=expected(state([item('a',{cook:840,rest:0})],
+ {date:'2027-03-28',mealTime:'12:00',availableFrom:''}),'feasible');
+ assert.equal(dOf(o,'a').start,Date.parse('2027-03-27T20:00:00Z'));
+ assert.equal(dOf(o,'a').cookEnd,Date.parse('2027-03-28T10:00:00Z'));
+});
+caseOf('N02',()=>{
+ const o=expected(state([item('a',{cook:840,rest:0,prepTasks:[{
+ id:'rub',daysBefore:1,time:'19:00',duration:10}]})],
+ {date:'2027-10-31',mealTime:'12:00',availableFrom:''}),'feasible');
+ assert.equal(dOf(o,'a').start,Date.parse('2027-10-30T21:00:00Z'));
+ assert.equal(o.proposedTasks.find(x=>x.id==='a:prep:rub').at,
+  Date.parse('2027-10-30T17:00:00Z'));
+});
+const fixtureN03=()=>state([
+ item('sear',{mode:'manual',fixedStart:'15:20',cook:60,rest:0,
+  serveSlot:'starter',grill:250,method:'direct',grate:'cast'}),
+ item('low',{mode:'manual',fixedStart:'17:00',cook:90,rest:0,
+  grill:120,method:'indirect',grate:'rvs'})
+],{v46MultiServe:true,v46Starter:'16:20'});
+caseOf('N03',()=>{
+ const o=expected(fixtureN03(),'conditional',['CHANGEOVER_UNVERIFIED']);
+ assert.ok(o.conflicts.some(c=>c.code==='CHANGEOVER_UNVERIFIED'&&
+  c.affectedIds.join(',')==='low,sear'));
+});
+caseOf('N05',()=>{
+ const o=expected(state([item('a',{serveSlot:'starter',cook:30,rest:0})],
+ {v46MultiServe:true,v46Starter:'20:00'}),'conditional',['SLOT_ORDER']);
+ assert.equal(codes(o).has('FIXED_START_MISSES_SERVE'),false);
+});
+caseOf('N06',()=>expected(state([item('a',{prepTasks:[{
+ id:'late',daysBefore:0,time:'16:50',duration:30}]})]),
+ 'infeasible',['PREP_AFTER_START']));
+caseOf('N10',()=>{
+ const o=expected(state([item('d',{cook:20000,rest:-5}),item('d')]),
+ 'unknown',['OUT_OF_RANGE','INVALID_DURATION','DUPLICATE_ID']);
+ assert.ok(o.conflicts.filter(c=>['OUT_OF_RANGE','INVALID_DURATION','DUPLICATE_ID'].includes(c.code))
+ .every(c=>c.severity==='unknown'));
+});
+
 const failed=results.filter(x=>x.status==='FAIL');
 console.log('SCENARIO_SUMMARY '+results.map(x=>x.id+'='+x.status).join(' '));
 if(failed.length)throw new Error(failed.length+' v6 scenario(s) failed: '+failed.map(x=>x.id).join(','));

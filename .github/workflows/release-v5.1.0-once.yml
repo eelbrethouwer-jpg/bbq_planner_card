@@ -1,0 +1,64 @@
+name: Publish BBQ Planner v5.1.0 (one-time)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-v5.1.0-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'eelbrethouwer-jpg/bbq_planner_card'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maak gecontroleerde v5.1.0-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v5.1.0"
+          TARGET="e2b1a861d745c6fcd77ff39515330995673c4d43"
+
+          # Never overwrite or silently reuse a pre-existing tag.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, no changes made."
+            exit 0
+          fi
+          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG exists without a release; refusing to change it."
+            exit 1
+          fi
+
+          cat > /tmp/bbq-v5.1.0-notes.md <<'NOTES'
+          ## BBQ Planner v5.1.0 — Eén app, rustig koken
+
+          Een rustiger, beter bruikbaar scherm tijdens het koken, met één navigatie.
+
+          ### Nieuw en verbeterd
+          - Eén vaste onderbalk in de planner, de recepten, Live en Meer.
+          - Compact Live-overzicht: serveertijd, voortgang, één hoofdtaak, kamadokaarten en maximaal vijf volgende stappen.
+          - Geplande en daadwerkelijk afgevinkte tijden bij afgeronde stappen.
+          - Alleen verse MEATER-metingen verschijnen als groot LIVE-cijfer; anders wordt de geplande temperatuur getoond.
+          - Uitklapbare receptdetails en scrollpositie blijven behouden bij automatische updates.
+          - Recept- en taakkoppelingen gebeuren via gerecht-ID, ook bij gerechten met dezelfde naam.
+          - Compacte recepttegels en herkomstfilters Eigen/Voorbeelden, zonder nieuwe opslagvelden.
+
+          ### Compatibiliteit
+          De bestaande berekeningsengine, persoonlijke recepten, reviews, import/export, PWA, Home Assistant- en MEATER-integratie en opslagstructuur blijven behouden. Geen datamigratie.
+
+          ### Teststatus
+          De vier GitHub CI-checks slaagden op PR #26 en de merge op main: HACS-validatie, JavaScript/PWA, DOM-regressies en mobiele Chromium/WebKit-checks.
+
+          ### Nog te controleren op echte apparaten
+          Fysieke iPhone Safari/PWA met bestaande gebruikersdata, echte Home Assistant/HACS en MEATER-hardware, iPad/desktop en VoiceOver. Test na installatie eerst of recepten, live-taken en navigatie correct blijven functioneren.
+
+          Bron: PR #26; gecontroleerde mergecommit e2b1a861d745c6fcd77ff39515330995673c4d43.
+          NOTES
+
+          gh release create "$TAG" --target "$TARGET" --title "BBQ Planner v5.1.0 — Eén app, rustig koken" --notes-file /tmp/bbq-v5.1.0-notes.md --latest
+          gh release view "$TAG" --json tagName,name,url

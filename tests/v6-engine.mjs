@@ -11,8 +11,8 @@ const item=(id,opts={})=>({id,name:id,kamado:'large',cook:60,rest:15,grill:120,m
   grate:'rvs',mode:'auto',phase:'waiting',prepTasks:[],...opts});
 const state=(dishes=[],opts={})=>({date:baseDate,dateMode:'manual',mealTime:'18:30',availableFrom:'00:00',
   preheatLarge:30,preheatSmall:25,dishes,...opts});
-function run(s,mutate){
-  const {input,validation}=fromLegacyState(s,{houseZone:Z,now:clock('12:00')});
+function run(s,mutate,now=clock('12:00')){
+  const {input,validation}=fromLegacyState(s,{houseZone:Z,now});
   if(mutate)mutate(input);
   return {out:plan(input),input,validation};
 }
@@ -22,8 +22,8 @@ function caseOf(id,fn){
   catch(e){results.push({id,status:'FAIL',error:e.message});console.error('FAIL '+id+': '+e.stack)}
 }
 const codes=out=>new Set(out.conflicts.map(x=>x.code));
-function expected(s,status,includes=[],mutate){
-  const x=run(s,mutate);
+function expected(s,status,includes=[],mutate,now){
+  const x=run(s,mutate,now);
   assert.equal(x.out.planStatus,status,'unexpected plan status: '+JSON.stringify(x.out.conflicts));
   for(const c of includes)assert.ok(codes(x.out).has(c),'missing '+c+': '+JSON.stringify(x.out.conflicts));
   assert.equal(x.out.searchStatus,'not_run');
@@ -63,9 +63,9 @@ caseOf('S12',()=>expected(state([item('a')],{mealTime:'25:99'}),'unknown',['INVA
 caseOf('S13',()=>expected(state([item('a',{cook:null})]),'unknown',['DURATION_UNKNOWN']));
 caseOf('S14',()=>{const o=expected(state([item('a',{cook:600,rest:60})]),'feasible');
  assertTimes(o,'a','07:30','17:30','18:30');assert.equal(o.fires.large,clock('07:00'))});
-caseOf('S15',()=>{const o=expected(state([item('a',{prepTasks:[{id:'rub',daysBefore:1,time:'19:00',duration:15}]})]),'feasible');
+caseOf('S15',()=>{const o=expected(state([item('a',{prepTasks:[{id:'rub',daysBefore:1,time:'19:00',duration:15}]})]),'conditional',['AVAILABILITY_UNVERIFIED']);
  const p=o.proposedTasks.find(x=>x.id==='a:prep:rub');assert.equal(p.at,at('2026-11-13','19:00'));assert.equal(p.timeKnown,true)});
-caseOf('S16',()=>{const o=expected(state([item('a',{prepTasks:[{id:'salt',daysBefore:2,time:'',duration:10}]})]),'feasible');
+caseOf('S16',()=>{const o=expected(state([item('a',{prepTasks:[{id:'salt',daysBefore:2,time:'',duration:10}]})]),'conditional',['AVAILABILITY_UNVERIFIED']);
  const p=o.proposedTasks.find(x=>x.id==='a:prep:salt');assert.equal(p.at,null);
  assert.equal(p.localDate,'2026-11-12');assert.equal(p.timeKnown,false)});
 caseOf('S17',()=>{
@@ -81,17 +81,17 @@ caseOf('S18',()=>{
 });
 caseOf('S19',()=>{const t=at('2026-11-14','18:30');assert.deepEqual(
  localParts(t,Z).localTime,'18:30');assert.equal(t,Date.parse('2026-11-14T17:30:00Z'));});
-caseOf('S20',()=>{const o=expected(state([item('a',{prepTasks:[{id:'before',daysBefore:1,time:'19:00',duration:10}]}),
- item('b',{kamado:'small',cook:30,rest:0})]),'feasible');
- const order=o.proposedTasks.filter(x=>Number.isFinite(x.at));
- assert.deepEqual(order.map(x=>x.id),[...order].sort((a,b)=>a.at-b.at||
- ({fire:0,prep:1,on:2,changeover:3,off:4,rest:5,serve:6}[a.type]-
- {fire:0,prep:1,on:2,changeover:3,off:4,rest:5,serve:6}[b.type])||
- String(a.kamadoId).localeCompare(String(b.kamadoId),'en')||
- String(a.dishId??'').localeCompare(String(b.dishId??''),'en')||
- String(a.id).localeCompare(String(b.id),'en')).map(x=>x.id));});
+caseOf('S20',()=>{
+ const o=expected(state([item('a',{prepTasks:[
+ {id:'before',daysBefore:1,time:'19:00',duration:10},
+ {id:'untimed',daysBefore:2,time:'',duration:10}]}),
+ item('b',{kamado:'small',cook:30,rest:0})]),'conditional',['AVAILABILITY_UNVERIFIED']);
+ assert.equal(o.proposedTasks[0].id,'a:prep:untimed');
+ assert.equal(o.proposedTasks[0].at,null);
+ assert.equal(o.proposedTasks[1].id,'a:prep:before');
+});
 caseOf('S29',()=>{const s=state([item('a',{kamado:'large-2'})]);
- expected(s,'infeasible',['UNKNOWN_KAMADO']);
+ expected(s,'unknown',['UNKNOWN_KAMADO']);
  assert.equal(s.dishes[0].kamado,'large-2')});
 caseOf('S30',()=>{
  const s=state(Array.from({length:12},(_,i)=>item('d'+String(i).padStart(2,'0'))));

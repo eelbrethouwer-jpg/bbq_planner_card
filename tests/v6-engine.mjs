@@ -185,6 +185,47 @@ caseOf('N10',()=>{
  .every(c=>c.severity==='unknown'));
 });
 
+
+caseOf('T01',()=>{
+ const o=expected(state([item('a',{grill:'120'}),item('b',{grill:'250'})]),
+  'infeasible',['INCOMPATIBLE_SETUP']);
+ assert.equal(codes(o).has('TEMPERATURE_UNKNOWN'),false);
+});
+caseOf('T02',()=>{
+ const o=expected(state([item('a',{grill:null}),item('b')]),'unknown',['TEMPERATURE_UNKNOWN']);
+ assert.equal(codes(o).has('INCOMPATIBLE_SETUP'),false);
+});
+caseOf('T03',()=>{
+ const early=expected(state([item('a',{mode:'manual',fixedStart:'17:05'})]),
+ 'conditional',['HOLD_UNVERIFIED']);
+ assert.equal(dOf(early,'a').end,clock('18:20'));
+ assert.equal(codes(early).has('FIXED_START_MISSES_SERVE'),false);
+ const late=expected(state([item('a',{mode:'manual',fixedStart:'17:20'})]),
+ 'infeasible',['FIXED_START_MISSES_SERVE']);
+ assert.equal(dOf(late,'a').end,clock('18:35'));
+});
+caseOf('T04',()=>{
+ const o=expected(state([item('a')],{date:'2026-11-10',dateMode:'auto'}),
+ 'feasible',[],undefined,clock('12:00'));
+ assert.equal(dOf(o,'a').start,Date.parse('2026-11-14T16:15:00Z'));
+});
+caseOf('T05',()=>expected(state([item('a',{prepTasks:[{
+ id:'p',daysBefore:0,time:'16:50',duration:30}]})]),
+ 'infeasible',['PREP_AFTER_START']));
+caseOf('T06',()=>{
+ const o=expected(state([
+ item('A',{cook:120,rest:0,mode:'manual',fixedStart:'16:30',grill:120}),
+ item('B',{cook:20,rest:0,mode:'manual',fixedStart:'17:10',grill:130}),
+ item('C',{cook:40,rest:0,mode:'manual',fixedStart:'18:35',
+  serveSlot:'dessert',grill:250,method:'direct',grate:'cast'})
+ ],{v46MultiServe:true,v46Dessert:'19:15'}),'conditional',['CHANGEOVER_UNVERIFIED'],
+ input=>{input.kamados[0].capacity={unit:'dishes',value:2}});
+ assert.ok(o.conflicts.some(c=>c.code==='CHANGEOVER_UNVERIFIED'&&
+  c.affectedIds.join(',')==='A,C'));
+ assert.equal(o.conflicts.some(c=>c.code==='CHANGEOVER_UNVERIFIED'&&
+  c.affectedIds.join(',')==='B,C'),false);
+});
+
 const failed=results.filter(x=>x.status==='FAIL');
 console.log('SCENARIO_SUMMARY '+results.map(x=>x.id+'='+x.status).join(' '));
 if(failed.length)throw new Error(failed.length+' v6 scenario(s) failed: '+failed.map(x=>x.id).join(','));

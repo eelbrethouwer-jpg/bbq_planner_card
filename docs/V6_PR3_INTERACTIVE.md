@@ -3,7 +3,7 @@
 ## Ontwikkelstatus
 
 Eerste PR3-slice op een eigen featurebranch. Niet gemerged, geen tag of release.
-De publieke v5.1.1-app en `dist/`, `sw.js`, `index.html`, manifest, HACS en bestaande storage-contracten blijven ongemoeid.
+De gepubliceerde v5.1.1-app blijft ongemoeid. Deze draft wijzigt inmiddels een kleine, uitsluitend opt-in loader in de v5-HTML in `dist/`; `sw.js`, `index.html`, manifest, HACS en bestaande storage-contracten blijven ongemoeid.
 
 ## Architectuur
 
@@ -29,16 +29,43 @@ De publieke v5.1.1-app en `dist/`, `sw.js`, `index.html`, manifest, HACS en best
 
 Deze stap blijft een veilige **test- en infrastructuurslice**, niet een werkende productieknop.
 
+### PR3 stap 4a — echte v5 testkoppeling, alleen-lezen
+
+De bestaande v5.1.1 HTML is nu op de PR-branch minimaal uitgebreid met een **opt-in testpad**:
+`/dist/BBQ_bereidingsplanner_MEATER_v4.html?v6preview=1`. Zonder die queryparameter
+wordt geen v6-module geïmporteerd en geen v6-paneel of accessor aangemaakt.
+Met deze parameter wordt na het bestaande synchrone v5-opstartpad de uitsluitend
+read-only `window.__bbqV6ReadOnlyState` aangeboden. Die levert een diepe
+JSON-kopie van de in-memory sessie; `v6/legacy-readonly-entry.mjs` laadt
+voorstellen via de echte module-Web-Worker en gebruikt de reeds geteste
+`v6/regisseur-view.mjs` met `onApply=null`. Er worden geen gegevens
+geschreven, geen extra storage keys aangemaakt en geen v5-schrijfoperaties
+gemodificeerd. Dit is **geen publieke release**: het staat uitsluitend
+in de nog openstaande draft-PR.
+
+`tests/v6-pr3-real-v5-browser.mjs` test in Chromium én WebKit op
+320/390/1024px dat de normale v5-URL geen v6-code activeert, de
+testparameter wel, optimizerresultaten zichtbaar worden, horizontale
+overflow uitblijft en `kamado-bereidingsplanner-v1` en de v6-journal
+door een preview onaangeraakt blijven.
+
+Dit is opzettelijk een **alleen-lezen testintegratie** en geen GO voor
+v6-sessieopslag. De nieuwe `Web Locks` kunnen oude reeds geopende v5-tabbladen
+niet blokkeren. Voor een echte apply-feature moeten alle schrijfpaden worden
+gecoördineerd, bestaande tabbladen veilig opnieuw laden/uitsluiten en herstel
+vóór opstarten bewezen zijn. Geen automatische write-fallback.
+
+
 
 **Grenzen van deze isolatie:** v5 heeft nu nog directe opslagwrites zonder gedeelde lock. `applyWithJournal()` accepteert daarom alleen expliciet aangeleverde `readLiveState`, `commitLiveState`, `rollbackLiveState` én `withExclusiveLock`-callbacks. Een nieuw JS-only mutex is nadrukkelijk **niet** voldoende voor meerdere tabbladen: bestaande v5-schrijvers moeten aan dezelfde lock deelnemen of de integratie moet aantoonbaar anders voorkomen dat andere tabbladen een update doen. `localStorage` biedt geen transactie over twee sleutels; de oplossing is herstelbaar via write-ahead logging, niet strikt atomair. `recoverJournal()` moet op start vóór het laden van de app worden uitgevoerd. Tot dan worden deze modules **niet** productief aangeroepen.
 - `v6/sandbox.html` met `v6/sandbox.mjs`: apart, werkend browserharnas met duidelijk gelabelde fictieve data; bereikbaar via een lokale HTTP-server op `/v6/sandbox.html`, nooit via bestaande productie-ingang.
 - `tests/v6-pr3-browser.mjs`: browserregressie via lokale HTTP-server voor echte module-Worker, Chromium en WebKit, 320/390/1024px, horizontale overflow en de uitgeschakelde opslagactie.
 
-De view heeft geen automatische start, live-navigatie of opslag. Zonder `onApply` is de knop **Toepassen** uitgeschakeld. Met een expliciete callback vergt Toepassen een aparte bevestigingsstap. Een callback moet vóór productie-integratie atomair de huidige sessie-fingerprint controleren, de oorspronkelijke sessie als rollback-snapshot bewaren, pas na alle validaties schrijven, en kunnen terugdraaien bij fout. Een afzonderlijke backup-/commit-/rollbackadapter met journal bestaat nu en wordt met mocks getest. De koppeling met de echte v5-live state, de cross-tab-lock en recover-before-load ontbreken nog. De huidige PR3-slice is daarom **niet productie- of mergeklaar**.
+De view is standaard niet actief; opt-in `?v6preview=1` maakt een read-only paneel boven de bestaande v5-interface. Er is geen schrijfende v6-navigatie of opslag. Zonder `onApply` is de knop **Toepassen** uitgeschakeld. Met een expliciete callback vergt Toepassen een aparte bevestigingsstap. Een callback moet vóór productie-integratie atomair de huidige sessie-fingerprint controleren, de oorspronkelijke sessie als rollback-snapshot bewaren, pas na alle validaties schrijven, en kunnen terugdraaien bij fout. Een afzonderlijke backup-/commit-/rollbackadapter met journal bestaat nu en wordt met mocks getest. De koppeling met de echte v5-live state, de cross-tab-lock en recover-before-load ontbreken nog. De huidige PR3-slice is daarom **niet productie- of mergeklaar**.
 
 ## Precies afgebakende huidige scope
 
-- Een aparte UI-component bestaat in de broncode, maar wordt **niet** in de bestaande PWA of Home Assistant geladen.
+- In de draft-branch kan de UI met `?v6preview=1` alleen-lezen worden getest binnen de bestaande v5-pagina; in de gepubliceerde PWA/Home Assistant is deze PR nog niet beschikbaar.
 - De standaardbudgetgrens van de engine blijft 96 kandidaten; de harde enginegrens blijft 512.
 - `run(input)` berekent asynchroon in de Worker. De caller kan een laadstatus tonen; een gestopte berekening keert terug met `AbortError`.
 - `buildPreviewModel` toont `budget_exhausted` expliciet. Opties worden als previews getoond; maximaal drie.

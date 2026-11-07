@@ -37,3 +37,17 @@
 .bbq6-root .bbq6-notice{margin-top:10px;color:#ffd19b;font-size:13px;overflow-wrap:anywhere}
 @media(min-width:720px){.bbq6-root .bbq6-screen{padding:24px}.bbq6-root .bbq6-lanes{grid-template-columns:repeat(2,minmax(0,1fr))}.bbq6-root .bbq6-dish-list{grid-template-columns:repeat(2,minmax(0,1fr))}.bbq6-root .bbq6-option-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:350px){.bbq6-root .bbq6-event{grid-template-columns:minmax(94px,105px) 1fr;gap:6px}.bbq6-root .bbq6-screen{padding-inline:10px}}
+
+
+/* Explicit v6preview=1 pilot header above the normal v5 app. */
+.bbq6-beta-shell{width:100%;margin:0 auto 18px;min-width:0;border:1px solid #49665f;
+  border-radius:16px;background:#10191e;color:#f3f4ee;overflow:hidden}
+.bbq6-beta-toolbar{padding:13px 14px;border-bottom:1px solid #34484b;display:flex;
+  flex-wrap:wrap;align-items:center;gap:10px;font:13px system-ui,-apple-system,sans-serif}
+.bbq6-beta-toolbar p:first-child{flex-basis:100%;margin:0;color:#a4e4c4;font-weight:750}
+.bbq6-beta-toolbar button{border:1px solid #50616a;background:#22333a;color:#f3f4ee;
+  border-radius:10px;font:inherit;font-weight:750;min-height:44px;padding:10px 12px}
+.bbq6-beta-toolbar button:disabled{opacity:.45;cursor:not-allowed}
+.bbq6-beta-toolbar button:focus-visible{outline:3px solid #6dd3ad;outline-offset:2px}
+.bbq6-beta-toolbar #bbq6-beta-status{flex-basis:100%;margin:0;color:#bbcfd0}
+.bbq6-beta-shell .bbq6-root .bbq6-screen{padding-bottom:18px}

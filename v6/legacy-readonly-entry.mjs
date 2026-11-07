@@ -7,6 +7,7 @@ import {fromLegacyState} from '../engine/adapter.mjs';
 import {plan} from '../engine/check.mjs';
 import {createOptimizerClient} from './optimizer-client.mjs';
 import {mountRegisseurPreview} from './regisseur-view.mjs';
+import {friendlyPreviewError,appendPreviewErrorDetails} from './preview-errors.mjs';
 import {createPlanLock} from './plan-lock.mjs';
 import {saveProposalDraft,inspectProposalDraft,discardProposalDraft,DRAFT_KEY}
   from './proposal-draft.mjs';
@@ -258,7 +259,11 @@ export function mountLegacyReadOnlyPreview({
   win.addEventListener('storage',storageChanged);
   win.addEventListener('focus',onFocus);
   doc.addEventListener('visibilitychange',onHidden);
-  try{refreshSnapshot();}catch(error){calculate.disabled=true;setStatus('V6 preview niet beschikbaar: '+error.message);}
+  try{refreshSnapshot();}catch(error){
+    calculate.disabled=true;
+    setStatus(friendlyPreviewError(error));
+    appendPreviewErrorDetails(header,error);
+  }
   return {refresh:refreshClick,dispose(){
     if(disposed)return;
     disposed=true;

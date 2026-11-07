@@ -63,9 +63,9 @@ caseOf('S12',()=>expected(state([item('a')],{mealTime:'25:99'}),'unknown',['INVA
 caseOf('S13',()=>expected(state([item('a',{cook:null})]),'unknown',['DURATION_UNKNOWN']));
 caseOf('S14',()=>{const o=expected(state([item('a',{cook:600,rest:60})]),'feasible');
  assertTimes(o,'a','07:30','17:30','18:30');assert.equal(o.fires.large,clock('07:00'))});
-caseOf('S15',()=>{const o=expected(state([item('a',{prepTasks:[{id:'rub',daysBefore:1,time:'19:00',duration:15}]})]),'conditional',['AVAILABILITY_UNVERIFIED']);
+caseOf('S15',()=>{const o=expected(state([item('a',{prepTasks:[{id:'rub',daysBefore:1,time:'19:00',duration:15}]})]),'feasible');
  const p=o.proposedTasks.find(x=>x.id==='a:prep:rub');assert.equal(p.at,at('2026-11-13','19:00'));assert.equal(p.timeKnown,true)});
-caseOf('S16',()=>{const o=expected(state([item('a',{prepTasks:[{id:'salt',daysBefore:2,time:'',duration:10}]})]),'conditional',['AVAILABILITY_UNVERIFIED']);
+caseOf('S16',()=>{const o=expected(state([item('a',{prepTasks:[{id:'salt',daysBefore:2,time:'',duration:10}]})]),'feasible');
  const p=o.proposedTasks.find(x=>x.id==='a:prep:salt');assert.equal(p.at,null);
  assert.equal(p.localDate,'2026-11-12');assert.equal(p.timeKnown,false)});
 caseOf('S17',()=>{
@@ -85,7 +85,7 @@ caseOf('S20',()=>{
  const o=expected(state([item('a',{prepTasks:[
  {id:'before',daysBefore:1,time:'19:00',duration:10},
  {id:'untimed',daysBefore:2,time:'',duration:10}]}),
- item('b',{kamado:'small',cook:30,rest:0})]),'conditional',['AVAILABILITY_UNVERIFIED']);
+ item('b',{kamado:'small',cook:30,rest:0})]),'feasible');
  assert.equal(o.proposedTasks[0].id,'a:prep:untimed');
  assert.equal(o.proposedTasks[0].at,null);
  assert.equal(o.proposedTasks[1].id,'a:prep:before');
@@ -230,9 +230,10 @@ caseOf('T06',()=>{
 caseOf('T07',()=>{
  const o=expected(state([item('a',{prepTasks:[{
  id:'p',daysBefore:2,time:'',duration:10}]})]),
- 'conditional',['AVAILABILITY_UNVERIFIED']);
+ 'feasible');
  assert.equal(o.proposedTasks[0].id,'a:prep:p');
  assert.equal(o.proposedTasks[0].at,null);
+ assert.equal(o.proposedTasks[0].timeKnown,false);
  assert.equal(o.proposedTasks[0].localDate,'2026-11-12');
 });
 caseOf('T08',()=>{
@@ -274,6 +275,43 @@ caseOf('P8-EXTRAS',()=>{
  id:'p',daysBefore:1.5,time:'19:00',duration:5}]})]),'unknown',['INVALID_DURATION']);
  expected(state([],{preheatLarge:null,preheatSmall:null}),'feasible');
  expected(state([item('a')],{availableFrom:''}),'feasible');
+});
+
+
+caseOf('X1',()=>{
+ const o=expected(state([item('a',{prepTasks:[
+ {id:'rub',daysBefore:1,time:'19:00',duration:10}]}],
+ {availableFrom:'16:30'}),'feasible');
+ assert.equal(o.conflicts.length,0);
+ assert.equal(o.proposedTasks.find(t=>t.id==='a:prep:rub').at,Date.parse('2026-11-13T18:00:00Z'));
+});
+caseOf('X2',()=>{
+ const o=expected(state([item('a')],{v46MultiServe:true,v46Starter:'17:30',
+  v46Dessert:'17:00'}),'conditional',['SLOT_ORDER']);
+ assert.ok(o.conflicts.some(c=>c.code==='SLOT_ORDER'&&c.affectedIds.join(',')==='dessert,main'));
+});
+caseOf('X4',()=>{
+ const o=expected(state([item('a',{prepTasks:[
+  {id:'rub',daysBefore:2,time:'19:00',duration:10},
+  {id:'rub',daysBefore:1,time:'19:00',duration:10}]}],
+ {availableFrom:''}),'unknown',['DUPLICATE_ID']);
+ const preps=o.proposedTasks.filter(t=>t.type==='prep');
+ assert.equal(preps.length,1,'duplicate prep-ID skipped');
+ assert.equal(preps[0].id,'a:prep:rub');
+ assert.equal(preps[0].localDate,'2026-11-12');
+ assert.equal(new Set(o.proposedTasks.map(t=>t.id)).size,o.proposedTasks.length);
+});
+caseOf('X5',()=>{
+ const o=expected(state([item('a',{cook:55,method:'combo',
+  transitionMins:15,phase2Minutes:0,phase2Temp:250})]),'unknown',['INVALID_DURATION']);
+ assert.ok(o.validation.some(v=>v.code==='INVALID_DURATION'&&v.field==='a:phase2'));
+ assert.equal(o.dishes.length,0);
+});
+caseOf('X6',()=>{
+ const o=expected(state([item('a',{cook:55,method:'combo',
+  transitionMins:15,phase2Minutes:90,phase2Temp:250})]),'unknown',['INVALID_DURATION']);
+ assert.ok(o.validation.some(v=>v.code==='INVALID_DURATION'&&v.field==='a:phase2'));
+ assert.equal(o.dishes.length,0);
 });
 
 const failed=results.filter(x=>x.status==='FAIL');

@@ -1,7 +1,6 @@
 # BBQ Planner v5.1.0 — Eén app, rustig koken
 
-**Status: Releasekandidaat.** Werkbranch `feature/v5.1.0-een-navigatie-live-focus`; niet mergen of publiceren.
-Bron: `0283c500ecee39dab940b575ce79cb1a3d33b1cb` (main/tag v5.0.3.0), vooraf exact gecontroleerd.
+**Status: gepubliceerd op 7 november 2026.** [GitHub Release v5.1.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.0), code/tag-commit e2b1a861d745c6fcd77ff39515330995673c4d43 (PR #26). Oorspronkelijke ontwikkelbasis: 0283c500ecee39dab940b575ce79cb1a3d33b1cb. Inmiddels opgevolgd door v5.1.1.
 
 ## Visueel/navigatie
 - Eén vaste onderbalk voor Vandaag, Recepten, Live en Meer, ook in de uitgebreide recepten- en planningsschermen. Actieve pagina wordt met `aria-current` aangegeven.

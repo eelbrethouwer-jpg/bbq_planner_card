@@ -24,9 +24,7 @@ Een mobiele BBQ-bereidingsplanner voor **één grote en één kleine kamado**, m
 ## Openbare website om met vrienden te delen
 
 Je kunt deze planner ook **zonder Home Assistant** als website gebruiken, op iPhone of Android.
-Het publieke websiteadres is **https://eelbrethouwer-jpg.github.io/bbq_planner_card/** zodra GitHub Pages is ingeschakeld.
-
-**Eenmalig activeren:** Open [Settings → Pages](https://github.com/eelbrethouwer-jpg/bbq_planner_card/settings/pages), kies **Deploy from a branch**, stel **main** en **/(root)** in en klik op **Save**. Zie [WEBSITE.md](WEBSITE.md) voor de volledige uitleg.
+De website is [BBQ Planner op GitHub Pages](https://eelbrethouwer-jpg.github.io/bbq_planner_card/). Voor installatie en updates: [WEBSITE.md](WEBSITE.md). Status van een deployment: **niet herverifieerd** in deze README; controleer GitHub Actions.
 
 De vaste webpagina `index.html` opent automatisch de bestaande zelfstandige HTML-planner onder `dist/`, zodat de Home Assistant-code en de openbare website dezelfde planner blijven gebruiken.
 
@@ -61,13 +59,11 @@ Deze release verwacht de volgende sensorprefixes (op maat voor deze installatie)
 
 Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_card.js` aan te passen.
 
-## Versies
+## Releases en projectinformatie
 
-**v4.4.0** is officieel gepubliceerd. **v4.5.0** wordt als releasekandidaat ontwikkeld op een aparte branch. HACS toont v4.5.0 pas na merge naar `main` en een officiële GitHub Release met tag `v4.5.0`.
+Zie [GitHub Releases](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases) voor versies. Samenwerking en technisch overzicht: [PROJECT_STATUS.md](PROJECT_STATUS.md) en [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md). De historische functieomschrijvingen hieronder zijn geen actuele statusbron.
 
-Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub Release met een versietag als je een versie wilt uitbrengen. De HACS-workflow controleert de repository automatisch op iedere push, pull request en via een geplande controle.
-
-## Nieuw in de releasekandidaat v4.5.0
+## Historische functiebeschrijving rond v4.5.0
 
 - **Slimme BBQ-coach:** concrete, veilige aanwijzingen bij actuele MEATER-kernwaarden en het kerndoel. Metingen gelden alleen als live bij recente berichten via Home Assistant (maximaal vijf minuten oud). De coach waarschuwt onder andere bij aflopende kern en overgang naar directe grillfase; hij bestuurt de kamado niet.
 - **Live kookmodus voor iPhone:** schermvullend en mobielvriendelijk met grote kern- en omgevingstemperaturen, gerechtkeuze, uitgeschreven receptstappen en handmatige faseknoppen. Zonder HA toont hij streepjes, nooit gefingeerde temperaturen.
@@ -76,7 +72,7 @@ Zie [CHANGELOG.md](CHANGELOG.md) voor wijzigingen. Publiceer een nieuwe GitHub R
 - **Boodschappenlijst:** combineert herkende hoeveelheden en eenheden uit ingrediënten van de geplande recepten, met aantal personen, handmatig ingestelde receptbasis, keuze per gerecht, afvinken en kopiëren. Ingrediënten zonder numerieke hoeveelheid worden niet geraamd. Controleer zelf de receptbasis.
 - **Slimme kamadoverdeling:** verkent mogelijke toewijzingen voor beide kamado's en minimaliseert overlappende temperatuur-, rooster- en opstellingsconflicten met een conflictscore. Voorstellen toepassen is expliciet; gerechten die al bezig zijn worden niet verplaatst. Het systeem kent geen fysieke roostercapaciteit of gewicht van de gerechten.
 
-Deze versie behoudt alle bestaande functies van v4.4.0: planning, recipesync, reviewsync, JSON-receptenback-up, direct/indirect, MEATER-grafieken, food safety-notities en de publieke standalone HTML. De nieuwe functies zijn nog geen officiële HACS-release. Tests in GitHub Actions zijn geautomatiseerd; een echte iPhone Safari- en live-Home-Assistant-apparaattest blijft na installatie noodzakelijk.
+Deze versie behoudt alle bestaande functies van v4.4.0: planning, recipesync, reviewsync, JSON-receptenback-up, direct/indirect, MEATER-grafieken, food safety-notities en de publieke standalone HTML. De passage beschrijft een oude ontwikkelkandidaat en niet de huidige HACS-releasestatus. Tests in GitHub Actions zijn geautomatiseerd; een echte iPhone Safari- en live-Home-Assistant-apparaattest blijft na installatie noodzakelijk.
 
 ## Nieuw in de voorbereide v4.2.0
 
@@ -118,7 +114,7 @@ De gecombineerde MEATER-grafiek toont uitsluitend meetpunten die zijn binnengeko
 
 Bereidingstijden en MEATER-ETA's zijn indicaties. Controleer veilige kerntemperaturen volgens het gerecht, gebruik een geschikt meetpunt en ga niet uitsluitend op de planner af. Publiceer nooit Home Assistant-toegangstokens, wachtwoorden of persoonlijke netwerkgegevens in deze publieke repository.
 
-## v4.9.0 iPhone App Edition (releasekandidaat)
+## Historische functiebeschrijving: v4.9.0 iPhone App Edition
 
 - Echte standalone PWA-weergave na toevoegen via Safari: eigen vlam-icoon, iOS metadata, veilige schermranden en compacte mobiele opmaak.
 - Bestaande vijf navigatietabs blijven intact: Overzicht, Planning, Koken, Recepten en Meer. Alle gerecht-/review-/MEATER-logica is behouden.
@@ -127,4 +123,4 @@ Bereidingstijden en MEATER-ETA's zijn indicaties. Controleer veilige kerntempera
 - Publieke PWA biedt **geen live MEATER-data** en geen automatische synchronisatie met de Home Assistant-dashboardkaart. Bestaande optionele HA-meldingen blijven in de kaart aanwezig.
 - Testen: `tests/pwa-smoke.mjs` controleert appassets, manifest en updatebeleid; `tests/smoke.mjs` test nu ook het openen/sluiten van de installatiehulp. GitHub Actions valideert code en regressies.
 
-Installatie: zie [WEBSITE.md](WEBSITE.md). Publiceer GitHub Pages op `main` na het samenvoegen van de releasebranch.
+Installatie: zie [WEBSITE.md](WEBSITE.md). GitHub Pages publiceert de huidige `main`-inhoud; verifieer de laatste deployment na updates.

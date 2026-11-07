@@ -68,7 +68,8 @@ export async function inspectProposalDraft({
  */
 export async function saveProposalDraft({
   storage,legacyState,readLiveState,input,outcome,alternativeId,
-  expectedStorageJSON,withExclusiveLock,allowConditional=false,
+  expectedStorageJSON,expectedDraftJSON=null,replaceExisting=false,
+  withExclusiveLock,allowConditional=false,
   subtle=globalThis.crypto?.subtle,
   now=Date.now()
 }={}){
@@ -79,6 +80,10 @@ export async function saveProposalDraft({
   requireState(Number.isFinite(now)&&now>=0,'INVALID_TIMESTAMP');
   return withExclusiveLock(async()=>{
     const before=storage.getItem(PLAN_KEY);
+    const currentDraft=storage.getItem(DRAFT_KEY);
+    requireState(currentDraft===expectedDraftJSON,'DRAFT_CHANGED');
+    requireState(currentDraft===null||replaceExisting===true,'DRAFT_EXISTS');
+    requireState(currentDraft!==null||replaceExisting!==true,'DRAFT_CHANGED');
     requireState(before===expectedStorageJSON,'STALE_STORED_PLAN');
     requireState(storage.getItem(JOURNAL_KEY)===null,'RECOVERY_REQUIRED');
     const source=clone(legacyState);
@@ -108,6 +113,7 @@ export async function saveProposalDraft({
     requireState(json(readLiveState())===sourceJSON,'STALE_LIVE_PLAN');
     requireState(storage.getItem(JOURNAL_KEY)===null,'RECOVERY_REQUIRED');
     const bytes=json(record);
+    requireState(storage.getItem(DRAFT_KEY)===currentDraft,'DRAFT_CHANGED');
     storage.setItem(DRAFT_KEY,bytes);
     requireState(storage.getItem(DRAFT_KEY)===bytes,'DRAFT_VERIFY_FAILED');
     // An old legacy tab can change PLAN_KEY after this check; that is fine:

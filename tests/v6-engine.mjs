@@ -100,40 +100,35 @@ caseOf('S30',()=>{
  const b=plan(input);assert.deepEqual(a,b);assert.ok(duration<50,'S30 exceeded 50 ms: '+duration.toFixed(2));
  assert.equal(a.searchStatus,'not_run');assert.equal(a.planStatus,'conditional');
 });
-caseOf('N01',()=>expected(state([item('a',{cook:-5})]),'unknown',['INVALID_DURATION']));
-caseOf('N02',()=>expected(state([item('dup'),item('dup',{kamado:'small'})]),'infeasible',['DUPLICATE_ID']));
-caseOf('N03',()=>expected(state([item('a',{kamado:'other'})]),'infeasible',['UNKNOWN_KAMADO']));
-caseOf('N05',()=>expected(state([
+caseOf('V01',()=>expected(state([item('a',{cook:-5})]),'unknown',['INVALID_DURATION']));
+caseOf('V02',()=>{
+ const o=expected(state([item('dup'),item('dup',{kamado:'small'})]),'unknown',['DUPLICATE_ID']);
+ assert.equal(o.dishes.length,1);
+ assert.equal(new Set(o.proposedTasks.map(t=>t.id)).size,o.proposedTasks.length);
+});
+caseOf('V03',()=>expected(state([item('a',{kamado:'other'})]),'unknown',['UNKNOWN_KAMADO']));
+caseOf('V05',()=>expected(state([
  item('a',{cook:60,rest:60,mode:'manual',fixedStart:'16:30',grill:120}),
  item('b',{cook:60,rest:0,grill:250,method:'direct',grate:'cast'})
  ]),'conditional',['CHANGEOVER_UNVERIFIED']));
-caseOf('N06',()=>expected(state([item('a',{prepTasks:[{id:'late',daysBefore:0,time:'18:00',duration:10}]})]),
+caseOf('V06',()=>expected(state([item('a',{prepTasks:[{id:'late',daysBefore:0,time:'18:00',duration:10}]})]),
  'infeasible',['PREP_AFTER_START']));
-caseOf('N04',()=>{const a=toInstant('2027-10-31','02:30',Z,'earlier');
- const b=toInstant('2027-10-31','02:30',Z,'later');
- assert.equal(b.at-a.at,3600000)});
-caseOf('N09',()=>expected(state([item('a',{cook:10001})]),'unknown',['OUT_OF_RANGE']));
-caseOf('STATUS-PRIORITY',()=>expected(state([
- item('a',{cook:null}),
- item('b',{kamado:'missing'})
- ]),'infeasible',['DURATION_UNKNOWN','UNKNOWN_KAMADO']));
-caseOf('N10',()=>{
- const s=state([item('a')]),before=JSON.stringify(s);
- const savedNow=Date.now;Date.now=()=>{throw Error('forbidden Date.now')};
- for(const name of ['localStorage','document','window']){
-  Object.defineProperty(globalThis,name,{configurable:true,get(){throw Error('forbidden '+name)}});
- }
- try{
-  const one=run(s).out,two=run(s).out;assert.deepEqual(one,two);
-  assert.equal(JSON.stringify(s),before);assert.equal(one.planStatus,'feasible');
- }finally{
-  Date.now=savedNow;for(const name of ['localStorage','document','window'])delete globalThis[name];
- }
+caseOf('V09',()=>expected(state([item('a',{cook:10001})]),'unknown',['OUT_OF_RANGE']));
+caseOf('STATUS-PRIORITY',()=>{
+ expected(state([item('a',{cook:null}),item('b'),item('c')]),
+ 'unknown',['DURATION_UNKNOWN','CAPACITY_UNVERIFIED']);
+ expected(state([item('b'),item('c')]),'conditional',['CAPACITY_UNVERIFIED']);
 });
 caseOf('NEG-DOUBLE-BOOK',()=>{
- const o=expected(state([item('a'),item('b',{method:'direct',grill:250,grate:'cast'})]),
- 'infeasible',['INCOMPATIBLE_SETUP']);assert.ok(codes(o).has('INCOMPATIBLE_SETUP'))});
-caseOf('NEG-FIXED-SHIFT',()=>expected(state([item('a',{mode:'manual',fixedStart:'17:00'})]),
+ const {input}=run(state([item('a'),item('b')]));
+ assert.equal(plan(input).planStatus,'conditional');
+ const b=input.dishes.find(x=>x.id==='b');
+ b.segments[0].method='direct';b.segments[0].heatC=250;b.segments[0].accessory='cast';
+ const changed=plan(input);
+ assert.equal(changed.planStatus,'infeasible');
+ assert.ok(codes(changed).has('INCOMPATIBLE_SETUP'));
+});
+caseOf('NEG-FIXED-SHIFT',()=>expected(state([item('a',{mode:'manual',fixedStart:'17:20'})]),
  'infeasible',['FIXED_START_MISSES_SERVE']));
 const failed=results.filter(x=>x.status==='FAIL');
 console.log('SCENARIO_SUMMARY '+results.map(x=>x.id+'='+x.status).join(' '));

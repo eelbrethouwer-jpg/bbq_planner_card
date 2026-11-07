@@ -83,5 +83,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Bewaak bestaande v5-publicatiebestanden tegen main
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          git diff --exit-code origin/main -- dist index.html sw.js
       - name: Controleer dynamisch versiecontract en mutatie-regressies
-        run: node tests/version-consistency.mjs
+        run: |
+          node tests/version-consistency.mjs
+          node tests/v6-pr3-publish-guard.mjs

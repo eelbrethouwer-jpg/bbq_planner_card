@@ -1,4 +1,6 @@
-/* PR3: actual v5 planner read-only integration (opt-in only), Chromium & WebKit. */
+/* PR3 route (b): real same-origin v5 data in standalone /v6/preview.html.
+ * Production dist must stay byte-identical to main. Tests run Chromium + WebKit.
+ */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
@@ -6,22 +8,25 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {chromium,webkit} from 'playwright';
 
-const dir=path.resolve(fileURLToPath(new URL('../',import.meta.url)));
+const root=path.resolve(fileURLToPath(new URL('../',import.meta.url)));
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
   '.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
-const server=createServer(async (request,response)=>{
+const server=createServer(async(req,res)=>{
   try{
-    const target=path.resolve(dir,'.'+decodeURIComponent(
-      new URL(request.url,'http://localhost').pathname));
-    if(!target.startsWith(dir+path.sep)){response.writeHead(403).end();return;}
+    const target=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,
+      'http://localhost').pathname));
+    if(!target.startsWith(root+path.sep)){res.writeHead(403).end();return;}
     const data=await readFile(target);
-    response.writeHead(200,{'content-type':mime[path.extname(target)]||'application/octet-stream'});
-    response.end(data);
-  }catch{response.writeHead(404).end('Missing');}
+    res.writeHead(200,{'content-type':mime[path.extname(target)]||'application/octet-stream'});
+    res.end(data);
+  }catch{res.writeHead(404).end('Missing');}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const mainPath='/dist/BBQ_bereidingsplanner_MEATER_v4.html';
+const legacyUrl=origin+'/dist/BBQ_bereidingsplanner_MEATER_v4.html';
+const previewUrl=origin+'/v6/preview.html';
+const PLAN='kamado-bereidingsplanner-v1',DRAFT='bbq-v6-proposal-draft-v1',
+  JOURNAL='bbq-v6-apply-journal-v1',BACKUP='bbq-v5-previous-plan-v1';
 const sample={
   date:'2026-11-14',dateMode:'manual',mealTime:'18:30',availableFrom:'00:00',
   preheatLarge:30,preheatSmall:25,equipment:{large:[],small:[]},
@@ -33,155 +38,179 @@ const sample={
       grate:'cast',method:'direct',mode:'auto',phase:'waiting',prepTasks:[]}
   ]
 };
+const snapshots=()=>({
+  plan:localStorage.getItem('kamado-bereidingsplanner-v1'),
+  journal:localStorage.getItem('bbq-v6-apply-journal-v1'),
+  backup:localStorage.getItem('bbq-v5-previous-plan-v1')
+});
+async function calculated(page){
+  await page.locator('#bbq6-calculate').click();
+  await page.waitForFunction(()=>document.getElementById('bbq6-beta-status')
+    ?.textContent?.startsWith('Gereed:'),null,{timeout:25000});
+  const alternatives=page.locator('#bbq6-beta-panel [data-bbq6-action^="select:"]');
+  const count=await alternatives.count();
+  assert.ok(count>0&&count<=3,'expected 1-3 optimizer proposals, got '+count);
+  await alternatives.first().click();
+  assert.equal(await page.locator('#bbq6-beta-panel [data-bbq6-action="apply"]').count(),0,
+    'Apply must be HIDDEN when no production onApply exists');
+  return count;
+}
 let checks=0;
 try{
   for(const browserType of [chromium,webkit]){
     const browser=await browserType.launch({headless:true});
     try{
-      for(const width of [320,390,1024]){
-        const context=await browser.newContext({
-          viewport:{width,height:844},isMobile:width<500,hasTouch:width<500
-        });
-        await context.addInitScript(state=>{
-          if(localStorage.getItem('kamado-bereidingsplanner-v1')===null)
-            localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(state));
-        },sample);
+      for(const width of [320,375,390,768,1024]){
+        const context=await browser.newContext({viewport:{width,height:844},
+          isMobile:width<500,hasTouch:width<500,acceptDownloads:true});
+        await context.addInitScript(({PLAN,sample})=>{
+          if(localStorage.getItem(PLAN)===null)
+            localStorage.setItem(PLAN,JSON.stringify(sample));
+        },{PLAN,sample});
         const page=await context.newPage();
         const errors=[];
         page.on('pageerror',e=>errors.push(e.message));
-        await page.goto(origin+mainPath,{waitUntil:'load'});
+        await page.goto(legacyUrl+'?v6preview=1',{waitUntil:'load'});
         assert.equal(await page.locator('#bbq6-beta-panel').count(),0,
-          'regular v5 must not render v6 beta UI');
+          'legacy URL must not mount v6, even if query param supplied');
         assert.equal(await page.evaluate(()=>typeof window.__bbqV6ReadOnlyState),
-          'undefined','regular v5 must not expose the opt-in bridge');
-        assert.ok(await page.locator('#v5-root').count(),'v5 root missing');
-        const before=await page.evaluate(()=>
-          localStorage.getItem('kamado-bereidingsplanner-v1'));
-        await page.goto(origin+mainPath+'?v6preview=1',{waitUntil:'load'});
+          'undefined');
+        assert.ok(await page.locator('#v5-root').count(),'legacy planner missing');
+        const before=await page.evaluate(snapshots);
+        await page.goto(previewUrl,{waitUntil:'load'});
         await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
         assert.ok((await page.locator('#bbq6-beta-panel').innerText())
           .includes('Concept apart bewaren'));
         assert.equal(await page.locator('#bbq6-beta-panel .bbq6-dish').count(),2);
-        assert.ok(await page.locator('#v5-root').count());
-        assert.equal(await page.evaluate(()=>
-          localStorage.getItem('kamado-bereidingsplanner-v1')),before,
-        'opt-in preview boot modified original storage');
-        await page.locator('#bbq6-calculate').click();
-        await page.waitForFunction(()=>document.getElementById('bbq6-beta-status')
-          ?.textContent?.startsWith('Gereed:'),null,{timeout:25000});
-        const alternatives=await page.locator('#bbq6-beta-panel [data-bbq6-action^="select:"]').count();
-        assert.ok(alternatives>0&&alternatives<=3,'invalid alternative count');
-        await page.locator('#bbq6-beta-panel [data-bbq6-action^="select:"]').first().click();
-        assert.ok(await page.locator('#bbq6-beta-panel [data-bbq6-action="apply"]').isDisabled(),
-          'beta must never apply live plan changes');
-        const draftSave=page.locator('#bbq6-beta-panel [data-bbq6-action="save"]');
-        assert.ok(await draftSave.count(),'save-concept action missing');
-        assert.ok(await draftSave.isEnabled(),'selected alternative must allow concept save');
-        await draftSave.click();
-        await page.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
-          ?.textContent?.includes('Concept'),null,{timeout:10000});
-        const savedDraft=await page.evaluate(()=>
-          localStorage.getItem('bbq-v6-proposal-draft-v1'));
-        assert.ok(savedDraft,'explicit concept save missing');
-        const draft=JSON.parse(savedDraft);
-        assert.ok(['conditional','feasible'].includes(draft.planStatus));
-        assert.equal(draft.version,1);
-        assert.ok(draft.sourceHash?.length===64);
-        assert.ok(!savedDraft.includes('Aardappeltjes'));
-        assert.ok(!savedDraft.includes('Ribeye'));
-        assert.equal(await page.evaluate(()=>
-          localStorage.getItem('kamado-bereidingsplanner-v1')),before,
-        'read-only optimizer modified storage');
-        assert.equal(await page.evaluate(()=>
-          localStorage.getItem('bbq-v6-apply-journal-v1')),null,
-        'read-only preview must not create a recovery journal');
+        assert.deepEqual(await page.evaluate(snapshots),before,
+          'preview boot must not write legacy keys');
+        const count=await calculated(page);
+        await page.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
+        await page.waitForFunction(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')!==null,
+          null,{timeout:10000});
+        const draft=await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1'));
+        const obj=JSON.parse(draft);
+        assert.equal(obj.version,1);
+        assert.ok(['feasible','conditional'].includes(obj.planStatus));
+        assert.equal(obj.sourceHash.length,64);
+        assert.ok(!draft.includes('Ribeye')&&!draft.includes('Aardappeltjes'));
+        assert.deepEqual(await page.evaluate(snapshots),before,
+          'draft save must not mutate any old v5 key');
         const bounds=await page.evaluate(()=>({
-          page:document.documentElement.scrollWidth,viewport:window.innerWidth
+          viewport:innerWidth,doc:document.documentElement.scrollWidth
         }));
-        assert.ok(bounds.page<=bounds.viewport+1,
-          browserType.name()+' '+width+' overflow '+JSON.stringify(bounds));
-        assert.deepEqual(errors,[],'browser script errors on gated real v5');
-        console.log('PASS real v5 preview '+browserType.name()+' '+width+
-          'px; alternatives='+alternatives+'; live-plan writes=0, concept saved');
+        assert.ok(bounds.doc<=bounds.viewport+1,
+          browserType.name()+' '+width+' horizontal overflow '+JSON.stringify(bounds));
+        assert.deepEqual(errors,[]);
+        console.log('PASS preview '+browserType.name()+' '+width+
+          'px alternatives='+count+'; live-plan untouched');
         checks++;
-        if(width===390){
-          // A plain old v5 tab bypasses Web Locks; it must invalidate any
-          // preview results and force a full reload rather than trust stale
-          // in-memory state. This does NOT make concurrent v5 writes safe.
-          const legacy=await context.newPage();
-          await legacy.goto(origin+mainPath,{waitUntil:'load'});
-          await legacy.evaluate(()=>{
-            const field=document.querySelector('#meal-time');
-            if(!field)throw new Error('Legacy meal time input missing');
-            field.value='19:00';
-            field.dispatchEvent(new Event('input',{bubbles:true}));
+
+        if(width===375){
+          // Changing localStorage in the SAME tab does not fire storage event:
+          // the preview must detect this via its 2-second polling and focus.
+          await page.evaluate(()=>{
+            const raw=JSON.parse(localStorage.getItem('kamado-bereidingsplanner-v1'));
+            raw.mealTime='18:40';
+            localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(raw));
           });
-          await page.waitForFunction(()=>{
-            const status=document.getElementById('bbq6-beta-status')?.textContent||'';
-            return status.includes('ander tabblad');
-          },null,{timeout:10000});
-          assert.ok(await page.locator('#bbq6-calculate').isDisabled());
-          assert.equal(await page.evaluate(()=>
-            localStorage.getItem('bbq-v6-proposal-draft-v1')),savedDraft,
-            'old v5 writer must not modify saved v6 draft');
+          const modified=await page.evaluate(snapshots);
+          await page.waitForFunction(()=>document.getElementById('bbq6-beta-status')
+            ?.textContent?.includes('gewijzigd'),null,{timeout:3500});
           assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0,
-            'stale alternatives should disappear');
-          const written=await page.evaluate(()=>
-            localStorage.getItem('kamado-bereidingsplanner-v1'));
-          assert.equal(JSON.parse(written).mealTime,'19:00');
-          assert.equal(await page.evaluate(()=>
-            localStorage.getItem('bbq-v6-apply-journal-v1')),null);
-          await Promise.all([
-            page.waitForEvent('load',{timeout:10000}),
-            page.locator('#bbq6-refresh').click()
-          ]);
+            'same-tab stale options must disappear');
+          await page.waitForFunction(()=>document.getElementById('bbq6-draft-status')
+            ?.textContent?.includes('verouderd'),null,{timeout:4000});
+          assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
+            draft);
+          assert.deepEqual(await page.evaluate(snapshots),modified);
+          console.log('PASS same-tab 2s invalidation '+browserType.name());
+          checks++;
+        }
+        if(width===390){
+          // Recalculate while the existing concept is still current.
+          await page.locator('#bbq6-refresh').click();
+          await page.locator('#bbq6-beta-panel .bbq6-title').waitFor();
+          await calculated(page);
+          // A replacement requires an explicit warning and confirmation.
+          page.once('dialog',dialog=>dialog.dismiss());
+          await page.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
+          await page.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
+            ?.textContent?.includes('GEANNULEERD'),null,{timeout:5000});
+          assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
+            draft,'declined overwrite altered existing draft');
+
+          const legacy=await context.newPage();
+          await legacy.goto(legacyUrl,{waitUntil:'load'});
+          await legacy.evaluate(()=>{
+            const input=document.getElementById('meal-time');
+            input.value='19:00';
+            input.dispatchEvent(new Event('input',{bubbles:true}));
+          });
+          await page.waitForFunction(()=>document.getElementById('bbq6-beta-status')
+            ?.textContent?.includes('gewijzigd'),null,{timeout:10000});
+          assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0);
+          assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
+            draft);
+          const changed=await page.evaluate(snapshots);
+          assert.equal(JSON.parse(changed.plan).mealTime,'19:00');
+          await Promise.all([page.waitForEvent('load',{timeout:10000}),
+            page.locator('#bbq6-refresh').click()]);
           await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
-          const fresh=await page.evaluate(()=>window.__bbqV6ReadOnlyState()?.mealTime);
-          assert.equal(fresh,'19:00','reload must read the newly saved legacy state');
           await page.waitForFunction(()=>document.getElementById('bbq6-draft-status')
             ?.textContent?.includes('verouderd'),null,{timeout:10000});
-          assert.equal(await page.evaluate(()=>
-            localStorage.getItem('bbq-v6-proposal-draft-v1')),savedDraft);
           await page.locator('#bbq6-discard-draft').click();
           await page.waitForFunction(()=>
             localStorage.getItem('bbq-v6-proposal-draft-v1')===null,null,{timeout:10000});
-          assert.equal(await page.evaluate(()=>
-            localStorage.getItem('bbq-v6-proposal-draft-v1')),null);
-          assert.equal(await page.evaluate(()=>
-            localStorage.getItem('kamado-bereidingsplanner-v1')),written);
-          assert.equal(await page.evaluate(()=>
-            localStorage.getItem('bbq-v6-apply-journal-v1')),null);
+          assert.deepEqual(await page.evaluate(snapshots),changed);
           await legacy.close();
-          console.log('PASS legacy old-tab write detected and reloaded '+browserType.name());
+          console.log('PASS legacy second-tab invalidation, reload, draft discard '+browserType.name());
           checks++;
         }
         await context.close();
       }
-      // No automatic recovery before the old v5 synchronous state loader:
-      // pending/corrupt journal must hard-block initialization.
-      const pending=JSON.stringify({
+      for(const journal of ['','{corrupt',JSON.stringify({
         version:1,stage:'prepared',before:JSON.stringify(sample),
         after:JSON.stringify({...sample,mealTime:'19:00'})
-      });
-      const blockedContext=await browser.newContext();
-      await blockedContext.addInitScript(({sample,pending})=>{
-        localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(sample));
-        localStorage.setItem('bbq-v6-apply-journal-v1',pending);
-      },{sample,pending});
-      const blockedPage=await blockedContext.newPage();
-      await blockedPage.goto(origin+mainPath,{waitUntil:'load'});
-      assert.ok(await blockedPage.locator('#bbq6-recovery-blocked').count());
-      assert.equal(await blockedPage.locator('#v5-root').count(),0);
-      const blockedData=await blockedPage.evaluate(()=>({
-        current:localStorage.getItem('kamado-bereidingsplanner-v1'),
-        journal:localStorage.getItem('bbq-v6-apply-journal-v1')
-      }));
-      assert.equal(blockedData.current,JSON.stringify(sample));
-      assert.equal(blockedData.journal,pending);
-      await blockedContext.close();
-      console.log('PASS preboot journal blocks actual v5 '+browserType.name());
-      checks++;
+      })]){
+        const context=await browser.newContext({acceptDownloads:true});
+        await context.addInitScript(({PLAN,DRAFT,JOURNAL,BACKUP,sample,journal})=>{
+          localStorage.setItem(PLAN,JSON.stringify(sample));
+          localStorage.setItem(JOURNAL,journal);
+          localStorage.setItem(BACKUP,'ORIGINAL_BACKUP');
+        },{PLAN,DRAFT,JOURNAL,BACKUP,sample,journal});
+        const page=await context.newPage();
+        await page.goto(previewUrl);
+        assert.ok(await page.locator('#bbq6-recovery-root').isVisible());
+        assert.equal(await page.locator('#bbq6-beta-panel').count(),0);
+        const before=await page.evaluate(snapshots);
+        const [download]=await Promise.all([
+          page.waitForEvent('download',{timeout:10000}),
+          page.locator('#bbq6-download-emergency').click()
+        ]);
+        const output=JSON.parse(await readFile(await download.path(),'utf8'));
+        assert.equal(output.keys[PLAN],before.plan);
+        assert.equal(output.keys[JOURNAL],journal);
+        assert.equal(output.keys[BACKUP],before.backup);
+        page.once('dialog',dialog=>dialog.dismiss());
+        await page.locator('#bbq6-discard-journal').click();
+        assert.deepEqual(await page.evaluate(snapshots),before,
+          'cancel journal deletion mutated backup/plan');
+        page.once('dialog',dialog=>dialog.accept());
+        await Promise.all([
+          page.waitForEvent('load',{timeout:10000}),
+          page.locator('#bbq6-discard-journal').click()
+        ]);
+        await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
+        const after=await page.evaluate(snapshots);
+        assert.equal(after.plan,before.plan);
+        assert.equal(after.backup,before.backup);
+        assert.equal(after.journal,null);
+        await context.close();
+        console.log('PASS standalone journal emergency export/discard '+browserType.name());
+        checks++;
+      }
     }finally{await browser.close();}
   }
 }finally{await new Promise(resolve=>server.close(resolve));}
-console.log('PASS '+checks+' gated real v5 browser scenarios');
+console.log('PASS '+checks+' standalone preview browser cases');

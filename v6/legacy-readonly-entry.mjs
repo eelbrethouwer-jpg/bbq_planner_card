@@ -52,7 +52,7 @@ export function mountLegacyReadOnlyPreview({
   css.dataset.bbq6BetaCss='1';
   doc.head.append(css);
   const client=createOptimizerClient();
-  let rendered=null,started=0,disposed=false,lastJSON=null;
+  let rendered=null,started=0,disposed=false,remoteStale=false,lastJSON=null;
   let input=null,baseline=null;
   function render(state){
     if(rendered)rendered.dispose();
@@ -73,6 +73,12 @@ export function mountLegacyReadOnlyPreview({
   }
   function setStatus(message){status.textContent=message;}
   function refreshSnapshot(){
+    if(remoteStale){
+      // v5 holds a stale closure state; a refresh must RELOAD the entire app,
+      // not reuse getLegacyState() from this tab and overwrite newer storage.
+      win.location.reload();
+      return;
+    }
     started++;
     client.cancel();
     const next=loadSnapshot();
@@ -85,7 +91,7 @@ export function mountLegacyReadOnlyPreview({
     refresh.disabled=false;
   }
   async function run(){
-    if(disposed||!input)return;
+    if(disposed||remoteStale||!input)return;
     const serial=++started;
     client.cancel();
     setStatus('Optimizer rekent veilig buiten de hoofdthread…');
@@ -117,8 +123,10 @@ export function mountLegacyReadOnlyPreview({
   }};
   const storageChanged=event=>{
     if(event.key===PLAN_KEY||event.key===null){
-      started++;client.cancel();
-      setStatus('Planning in een ander tabblad gewijzigd. Ververs om verder te gaan.');
+      started++;client.cancel();remoteStale=true;
+      rendered?.dispose();rendered=null;viewRoot.replaceChildren();
+      setStatus('Planning in een ander tabblad gewijzigd. Herlaad de pagina om de actuele sessie te zien.');
+      refresh.textContent='Herlaad planning';
       calculate.disabled=true;
     }
   };

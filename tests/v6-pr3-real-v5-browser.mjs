@@ -43,7 +43,8 @@ try{
           viewport:{width,height:844},isMobile:width<500,hasTouch:width<500
         });
         await context.addInitScript(state=>{
-          localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(state));
+          if(localStorage.getItem('kamado-bereidingsplanner-v1')===null)
+            localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(state));
         },sample);
         const page=await context.newPage();
         const errors=[];
@@ -88,6 +89,45 @@ try{
         console.log('PASS real v5 preview '+browserType.name()+' '+width+
           'px; alternatives='+alternatives+'; writes=0');
         checks++;
+        if(width===390){
+          // A plain old v5 tab bypasses Web Locks; it must invalidate any
+          // preview results and force a full reload rather than trust stale
+          // in-memory state. This does NOT make concurrent v5 writes safe.
+          const legacy=await context.newPage();
+          await legacy.goto(origin+mainPath,{waitUntil:'load'});
+          await legacy.evaluate(()=>{
+            const field=document.querySelector('#meal-time');
+            if(!field)throw new Error('Legacy meal time input missing');
+            field.value='19:00';
+            field.dispatchEvent(new Event('input',{bubbles:true}));
+          });
+          await page.waitForFunction(()=>{
+            const status=document.getElementById('bbq6-beta-status')?.textContent||'';
+            return status.includes('ander tabblad');
+          },null,{timeout:10000});
+          assert.ok(await page.locator('#bbq6-calculate').isDisabled());
+          assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0,
+            'stale alternatives should disappear');
+          const written=await page.evaluate(()=>
+            localStorage.getItem('kamado-bereidingsplanner-v1'));
+          assert.equal(JSON.parse(written).mealTime,'19:00');
+          assert.equal(await page.evaluate(()=>
+            localStorage.getItem('bbq-v6-apply-journal-v1')),null);
+          await Promise.all([
+            page.waitForEvent('load',{timeout:10000}),
+            page.locator('#bbq6-refresh').click()
+          ]);
+          await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
+          const fresh=await page.evaluate(()=>window.__bbqV6ReadOnlyState()?.mealTime);
+          assert.equal(fresh,'19:00','reload must read the newly saved legacy state');
+          assert.equal(await page.evaluate(()=>
+            localStorage.getItem('kamado-bereidingsplanner-v1')),written);
+          assert.equal(await page.evaluate(()=>
+            localStorage.getItem('bbq-v6-apply-journal-v1')),null);
+          await legacy.close();
+          console.log('PASS legacy old-tab write detected and reloaded '+browserType.name());
+          checks++;
+        }
         await context.close();
       }
     }finally{await browser.close();}

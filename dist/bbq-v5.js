@@ -9,7 +9,7 @@ window.initBBQV5=function(b){
   const day=t=>Number.isFinite(t)?new Date(t).toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}):'Datum onbekend';
   const labelKam=k=>k==='large'?'Grote kamado':k==='small'?'Kleine kamado':'Algemeen';
   const categoryIcon={rund:'🥩',varken:'🥓',gevogelte:'🍗',vis:'🐟',lam:'🍖',groenten:'🥦',vegetarisch:'🥬',dessert:'🍰',overig:'🍽️'};
-  let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',showAllTasks=false;
+  let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',showAllTasks=false,recipeFilter='all';
   try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==='object'&&saved.version===1){meta={active:saved.active===true,stage:['select','setup','prep','live','finished'].includes(saved.stage)?saved.stage:'select',created:String(saved.created||'')}}}catch(e){}
   const state=()=>b.getState();
   const dishes=()=>state().dishes||[];
@@ -31,14 +31,14 @@ window.initBBQV5=function(b){
     return Object.entries(b.getRecipes()).filter(([name,r])=>r&&typeof r==='object'&&r.name).sort((a,z)=>a[0].localeCompare(z[0],'nl')).map(([key,r])=>({...r,_key:key}));
   }
   function recipeCard(r){
-    const name=String(r.name||r._key),already=dishes().some(d=>d.name===name);
+    const name=String(r.name||r._key),origin=b.recipeOrigin(name),already=dishes().some(d=>d.name===name);
     const photo=typeof r.photo==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(r.photo)?'<img loading="lazy" alt="" src="'+r.photo+'">':null;
     return '<button type="button" class="v5-recipe'+(already?' selected':'')+'" data-v5-recipe="'+escape(r._key)+'" aria-label="'+escape((already?'Nogmaals toevoegen: ':'Toevoegen: ')+name)+'">'+
       (photo||'<div class="v5-recipe-icon" aria-hidden="true">'+(categoryIcon[r.category]||categoryIcon.overig)+'</div>')+
-      '<span class="v5-recipe-body"><span class="v5-recipe-name">'+escape(name)+'</span><span class="v5-recipe-foot">'+(already?'✓ In menu · tik voor extra portie':'＋ Toevoegen · ±'+escape(r.cook||'?')+' min')+'</span></span></button>';
+      '<span class="v5-recipe-body"><span class="v5-origin">'+(origin==='own'?'Eigen':'Voorbeeld')+'</span><span class="v5-recipe-name">'+escape(name)+'</span><span class="v5-recipe-foot">'+(already?'✓ In menu · tik voor extra portie':'＋ Toevoegen · ±'+escape(r.cook||'?')+' min')+'</span></span></button>';
   }
   function recipeGrid(){
-    const needle=recipeSearch.trim().toLocaleLowerCase('nl-NL'),results=allRecipes().filter(r=>(r.name+' '+r.category).toLocaleLowerCase('nl-NL').includes(needle));
+    const needle=recipeSearch.trim().toLocaleLowerCase('nl-NL'),results=allRecipes().filter(r=>(recipeFilter==='all'||b.recipeOrigin(r.name)===recipeFilter)&&(r.name+' '+r.category).toLocaleLowerCase('nl-NL').includes(needle));
     return results.length?results.map(recipeCard).join(''):'<div class="v5-empty">Geen recepten gevonden. Importeer een recept via je receptenbibliotheek.</div>';
   }
   function menuLines(removeOnly=false){
@@ -48,6 +48,7 @@ window.initBBQV5=function(b){
   function select(){
     return heading('Stap 1 van 3','Kies je gerechten','Tik op een recept om het aan jouw BBQ-menu toe te voegen. Je kunt ook recepten toevoegen uit je eigen bibliotheek.')+progress(1)+
       '<label class="v5-field v5-filter">Zoek gerechten<input id="v5-search" type="search" class="v5-input" placeholder="Bijv. ribeye, pulled pork, zalm..." value="'+escape(recipeSearch)+'"></label>'+
+      '<div class="v5-origin-filters" aria-label="Herkomst recepten">'+[['all','Alle'],['own','Eigen'],['example','Voorbeelden']].map(([value,label])=>'<button type="button" class="v5-btn subtle" data-v5-filter="'+value+'" aria-pressed="'+(recipeFilter===value)+'">'+label+'</button>').join('')+'</div>'+
       '<div class="v5-recipes" id="v5-recipe-list">'+recipeGrid()+'</div>'+
       '<div class="v5-card"><h3>Jouw menu ('+dishes().length+')</h3>'+(dishes().length?menuLines():'<p class="v5-muted">Nog geen gerechten geselecteerd.</p>')+'</div>'+
       '<div class="v5-row">'+action('📝 Recept uit tekst maken','recipe-generate')+action('📚 Mijn bibliotheek','recipes')+action('🔥 BBQ Junkie','recipe-junkie')+action('← Startscherm','home')+'</div>'+
@@ -67,7 +68,7 @@ window.initBBQV5=function(b){
       '<select class="v5-input" aria-label="Kamado voor '+escape(d.name)+'" data-v5-kamado="'+escape(d.id)+'"><option value="large"'+(d.kamado==='large'?' selected':'')+'>Groot</option><option value="small"'+(d.kamado==='small'?' selected':'')+'>Klein</option></select></div>').join('')+
       '<div class="v5-row" style="margin-top:14px">'+action('⚙ Temperatuur / methode wijzigen','planning')+'</div></div>'+
     '<div class="v5-card"><h3>⏱️ Planning in het kort</h3><div class="v5-grid"><div><span class="v5-muted">Grote kamado aan</span><div class="v5-number">'+clock(c.fires.large)+'</div></div><div><span class="v5-muted">Kleine kamado aan</span><div class="v5-number">'+clock(c.fires.small)+'</div></div></div>'+
-       (alerts.length?'<details class="v5-alerts"><summary>⚠️ '+alerts.length+' aandachtspunt(en) — bekijken</summary>'+alerts.slice(0,12).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'<p class="v5-muted">Geen planningsconflicten gedetecteerd. Controleer de praktische roosterruimte zelf.</p>')+'</div>'+
+       (alerts.length?'<details class="v5-alerts" data-v5-key="alerts"><summary>⚠️ '+alerts.length+' aandachtspunt(en) — bekijken</summary>'+alerts.slice(0,12).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'<p class="v5-muted">Geen planningsconflicten gedetecteerd. Controleer de praktische roosterruimte zelf.</p>')+'</div>'+
     '<div class="v5-row">'+action('← Gerechten','select')+action('Naar voorbereiding →','prep','primary')+'</div>';
   }
   function prepTasks(){
@@ -127,9 +128,9 @@ window.initBBQV5=function(b){
     '<div class="v5-sectionhead">⏭️ Volgende handelingen</div><div class="v5-card v5-next-tasks">'+
       (rows.length?checklist(rows.map(taskRow)):'<p class="v5-muted">Geen volgende geplande taken.</p>')+
       (follow.length>5?action(showAllTasks?'Toon minder':'Toon alle ('+follow.length+')','show-tasks'):'')+'</div>'+
-    (all.some(t=>done[t.id])?'<details class="v5-card"><summary>Afgeronde handelingen ('+finished+')</summary>'+checklist(all.filter(t=>done[t.id]).map(taskRow))+'</details>':'')+
+    (all.some(t=>done[t.id])?'<details class="v5-card" data-v5-key="completed"><summary>Afgeronde handelingen ('+finished+')</summary>'+checklist(all.filter(t=>done[t.id]).map(taskRow))+'</details>':'')+
     '<div class="v5-sectionhead">📖 Receptfasen per gerecht</div>'+dishes().map(d=>liveDish(d)).join('')+
-    (c.alerts.length?'<details class="v5-card v5-alerts"><summary>⚠️ Planning: '+c.alerts.length+' aandachtspunt(en)</summary>'+c.alerts.slice(0,10).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'')+
+    (c.alerts.length?'<details class="v5-card v5-alerts" data-v5-key="alerts"><summary>⚠️ Planning: '+c.alerts.length+' aandachtspunt(en)</summary>'+c.alerts.slice(0,10).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'')+
     '<div class="v5-row">'+action('✎ Planning aanpassen','planning')+action('Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
   }
   function liveDish(d){
@@ -138,14 +139,14 @@ window.initBBQV5=function(b){
     const phaseNext=d.phase==='waiting'?'cooking':d.phase==='cooking'?(Number(d.rest)>0?'resting':'done'):d.phase==='resting'?'done':null;
     const nextName={cooking:'▶ Op BBQ gelegd',resting:'⏱️ Begin rusten',done:'✓ Gerecht gereed'};
     const checked=s.v46Done||{};
-    return '<details class="v5-card" '+(d.phase==='cooking'?'open':'')+'><summary style="cursor:pointer;font-weight:850">'+escape(d.name)+' · '+escape(phaseLabel)+'</summary>'+
+    return '<details class="v5-card" data-v5-dish="'+escape(d.id)+'" data-v5-key="dish:'+escape(d.id)+'" '+(d.phase==='cooking'?'open':'')+'><summary style="cursor:pointer;font-weight:850">'+escape(d.name)+' · '+escape(phaseLabel)+'</summary>'+
       '<p class="v5-muted" style="margin-top:10px">'+escape(labelKam(d.kamado))+' · '+escape(d.grill)+' °C gepland'+(d.core!==''?' · Richtkern '+escape(d.core)+' °C':'')+'</p>'+
       '<div class="v5-probe">'+probe(d,p)+'</div>'+
       (phaseNext?'<div class="v5-row" style="margin:12px 0">'+action(nextName[phaseNext],'phase:'+d.id+':'+phaseNext,'primary')+'</div>':'')+
       (stages.length?stages.map((r,i)=>{
         const id=s.date+'|'+d.id+':recipe:'+i;
-        return '<div class="v5-recipestage"><details><summary>'+(checked[id]?'✓ ':'○ ')+escape(r.title||'Stap '+(i+1))+' · '+escape(r.trigger||'Op volgorde')+'</summary><p>'+escape(r.detail||'Geen extra uitleg.')+'</p>'+action(checked[id]?'↺ Heropen stap':'✓ Stap uitgevoerd','done:'+id,checked[id]?'subtle':'primary')+'</details></div>';
-      }).join(''):'<details class="v5-recipestage"><summary>Bereidingsinstructies</summary><p>'+escape(b.getRecipeDetails(d).cook||d.notes||'Volg de kerntemperatuur en controleer de gaarheid.')+'</p></details>')+
+        return '<div class="v5-recipestage"><details data-v5-key="stage:'+escape(d.id)+':'+i+'"><summary>'+(checked[id]?'✓ ':'○ ')+escape(r.title||'Stap '+(i+1))+' · '+escape(r.trigger||'Op volgorde')+'</summary><p>'+escape(r.detail||'Geen extra uitleg.')+'</p>'+action(checked[id]?'↺ Heropen stap':'✓ Stap uitgevoerd','done:'+id,checked[id]?'subtle':'primary')+'</details></div>';
+      }).join(''):'<details class="v5-recipestage" data-v5-key="instructions:'+escape(d.id)+'"><summary>Bereidingsinstructies</summary><p>'+escape(b.getRecipeDetails(d).cook||d.notes||'Volg de kerntemperatuur en controleer de gaarheid.')+'</p></details>')+
       '</details>';
   }
   function renderNav(){
@@ -155,11 +156,14 @@ window.initBBQV5=function(b){
   }
   function render(){
     const root=$('v5-root');if(!root)return;
+    const scroll=window.scrollY,open=new Map([...root.querySelectorAll('details[data-v5-key]')].map(el=>[el.dataset.v5Key,el.open]));
     let body=screen==='home'?home():screen==='select'?select():screen==='setup'?setup():screen==='prep'?prep():screen==='live'?live():home();
     root.dataset.screen=screen;
     root.innerHTML='<div class="v5-content">'+logo()+body+'</div>';
     root.querySelectorAll('input[data-v5-setting]').forEach(el=>{el.setAttribute('autocomplete','off')});
+    root.querySelectorAll('details[data-v5-key]').forEach(el=>{if(open.has(el.dataset.v5Key))el.open=open.get(el.dataset.v5Key)});
     renderNav();
+    if(window.scrollY!==scroll)window.scrollTo(0,scroll);
   }
   function legacy(tab,recipeTab){
     legacyFrom=screen;legacyTab=tab;
@@ -221,7 +225,21 @@ window.initBBQV5=function(b){
     }
     if(el.matches('[data-v5-kamado]')){const d=dishes().find(d=>d.id===el.dataset.v5Kamado);if(d){d.kamado=el.value==='small'?'small':'large';commit();render()}return}
   });
+  function openDish(id){
+    const card=[...root.querySelectorAll('[data-v5-dish]')].find(el=>el.dataset.v5Dish===id);
+    if(card){card.open=true;card.scrollIntoView?.({behavior:'smooth',block:'start'})}
+  }
+  function heroDish(){
+    const done=state().v46Done||{},tasks=b.getTasks().filter(t=>!t.id.includes(':prep:')&&!done[t.id]);
+    const next=tasks.find(t=>t.time<=Date.now()+10*60000)||tasks[0];if(!next)return null;
+    const task=next.id.slice(next.id.indexOf('|')+1),fire=/^(large|small):fire$/.exec(task);
+    if(fire)return b.calculate().dishes.filter(d=>d.kamado===fire[1]).sort((a,z)=>a.start-z.start)[0]?.id;
+    return task.replace(/:(on|off|serve)$/,'');
+  }
   function handleClick(e){
+    const filter=e.target.closest('[data-v5-filter]');
+    if(filter){recipeFilter=filter.dataset.v5Filter;render();return}
+
     const recipe=e.target.closest('[data-v5-recipe]');
     if(recipe){const r=b.getRecipes()[recipe.dataset.v5Recipe];if(r){state().dishes.push(b.makeDish(r));commit();render()}return}
     const remove=e.target.closest('[data-v5-remove]');
@@ -243,8 +261,8 @@ window.initBBQV5=function(b){
     if(act==='recipe-junkie'){legacy('recipes','junkie');return}
     if(act==='history'||act==='more'){legacy('more');return}
     if(act==='planning'){legacy('planning');return}
-    if(act==='recipe-in-live'){const el=root.querySelector('.v5-card details');if(el){el.open=true;el.scrollIntoView?.({behavior:'smooth',block:'start'})}else{legacy('recipes')}return}
-    if(act.startsWith('dish:')){const id=act.slice(5),cards=[...root.querySelectorAll('details.v5-card')],card=cards.find(c=>c.textContent.includes(dishes().find(d=>d.id===id)?.name||'\u0000'));if(card){card.open=true;card.scrollIntoView?.({behavior:'smooth',block:'center'})}return}
+    if(act==='recipe-in-live'){openDish(heroDish());return}
+    if(act.startsWith('dish:')){openDish(act.slice(5));return}
     if(act.startsWith('phase:')){const [,id,phase]=act.split(':'),d=dishes().find(d=>d.id===id);if(d&&['cooking','resting','done'].includes(phase)){setPhase(d,phase);commit();render()}return}
     if(act.startsWith('done:')){const id=act.slice(5);toggleDone(id,!(state().v46Done||{})[id]);return}
   }

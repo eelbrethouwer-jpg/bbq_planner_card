@@ -2804,6 +2804,7 @@ if(typeof window.initBBQV5==='function'){
     getState:()=>state,
     calculate:()=>calc(),
     getRecipes:()=>examples,
+    recipeOrigin:name=>(localRecipes.some(r=>r.name===name)?'own':builtInRecipeNames.has(name)?'example':'own'),
     getPrepTasks:()=>v46PrepTasks(calc()),
     getTasks:()=>v46Tasks(calc()),
     getRecipeDetails:d=>recipeDetails(d),

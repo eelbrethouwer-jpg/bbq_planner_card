@@ -200,10 +200,11 @@ try{
           'cancel journal deletion mutated backup/plan');
         page.once('dialog',dialog=>dialog.accept());
         await Promise.all([
-          page.waitForEvent('load',{timeout:10000}),
+          page.waitForURL(legacyUrl,{timeout:10000}),
           page.locator('#bbq6-discard-journal').click()
         ]);
-        await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
+        await page.locator('#v5-root').waitFor({timeout:10000});
+        assert.equal(await page.locator('#bbq6-beta-panel').count(),0);
         const after=await page.evaluate(snapshots);
         assert.equal(after.plan,before.plan);
         assert.equal(after.backup,before.backup);

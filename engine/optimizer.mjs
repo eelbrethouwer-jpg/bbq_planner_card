@@ -26,7 +26,10 @@ function isLocked(d) {
 function conflictCount(result, severity) {
   return result.conflicts.filter(c => c.severity === severity).length;
 }
-function score(result, changes) {
+function score(result, changes, input) {
+  // At otherwise equal risk and intervention cost, preserve earlier-entered
+  // dishes on their assigned kamado. This is a deterministic, low-impact tie-break.
+  const priorities=new Map(input.dishes.map((dish,index)=>[dish.id,input.dishes.length-index]));
   return [
     STATUS_RANK[result.planStatus] ?? 4,
     conflictCount(result,'blocker'),
@@ -34,7 +37,8 @@ function score(result, changes) {
     conflictCount(result,'warning'),
     changes.length,
     changes.filter(x => x.type === 'kamado').length,
-    changes.filter(x => x.type === 'serve_delay').reduce((s,x) => s+x.minutes,0)
+    changes.filter(x => x.type === 'serve_delay').reduce((sum,x) => sum+x.minutes,0),
+    changes.filter(x => x.type === 'kamado').reduce((sum,x) => sum+(priorities.get(x.dishId)??0),0)
   ];
 }
 function compareScores(a,b) {
@@ -235,7 +239,7 @@ export function optimize(input){
   const total=opts.length+twoMoves+moves.length*delays.length;
   const checked=[];
   let tested=0;
-  const baselineScore=score(baseline,[]);
+  const baselineScore=score(baseline,[],input);
   function consider(actions){
     const snapshot=candidateInput(input,actions);
     const changes=changesOf(input,actions);
@@ -244,7 +248,7 @@ export function optimize(input){
     tested++;
     if(trial.planStatus==='unknown'||trial.planStatus==='infeasible')return;
     if(!preservedLocked(baseline,trial,input))return;
-    const value=score(trial,changes);
+    const value=score(trial,changes,input);
     if(compareScores(value,baselineScore)>=0)return;
     checked.push({changes,trial,score:value,
       signature:changes.map(c=>c.type+':'+(c.dishId??c.slotId)+':'+c.to+':'+c.minutes).join('|')});

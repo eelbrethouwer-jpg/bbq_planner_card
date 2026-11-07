@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>BBQ Regisseur v6 — PR3 testomgeving</title>
+  <link rel="stylesheet" href="./regisseur.css">
+  <style>
+    body{margin:0;background:#10191e;color:#f3f4ee;font:15px system-ui,-apple-system,sans-serif}
+    .bbq6-harness{max-width:1100px;margin:auto;padding:12px 14px}
+    .bbq6-harness button{border:0;background:#eeb076;color:#151a1c;padding:11px 14px;border-radius:10px;font-weight:750;min-height:44px}
+    .bbq6-harness p{margin:8px 0;color:#b6c5c5}
+  </style>
+</head>
+<body>
+  <header class="bbq6-harness">
+    <strong>PR3 testomgeving · FICTIEVE DATA · geen opslag</strong>
+    <p>Alleen voor browser- en responsive-tests. Deze pagina verandert de bestaande BBQ Planner niet.</p>
+    <button id="calculate" type="button">Bereken alternatieven</button>
+    <span id="status" role="status" aria-live="polite">Nog niet berekend</span>
+  </header>
+  <main id="regisseur" aria-label="Interactieve BBQ-planning"></main>
+  <script type="module" src="./sandbox.mjs"></script>
+</body>
+</html>

@@ -226,6 +226,56 @@ caseOf('T06',()=>{
   c.affectedIds.join(',')==='B,C'),false);
 });
 
+
+caseOf('T07',()=>{
+ const o=expected(state([item('a',{prepTasks:[{
+ id:'p',daysBefore:2,time:'',duration:10}]})]),
+ 'conditional',['AVAILABILITY_UNVERIFIED']);
+ assert.equal(o.proposedTasks[0].id,'a:prep:p');
+ assert.equal(o.proposedTasks[0].at,null);
+ assert.equal(o.proposedTasks[0].localDate,'2026-11-12');
+});
+caseOf('T08',()=>{
+ const o=expected(state([item('a',{cook:1200,rest:60})],
+ {availableFrom:'16:30'}),'conditional',['AVAILABILITY_UNVERIFIED']);
+ assert.equal(dOf(o,'a').start,Date.parse('2026-11-13T20:30:00Z'));
+ assert.equal(o.fires.large,Date.parse('2026-11-13T20:00:00Z'));
+ assert.equal(codes(o).has('PREHEAT_UNAVAILABLE'),false);
+});
+caseOf('T09',()=>{
+ const a=expected(state([item('a',{cook:840,rest:0})],
+ {date:'2027-03-28',mealTime:'12:00',availableFrom:''}),'feasible');
+ const b=expected(state([item('b',{cook:840,rest:0,prepTasks:[{
+ id:'p',daysBefore:1,time:'19:00',duration:10}]})],
+ {date:'2027-10-31',mealTime:'12:00',availableFrom:''}),'feasible');
+ assert.equal(dOf(a,'a').start,Date.parse('2027-03-27T20:00:00Z'));
+ assert.equal(dOf(b,'b').start,Date.parse('2027-10-30T21:00:00Z'));
+ assert.equal(b.proposedTasks.find(x=>x.id==='b:prep:p').at,
+  Date.parse('2027-10-30T17:00:00Z'));
+});
+caseOf('T10',()=>{
+ const o=expected(fixtureN03(),'conditional',['CHANGEOVER_UNVERIFIED']);
+ assert.equal(codes(o).has('INCOMPATIBLE_SETUP'),false);
+});
+caseOf('T11',()=>{
+ const o=expected(state([item('a',{name:'Ribeye'}),
+ item('b',{name:'Ribeye',kamado:'small'})]),'feasible');
+ assert.equal(new Set(o.proposedTasks.map(x=>x.id)).size,o.proposedTasks.length);
+ assert.equal(codes(o).has('DUPLICATE_ID'),false);
+});
+caseOf('T12',()=>{
+ expected(state([item('a',{cook:null}),item('b'),item('c')]),
+ 'unknown',['DURATION_UNKNOWN','CAPACITY_UNVERIFIED']);
+ expected(state([item('b'),item('c')]),'conditional',['CAPACITY_UNVERIFIED']);
+});
+caseOf('P8-EXTRAS',()=>{
+ expected(state([item('a',{cook:0})]),'unknown',['INVALID_DURATION']);
+ expected(state([item('a',{prepTasks:[{
+ id:'p',daysBefore:1.5,time:'19:00',duration:5}]})]),'unknown',['INVALID_DURATION']);
+ expected(state([],{preheatLarge:null,preheatSmall:null}),'feasible');
+ expected(state([item('a')],{availableFrom:''}),'feasible');
+});
+
 const failed=results.filter(x=>x.status==='FAIL');
 console.log('SCENARIO_SUMMARY '+results.map(x=>x.id+'='+x.status).join(' '));
 if(failed.length)throw new Error(failed.length+' v6 scenario(s) failed: '+failed.map(x=>x.id).join(','));

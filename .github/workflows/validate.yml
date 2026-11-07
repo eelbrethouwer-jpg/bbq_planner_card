@@ -58,6 +58,7 @@ jobs:
           node tests/v6-pr3-storage.mjs
           node tests/v6-pr3-live-apply.mjs
           node tests/v6-pr3-proposal-draft.mjs
+          node tests/v6-pr3-preboot.mjs
           node tests/v6-pr3-legacy-bridge.mjs
           TZ=America/New_York node tests/v6-engine.mjs && TZ=Pacific/Kiritimati node tests/v6-engine.mjs
           TZ=America/New_York node tests/v6-optimizer.mjs && TZ=Pacific/Kiritimati node tests/v6-optimizer.mjs

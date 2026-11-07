@@ -54,6 +54,7 @@ jobs:
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs
           node tests/v6-pr3.mjs
+          node tests/v6-pr3-apply-proposal.mjs
           TZ=America/New_York node tests/v6-engine.mjs && TZ=Pacific/Kiritimati node tests/v6-engine.mjs
           TZ=America/New_York node tests/v6-optimizer.mjs && TZ=Pacific/Kiritimati node tests/v6-optimizer.mjs
 

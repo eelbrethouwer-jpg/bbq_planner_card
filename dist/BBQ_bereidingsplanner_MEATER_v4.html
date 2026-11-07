@@ -588,33 +588,6 @@ body{overscroll-behavior-y:contain}
 <script src="./bbq-v501.js?v=5.1.1"></script>
 <script>
 (()=>{'use strict';
-// A pending v6 write-ahead journal must be reconciled BEFORE v5 loads the plan.
-// Legacy tabs still bypass locks, so do NOT silently roll back or auto-load.
-let v6RecoveryPending=false;
-try{
-  v6RecoveryPending=localStorage.getItem('bbq-v6-apply-journal-v1')!==null;
-}catch{ /* No new failure mode for browsers where legacy storage is disabled. */ }
-if(v6RecoveryPending){
-  const screen=document.createElement('main');
-  screen.id='bbq6-recovery-blocked';
-  screen.setAttribute('role','alert');
-  screen.style.cssText='max-width:650px;margin:12vh auto;padding:28px 20px;'+
-    'font:16px/1.6 system-ui;background:#15262c;color:#f5f1e8;'+
-    'border:1px solid #d8a268;border-radius:16px';
-  const title=document.createElement('h1');
-  title.textContent='BBQ Planner: veilig herstel nodig';
-  const explanation=document.createElement('p');
-  explanation.textContent='Er is een onderbroken wijziging gevonden. '+
-    'De planner wordt niet geladen om gegevensverlies te voorkomen. '+
-    'Je bestaande sessie is niet automatisch aangepast of hersteld.';
-  const instruction=document.createElement('p');
-  instruction.textContent='Maak eerst een controle of herstel van de opgeslagen '+
-    'planning mogelijk is. Sluit andere tabbladen en voer geen '+
-    'nieuwe bereidingen in totdat het conflict is opgelost.';
-  screen.append(title,explanation,instruction);
-  document.body.replaceChildren(screen);
-  return;
-}
 const KEY='kamado-bereidingsplanner-v1';
 const PUBLIC_SITE_URL='https://eelbrethouwer-jpg.github.io/bbq_planner_card/';
 const $=id=>document.getElementById(id);
@@ -2842,23 +2815,7 @@ if(typeof window.initBBQV5==='function'){
     syncLegacy:()=>{initValuesOnly();renderAll();}
   });
 }
-// PR3 beta is deliberately read-only and opt-in. Existing v5 flow is untouched.
-if(new URLSearchParams(location.search).get('v6preview')==='1'){
-  window.__bbqV6ReadOnlyState=()=>JSON.parse(JSON.stringify(state));
-}
 })();
-</script>
-<script type="module">
-  // No imports, styles, workers or side effects on the normal v5 URL.
-  if(new URLSearchParams(location.search).get('v6preview')==='1'){
-    import('../v6/legacy-readonly-entry.mjs').then(({mountLegacyReadOnlyPreview})=>{
-      mountLegacyReadOnlyPreview({
-        win:window,getLegacyState:window.__bbqV6ReadOnlyState
-      });
-    }).catch(error=>{
-      console.error('v6 read-only preview unavailable',error);
-    });
-  }
 </script>
 </body>
 </html>

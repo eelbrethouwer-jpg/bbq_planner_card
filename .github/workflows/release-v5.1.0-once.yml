@@ -1,4 +1,4 @@
-name: Publish BBQ Planner v5.1.0 (one-time)
+name: Publish BBQ Planner v5.1.1 (one-time)
 
 on:
   push:
@@ -14,51 +14,56 @@ jobs:
     if: github.repository == 'eelbrethouwer-jpg/bbq_planner_card'
     runs-on: ubuntu-latest
     steps:
-      - name: Maak gecontroleerde v5.1.0-release
+      - name: Publiceer alleen de gecontroleerde v5.1.1-mergecommit
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
-          TAG="v5.1.0"
-          TARGET="e2b1a861d745c6fcd77ff39515330995673c4d43"
+          TAG="v5.1.1"
+          TARGET="8afb5a89c7d2af975f6cddcbb97598682906e543"
 
-          # Never overwrite or silently reuse a pre-existing tag.
+          # Idempotent: never overwrite a published release or change an existing tag.
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists, no changes made."
+            echo "Release $TAG already exists; no changes made."
             exit 0
           fi
           if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
-            echo "::error::Tag $TAG exists without a release; refusing to change it."
+            echo "::error::Tag $TAG exists without release; refusing to move it."
             exit 1
           fi
+          gh api "repos/${GH_REPO}/commits/${TARGET}" --jq '.sha' | grep -Fx "$TARGET"
 
-          cat > /tmp/bbq-v5.1.0-notes.md <<'NOTES'
-          ## BBQ Planner v5.1.0 — Eén app, rustig koken
+          cat > /tmp/bbq-v5.1.1-notes.md <<'NOTES'
+          ## BBQ Planner v5.1.1 — Kookfuncties weer bereikbaar
 
-          Een rustiger, beter bruikbaar scherm tijdens het koken, met één navigatie.
+          Kleine herstelrelease op v5.1.0; de bestaande kookfuncties zijn weer bereikbaar vanuit Live.
 
-          ### Nieuw en verbeterd
-          - Eén vaste onderbalk in de planner, de recepten, Live en Meer.
-          - Compact Live-overzicht: serveertijd, voortgang, één hoofdtaak, kamadokaarten en maximaal vijf volgende stappen.
-          - Geplande en daadwerkelijk afgevinkte tijden bij afgeronde stappen.
-          - Alleen verse MEATER-metingen verschijnen als groot LIVE-cijfer; anders wordt de geplande temperatuur getoond.
-          - Uitklapbare receptdetails en scrollpositie blijven behouden bij automatische updates.
-          - Recept- en taakkoppelingen gebeuren via gerecht-ID, ook bij gerechten met dezelfde naam.
-          - Compacte recepttegels en herkomstfilters Eigen/Voorbeelden, zonder nieuwe opslagvelden.
+          ### Opgelost
+          - Vanuit Live opent **📈 MEATER-grafiek & focusmodus** de bestaande kookpagina met de live MEATER-monitor en focusmodus.
+          - De navigatie blijft op Live tijdens de kookpagina; terugkeren gaat via **← Live**.
+          - Uitgebreide planning markeert Live wanneer geopend vanuit Live, anders Vandaag.
+          - Hoofdtaak en volgende taken tonen ook de datum wanneer een taak niet vandaag valt.
+          - Een kamado zonder gerecht toont **Niet in gebruik** in plaats van een doeltemperatuur.
+          - PWA-cache, HTML-, CSS-/JS- en Home Assistant-versieverwijzingen bijgewerkt naar v5.1.1.
 
           ### Compatibiliteit
-          De bestaande berekeningsengine, persoonlijke recepten, reviews, import/export, PWA, Home Assistant- en MEATER-integratie en opslagstructuur blijven behouden. Geen datamigratie.
+          Geen nieuwe localStorage-sleutels of datamigratie. Bestaande kookengine, recepten, planning, reviews en MEATER-bridge zijn behouden.
 
-          ### Teststatus
-          De vier GitHub CI-checks slaagden op PR #26 en de merge op main: HACS-validatie, JavaScript/PWA, DOM-regressies en mobiele Chromium/WebKit-checks.
+          ### Geautomatiseerde controles
+          HACS-validatie, JavaScript/PWA, DOM-/opslagregressies en mobiele Chromium-/WebKit-checks geslaagd op PR #28. De release verwijst exact naar mergecommit `8afb5a89c7d2af975f6cddcbb97598682906e543`.
 
-          ### Nog te controleren op echte apparaten
-          Fysieke iPhone Safari/PWA met bestaande gebruikersdata, echte Home Assistant/HACS en MEATER-hardware, iPad/desktop en VoiceOver. Test na installatie eerst of recepten, live-taken en navigatie correct blijven functioneren.
+          ### Nog niet praktijkgetest
+          Echte iPhone Safari/PWA, Home Assistant-installatie en MEATER-hardware. Controleer na de update of je recepten en opgeslagen sessies intact zijn.
 
-          Bron: PR #26; gecontroleerde mergecommit e2b1a861d745c6fcd77ff39515330995673c4d43.
+          Bron: https://github.com/eelbrethouwer-jpg/bbq_planner_card/pull/28
           NOTES
 
-          gh release create "$TAG" --target "$TARGET" --title "BBQ Planner v5.1.0 — Eén app, rustig koken" --notes-file /tmp/bbq-v5.1.0-notes.md --latest
+          gh release create "$TAG" --target "$TARGET" --title "BBQ Planner v5.1.1 — Kookfuncties weer bereikbaar" --notes-file /tmp/bbq-v5.1.1-notes.md --latest
+          ACTUAL="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+          if [[ "$ACTUAL" != "$TARGET" ]]; then
+            echo "::error::Release tag points to unexpected commit: $ACTUAL"
+            exit 1
+          fi
           gh release view "$TAG" --json tagName,name,url

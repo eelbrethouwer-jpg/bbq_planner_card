@@ -66,12 +66,13 @@ export async function inspectProposalDraft({
  * detected and the resulting concept becomes outdated; never changes v5 data.
  */
 export async function saveProposalDraft({
-  storage,legacyState,input,outcome,alternativeId,
+  storage,legacyState,readLiveState,input,outcome,alternativeId,
   expectedStorageJSON,withExclusiveLock,subtle=globalThis.crypto?.subtle,
   now=Date.now()
 }={}){
   validStorage(storage);
   requireState(typeof withExclusiveLock==='function','LOCK_REQUIRED');
+  requireState(typeof readLiveState==='function','LIVE_BRIDGE_REQUIRED');
   requireState(typeof expectedStorageJSON==='string','MISSING_SNAPSHOT');
   requireState(Number.isFinite(now)&&now>=0,'INVALID_TIMESTAMP');
   return withExclusiveLock(async()=>{
@@ -81,6 +82,7 @@ export async function saveProposalDraft({
     const source=clone(legacyState);
     const sourceJSON=json(source);
     requireState(sourceJSON===json(legacyState),'INVALID_SOURCE');
+    requireState(json(readLiveState())===sourceJSON,'STALE_LIVE_PLAN');
     const candidate=prepareLegacyApply({
       legacyState:source,input,outcome,alternativeId,allowConditional:false
     });
@@ -94,6 +96,7 @@ export async function saveProposalDraft({
     };
     validateRecord(record);
     requireState(storage.getItem(PLAN_KEY)===before,'STALE_STORED_PLAN');
+    requireState(json(readLiveState())===sourceJSON,'STALE_LIVE_PLAN');
     requireState(storage.getItem(JOURNAL_KEY)===null,'RECOVERY_REQUIRED');
     const bytes=json(record);
     storage.setItem(DRAFT_KEY,bytes);

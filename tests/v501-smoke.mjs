@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 const read=x=>fs.readFileSync(x,'utf8');
 const html=read('dist/BBQ_bereidingsplanner_MEATER_v4.html');
-const mainLoader='<script src="./bbq-v5.js?v=5.0.3"></script>';
-const recipeLoader='<script src="./bbq-v501.js?v=5.0.3"></script>';
+const mainLoader='<script src="./bbq-v5.js?v=5.1.0"></script>';
+const recipeLoader='<script src="./bbq-v501.js?v=5.1.0"></script>';
 assert.ok(html.includes(mainLoader)&&html.includes(recipeLoader),'current v5 bundle and recipe switch loaded');
 const body=html.replace(mainLoader,'<script>'+read('dist/bbq-v5.js')+'</script>').replace(recipeLoader,'<script>'+read('dist/bbq-v501.js')+'</script>');
 const errors=[];
@@ -32,7 +32,7 @@ function current(){return d.querySelector('[data-v501-recipe-tab][aria-selected=
 try{
  assert.equal(errors.length,0,'page initializes without errors');
  assert.equal(d.querySelectorAll('#v501-recipe-tabs [role=tab]').length,3,'all three source tabs exist');
- assert.deepEqual([...d.querySelectorAll('#v501-recipe-tabs button')].map(el=>el.textContent.trim()),['✨Recept genereren','📚Mijn bibliotheek','🔥BBQ Junkie']);
+ assert.deepEqual([...d.querySelectorAll('#v501-recipe-tabs button')].map(el=>el.textContent.trim()),['📝Recept uit tekst maken','📚Mijn bibliotheek','🔥BBQ Junkie']);
  assert.equal(current(),'library','first visit defaults to personal library');
  assert.ok(!pane('library').hidden,'library panel displayed');
  assert.ok(pane('generate').hidden&&pane('junkie').hidden,'other sources are hidden');

@@ -45,3 +45,6 @@
 body.v5-ready #v5-back{min-height:44px}
 @media(min-width:600px){#v5-root .v5-recipes{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media print{#v5-nav{display:none!important}}
+/* Keep a full-size checkbox target with an explicit dark-theme appearance. */
+#v5-root .v5-check input[type=checkbox]{appearance:none;border:1px solid #688c8c;border-radius:10px;background:#102128;cursor:pointer}
+#v5-root .v5-check input[type=checkbox]:checked{background:#6dd3ad url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='%23102328' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/26px no-repeat;border-color:#6dd3ad}

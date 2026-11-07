@@ -15,7 +15,7 @@ window.initBBQV5=function(b){
   const dishes=()=>state().dishes||[];
   function saveMeta(){try{localStorage.setItem(KEY,JSON.stringify({...meta,version:1}))}catch(e){/* Only session navigation metadata; dishes remain in v4 storage */}}
   function commit(){b.commit();}
-  function goto(next){screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo(0,0)}catch(e){}}
+  function goto(next){screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}}
   function logo(){return '<div class="v5-top"><div class="v5-brand"><span class="v5-flame">🔥</span><div><div class="v5-title">BBQ Planner</div><div class="v5-sub">Rustig samen koken</div></div></div><span class="v5-chip neutral">'+escape(day(Date.parse(state().date)))+'</span></div>'}
   function progress(n){return '<div class="v5-steps" aria-label="Stap '+n+' van 3">'+[1,2,3].map(i=>'<span class="'+(i<=n?'on':'')+'"></span>').join('')+'</div>'}
   function action(label,act,variant='subtle',disabled=false){return '<button type="button" class="v5-btn '+variant+'" data-v5-act="'+escape(act)+'"'+(disabled?' disabled':'')+'>'+label+'</button>'}
@@ -163,15 +163,15 @@ window.initBBQV5=function(b){
     root.querySelectorAll('input[data-v5-setting]').forEach(el=>{el.setAttribute('autocomplete','off')});
     root.querySelectorAll('details[data-v5-key]').forEach(el=>{if(open.has(el.dataset.v5Key))el.open=open.get(el.dataset.v5Key)});
     renderNav();
-    if(window.scrollY!==scroll)window.scrollTo(0,scroll);
+    if(window.scrollY!==scroll)window.scrollTo({top:scroll,left:0,behavior:'instant'});
   }
   function legacy(tab,recipeTab){
     legacyFrom=screen;legacyTab=tab;
     if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
-    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyFrom==='live'?'← Live':'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo(0,0)}catch(e){}
+    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyFrom==='live'?'← Live':'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
   }
   function exitLegacy(){
-    document.body.classList.remove('v5-legacy');$('v5-back').style.display='none';b.syncLegacy();screen=legacyFrom==='live'?'live':'home';legacyTab='';render();try{window.scrollTo(0,0)}catch(e){}
+    document.body.classList.remove('v5-legacy');$('v5-back').style.display='none';b.syncLegacy();screen=legacyFrom;legacyTab='';render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
   }
   function start(){
     const s=state();

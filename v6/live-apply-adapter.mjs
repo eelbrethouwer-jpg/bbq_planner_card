@@ -4,7 +4,9 @@
  *
  * This is opt-in and exports no global. It is not loaded by the public v5 UI.
  * Do not mount until every legacy plan writer participates in coordination
- * (or old/uncoordinated clients are reliably excluded).
+ * (or old/uncoordinated clients are reliably excluded). An explicit
+ * assertLegacyWriterExclusion callback is REQUIRED for writes and recovery.
+ * It is an integration contract, not a way to detect old tabs automatically.
  */
 import {prepareLegacyApply} from './apply-proposal.mjs';
 import {applyWithJournal,recoverJournal,PLAN_KEY} from './storage-journal.mjs';
@@ -21,7 +23,8 @@ const snapshot=state=>{
   return parsed;
 };
 export function createLegacyApplyAdapter({
-  storage,lockManager,readLiveState,replaceLiveState,refreshView
+  storage,lockManager,readLiveState,replaceLiveState,refreshView,
+  assertLegacyWriterExclusion
 }={}){
   required(storage&&['getItem','setItem','removeItem']
     .every(k=>typeof storage[k]==='function'),'INVALID_STORAGE');
@@ -29,15 +32,26 @@ export function createLegacyApplyAdapter({
     typeof replaceLiveState==='function','LIVE_BRIDGE_REQUIRED');
   if(refreshView!==undefined)
     required(typeof refreshView==='function','INVALID_VIEW_BRIDGE');
+  // Old v5 tabs do not use Web Locks. Do not allow writes unless a future
+  // boot coordinator can *prove* those tabs cannot write this plan key.
+  // An existing Web Lock alone is NOT such proof.
+  const validateIsolation=async()=>{
+    required(typeof assertLegacyWriterExclusion==='function',
+      'LEGACY_WRITER_EXCLUSION_REQUIRED');
+    const result=await assertLegacyWriterExclusion();
+    required(result===true,'UNCOORDINATED_V5_WRITERS');
+  };
   // Deliberately throw on browsers without Web Locks. No unsafe fallback.
   const withExclusiveLock=createPlanLock({lockManager});
 
   const writeExact=async(next)=>{
+    await validateIsolation();
     const target=snapshot(next);
     // v5 must replace its own state reference, never expose separate copies.
     await replaceLiveState(target);
     const serialized=JSON.stringify(readLiveState());
     required(serialized===JSON.stringify(target),'LIVE_REPLACE_FAILED');
+    await validateIsolation();
     storage.setItem(PLAN_KEY,serialized);
     required(storage.getItem(PLAN_KEY)===serialized,'PERSIST_FAILED');
     if(refreshView)await refreshView();
@@ -53,8 +67,13 @@ export function createLegacyApplyAdapter({
     const proposal=prepareLegacyApply({
       legacyState,input,outcome,alternativeId,allowConditional
     });
+    // Guard also runs INSIDE the exclusive v6 lock, not only at UI click.
+    const withFencedLock=operation=>withExclusiveLock(async()=>{
+      await validateIsolation();
+      return operation();
+    });
     return applyWithJournal({
-      storage,proposal,withExclusiveLock,
+      storage,proposal,withExclusiveLock:withFencedLock,
       readLiveState,
       commitLiveState:writeExact,
       rollbackLiveState:writeExact
@@ -79,6 +98,16 @@ export function createLegacyApplyAdapter({
  * in-memory state. Must be awaited by a future gated bootstrap.
  * Do not run recovery against an already-live v5 tab.
  */
-export function createPreloadRecovery({storage,lockManager}={}){
-  return ()=>recoverJournal({storage,withExclusiveLock:createPlanLock({lockManager})});
+export function createPreloadRecovery({storage,lockManager,
+  assertLegacyWriterExclusion}={}){
+  const withExclusiveLock=createPlanLock({lockManager});
+  return ()=>recoverJournal({storage,withExclusiveLock:operation=>
+    withExclusiveLock(async()=>{
+      required(typeof assertLegacyWriterExclusion==='function',
+        'LEGACY_WRITER_EXCLUSION_REQUIRED');
+      required(await assertLegacyWriterExclusion()===true,
+        'UNCOORDINATED_V5_WRITERS');
+      return operation();
+    })
+  });
 }

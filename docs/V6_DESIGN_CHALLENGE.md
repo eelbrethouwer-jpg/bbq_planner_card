@@ -53,66 +53,63 @@ De MVP moet ook **zonder MEATER** bruikbaar blijven. Receptvoorkeur "geen ui" en
 
 **Geen één onverklaard 'magisch scoregetal'.** Sorteer lexicografisch: eerst haalbaarheid/vaste wensen, daarna veilige marge, dan gemakken. Noem niet-meetbare capaciteit/temperatuurherstel geen harde zekerheid.
 
-## 6. Gecorrigeerd PR1-contract — verifieer nog tegen de letterlijke Claude-review
+## 6. Contract en statussen — Claude reviewronde 0 (D1/D2)
 
-**Bronstatus:** deze tabel volgt de expliciete gebruikersopdracht voor stap 1. De oorspronkelijke tekst van Claude (HOOG-1 t/m HOOG-4 en het gecorrigeerde contract) is **niet** beschikbaar via PR #31, GitHub-comments of de projectbestanden. De hier vastgelegde afspraken zijn daarom een *voorlopige implementatiebaseline*, niet een geverifieerde letterlijke kopie van Claude's review. Ontwerp-GO vereist bronvergelijking door Claude.
+**Letterlijk contract van Claude, ronde 0 — door gebruiker overgedragen (7 november 2026):**
 
-**Statusvoorrang:** `infeasible > unknown > conditional > feasible` — als zowel harde blokkade als onbekende invoer voorkomen, wint `infeasible`; anders wint `unknown` van `conditional`. `searchStatus='not_run'` is de enige geldige waarde in PR1: geen optimizer, geen alternatieven en geen claim op globale haalbaarheid.
-
-**PR1-modules (read-only, niet in app geladen):**
-- `engine/time.mjs`: `toInstant(localDate,localTime,zone,disambiguation?)` retourneert `{ok:true,at}` of `{ok:false,code}`; alleen Intl. Codes: `NONEXISTENT_LOCAL_TIME`, `AMBIGUOUS_LOCAL_TIME`, `INVALID_DATE`, `INVALID_TIME`. `localParts(at,zone)` voor presentatie. Geen verborgen DST-correctie.
-- `engine/adapter.mjs`: `fromLegacyState(plainStateJSON,{houseZone,now})` retourneert `{input,validation}`. Bewaak **ruwe** waarden: `null` is niet nul; negatief is ongeldig; >10.000 minuten buiten bereik; dubbele gerecht-ID's en onbekende kamado's blijven zichtbare fouten. Compatibiliteitsmapping volgt `phaseSegments()`: `cook` is totale actieve fase-duur, `phase2Minutes` daarvan afgetrokken, `transitionMins` daarbovenop.
-- `engine/check.mjs`: `plan(input)` retourneert een **deterministische**, bijwerkingsvrije backwards-planning per gerecht, inclusief preheat op kamado, voorbereiding met `localDate`/`timeKnown`, conflicten en gesorteerde taken. Geen DOM/localStorage/Date.now. Nooit zelf een fixed start of serveertijd wijzigen.
-
-```ts
-type ValidationIssue = {code:string; affectedIds:string[]};
-type ServeSlot = {id:string; at:number|null};
-type Kamado = {id:string; preheatMin:number|null;
-  capacity:null|{unit:"dishes";value:number}};
-type Segment = {id:string; durationMin:number; heatC:number|null;
-  method:string; accessory:string};
-type Preparation = {id:string; localDate:string|null;
-  localTime:string|null; timeKnown:boolean; at:number|null; durationMin:number|null};
-type Dish = {
-  id:string; name:string; currentKamadoId:string; slotId:string;
-  status:"waiting"|"cooking"|"resting"|"done";
-  segments:Segment[]; restMin:number|null; preparation:Preparation[];
-  startConstraint:null|{kind:"fixed";at:number|null};
-  immutableActuals:{startedAt:number|null;restAt:number|null;doneAt:number|null};
-};
-type Input = {
-  now:number;timeZone:string;localDate:string;
-  serveSlots:ServeSlot[];availableAt:number|null;
-  kamados:Kamado[];dishes:Dish[];validation:ValidationIssue[];
-};
-type Output = {
-  planStatus:"infeasible"|"unknown"|"conditional"|"feasible";
-  searchStatus:"not_run";
-  dishes:Array<{id:string;kamadoId:string;slotId:string;
-    start:number;cookEnd:number;end:number;serveAt:number;
-    restMin:number;cookMin:number;fixed:boolean}>;
-  fires:Record<string,number|null>;
-  proposedTasks:Array<{id:string;type:string;at:number|null;
-    end?:number;dishId?:string;kamadoId?:string;
-    localDate?:string|null;timeKnown?:boolean}>;
-  conflicts:Array<{code:string;affectedIds:string[];
-    severity:"blocker"|"unknown"|"warning";explanation:string}>;
-  alternatives:[];
-  provenance:{engineVersion:string;inputFingerprint:string};
-};
+```text
+Input = { now, houseZone, serveDate, availableFrom: Instant|null,
+  slots:[{id, at:Instant, toleranceMin, laterAllowedMaxMin}],
+  kamados:[{id, preheatMin:number|null, maxConcurrent:number|null}],
+  dishes:[{id, name, slotId, kamadoId, status, pinnedStart:Instant|null,
+    segments:[{id, kind:'cook'|'changeover', durationMin, setup:{method,grate,tempC}|null}],
+    restMin, maxHoldMin:number|null,
+    prep:[{id, localDate, at:Instant|null, durationMin}], actuals}],
+  limits:{maxCandidates, maxAlternatives≤3}, params:{sameSetupDeltaC:25} }
+Output = { planStatus, searchStatus:'not_run'|'complete'|'budget_exhausted',
+  tasks:[{id, type, dishId?, kamadoId?, at:Instant|null, localDate, timeKnown}],
+  conflicts:[{code, ids, severity:'blocker'|'unknown'|'conditional'}],
+  validation:[{code, field, dishId?}], alternatives:[], provenance:{engineVersion, inputFingerprint, assumptions} }
 ```
 
-**Harde conflictregels van PR1:** `INCOMPATIBLE_SETUP`, `CAPACITY_UNVERIFIED`, `RESOURCE_CAPACITY`, `CHANGEOVER_UNVERIFIED`, `PREHEAT_UNAVAILABLE`, `EARLIEST_START_AFTER_REQUIRED`, `FIXED_START_MISSES_SERVE`, `HOLD_UNVERIFIED`, `PREP_AFTER_START`. Daarnaast invoervalidatie `DURATION_UNKNOWN`, `INVALID_DURATION`, `OUT_OF_RANGE`, `DUPLICATE_ID`, `UNKNOWN_KAMADO` en tijd-/datumcodes. Bewaak expliciet *halfopen* resource-intervallen `[start,end)`.
+**PR1-compatibiliteitsmapping (veldnamen mogen afwijken, semantiek niet):**
 
-**Taakordening:** `(at, type, kamadoId, dishId, id)` met gedocumenteerde `type`-prioriteit en stabiele tie-break. Voorbereidingen zonder tijd krijgen `at:null`, `timeKnown:false` en behouden hun kalenderdatum.
+| Claude-contract | Bestaande PR1-naam | Betekenis |
+| --- | --- | --- |
+| `houseZone`, `serveDate` | `timeZone`, `localDate` | IANA-huiszone en lokale serveerdatum |
+| `slots`, `toleranceMin` | `serveSlots`, `toleranceMin ?? 0` | Vaste serveerinstants, tolerantiewaarde standaard nul |
+| `kamados.maxConcurrent` | `kamados.capacity={unit:'dishes',value}` | Expliciet bekend maximum; anders onbekend |
+| `dishes.kamadoId`, `pinnedStart` | `currentKamadoId`, `startConstraint?.at` | Hardware-ID en vastgepinde start |
+| `segments.kind/setup` | `segments.method/accessory/heatC` | Fasen en bijbehorende opstelling |
+| `dishes.prep`, `maxHoldMin` | `preparation`, `maxHoldMin:null` | Kalendergebonden voorbereiding, onbekende veilige warmhoudtijd |
+| `tasks` | `proposedTasks` | Read-only tijden, sorteervolgorde en taakidentiteit |
+| `conflicts.ids/severity:'conditional'` | `affectedIds/severity:'warning'` | Zelfde voorwaardelijke uitspraak, andere veldnaam |
+| `validation:{code,field,dishId?}` | `validation:{code,affectedIds}` | Veld-/gerechtidentiteit moet traceerbaar blijven |
+| `limits`, `laterAllowedMaxMin`, `searchStatus` | PR1: `searchStatus:'not_run'`, `alternatives:[]` | Kandidatenbudget, tijdsflexibiliteit en optimizer pas in PR2 |
 
-**Geen stilzwijgende compatibiliteitsclaim:** `calc()` blijft huidige waarheid; PR1 mag bewust strengere statussen geven dan legacy. Verwacht exacte tijdpariteit S01/S02/S06/S14 en verklaarde semantische afwijkingen S03/S04/S08/S13/N03.
+PR1 gebruikt `toleranceMin` (standaard **0**) en `maxHoldMin:null`; `laterAllowedMaxMin` en `limits` worden pas in PR2 daadwerkelijk gebruikt. PR1 bouwt **geen optimizer** en vervangt de huidige v5-engine niet. In PR1 worden `actuals` en `status` niet gebruikt voor het plan; veilige sessieverankering en Live-herplanning zijn uitgesteld naar PR4.
 
-**Test- en releasepoort:** echte `node tests/v6-engine.mjs`-orakels + `node tests/v6-shadow.mjs` naast bestaande CI, <50 ms op S30, mutatietests (dubbele bezetting, vaste start), geen runtime-filewijzigingen. Nog geen v6-apprelease, geen import in de publieke app.
+### Status- en validatievoorrang (D2)
 
-**Belangrijk:** deze types zijn een eerste ontwerp, géén toezegging van opslagwijzigingen. Maak een **adapter** van bestaande `state` naar het nieuwe model, schrijf geen nieuw schema naar de bestaande localStorage-sleutels. Behoud de bestaande `large`/`small`-mapping in legacy-modus. De gebruiker heeft fysiek meer kamado's genoemd, maar dwing uitbreiding niet via een ongeteste migratie af. Plan ondersteunt meer apparatuur pas wanneer compatibiliteit en configuratie betrouwbaar zijn ontworpen.
+1. **Elke adapter- of validatiefout** (o.a. `DUPLICATE_ID`, `UNKNOWN_KAMADO`, `DURATION_UNKNOWN`, `TEMPERATURE_UNKNOWN`, `OUT_OF_RANGE`, `INVALID_DURATION`, tijd- en datumcodes) krijgt `severity:'unknown'`. Geen blocker zonder geldige invoer.
+2. **`blocker` uitsluitend bij bewezen harde schending met geldige data.** Een bewezen harde schending is bijvoorbeeld een onverenigbare overlap, overschreden expliciete capaciteit of een te late vaste start.
+3. **Vaste start:** `end > slot.at + toleranceMin` geeft blocker `FIXED_START_MISSES_SERVE`; `end < slot.at - toleranceMin` geeft uitsluitend voorwaardelijke waarschuwing `HOLD_UNVERIFIED`. Nooit een vastgepinde start wijzigen.
+4. **`availableFrom` geldt alleen voor acties op `serveDate`.** Een handeling op een voorafgaande dag levert waarschuwing `AVAILABILITY_UNVERIFIED`, geen blocker wegens serveerdag-beschikbaarheid.
+5. **Kamado-ombouw tussen gerechten:** daling van meer dan 60 °C zonder opgegeven afkoeltijd altijd `CHANGEOVER_UNVERIFIED` (voorwaardelijk); stijging >60 °C bij een tussenruimte korter dan 15 minuten eveneens. Vergelijk elk segment met de voorgaande relevante bezetting die daadwerkelijk het laatst eindigde, niet uitsluitend het voorafgaande item op starttijd.
+6. **Voorbereidingen:** `prep.at + durationMin*60_000 > start` geeft blocker `PREP_AFTER_START`. Zonder kloktijd: een prep-datum na lokale startdatum is blocker; op startdatum is `PREP_TIME_UNVERIFIED` voorwaardelijk. Sorteer tijdloze prep-taken op het begin van hun `localDate`.
+7. **Duur:** `cook=0` is `INVALID_DURATION`, niet een geldige bereiding. Null of negatieve data mogen nooit stilzwijgend naar 0 worden omgezet.
+8. **Planstatus:** `infeasible > unknown > conditional > feasible`. Onbekende invoer wint van alleen voorwaardelijke warnings; een blocker vereist verifieerbare geldige gegevens. `searchStatus:'not_run'` blijft van kracht in PR1.
+9. **Huiszone:** bewuste shadow-verschillen bij draaien op systemen buiten `Europe/Amsterdam` zijn mogelijk doordat legacy de systeemzone gebruikt; de nieuwe engine gebruikt de expliciete huiszone. De geplande legacy-pariteit moet onder `TZ=Europe/Amsterdam` worden gemeten.
 
-**Zoekstrategie om te onderzoeken:** eerst deterministische constraints/checker + eenvoudige greedy/beam-search met begrensde kandidaten, voor kleine menu's eventueel exacte backtracking/branch-and-bound. Voorkom factorial blow-ups en UI-blocking; geef bij budgetlimiet een **partieel/unknown** resultaat, niet 'haalbaar'. Laat Claude worst-case complexiteit, tie-breaks en resourcegrenzen controleren.
+### Scope en acceptatie
+
+- `engine/time.mjs` gebruikt uitsluitend `Intl` voor DST-gap/fold validatie; lokale kalenderdagen worden in de huiszone berekend.
+- `fromLegacyState(plainStateJSON,{houseZone,now})` leest ruwe invoer zonder `n()/minutes()`-clamping en maakt geen opslag-/DOM-wijzigingen.
+- `plan(input)` is puur, deterministisch, read-only; geeft terugwaartse planning, kamado-vuurtijden, voorbereidingstaken, expliciete conflictcodes en geen alternatieven.
+- Legacy `calc()` blijft leidend en wordt in PR1 alleen in de testharness aangeroepen.
+- Eerst de 30 bestaande S-cases en Claudes tien nieuwe N-cases als orakels. PR1 test uitsluitend de aangewezen subset, PR2/PR3/PR4 krijgen hun eigen testcases.
+- Geen wijziging aan `dist/`, `sw.js`, `index.html`, `manifest.webmanifest`, `hacs.json`, opslag, UI of appversie. Geen merge of publicatie zonder gebruikersakkoord.
+
 
 ## 7. Interface / UX voor iPhone
 

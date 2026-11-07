@@ -31,12 +31,13 @@ Elke rij noemt primair testtype: **E** = exact tijdstip, **I** = invariant, **C*
 | S12 | Ongeldige datum, '25:99' of ontbrekende serveertijd | `unknown`/validatiefout met veldnaam; geen stille fallback of `NaN`-tijd op tijdlijn | I/C |
 | S13 | Onbekende cookduur of `null`/negatieve rust | Geen impliciete nulduur; validatie `DURATION_UNKNOWN` of `INVALID_DURATION` | I/C |
 | S14 | Eén gerecht met `cook=600` min (10 uur) en rust 60 min, serve 14 nov om 18:30, groot preheat 30 | Start **14 nov 07:30**, off **17:30**, vuur **07:00**, ready **18:30**. Een daggrens wordt pas overgestoken als de werkelijke keten dat vereist, niet automatisch omdat het long/slow is | E/I |
+| S14b | Serve 14 nov 2026 18:30, **20 uur cook + 60 min rust**, groot preheat 30, availableFrom 14 nov 16:30 | Start **13 nov 21:30**, vuur **13 nov 21:00**, off 14 nov 17:30, ready 14 nov 18:30. Alleen `AVAILABILITY_UNVERIFIED` (conditional), geen blocker door beschikbaarheid op serveerdag | E/C |
 | S15 | Rub één kalenderdag vooraf, tijd 19:00, serve 14 nov | Voorbereiding op **13 nov 19:00**, vóór de bereiding, geen 'vandaag 19:00' | E |
 | S16 | Pekelen twee dagen vooraf zonder expliciete tijd, serve 14 nov | Taakdatum **12 nov**, kloktijd **onbekend**; geen fictieve definitieve 12:00 | E/I |
 | S17 | Lokale start `2027-03-28 02:30 Europe/Amsterdam` (voorjaar DST) | `NONEXISTENT_LOCAL_TIME`; niet stil doorschuiven naar 03:30 | C |
 | S18 | Lokale start `2027-10-31 02:30 Europe/Amsterdam` (najaar DST) | `AMBIGUOUS_LOCAL_TIME` met expliciete eerdere/latere instantkeuze | C |
 | S19 | Dezelfde UTC-instant gepland vanaf iPhone en desktop in andere systeemzone | Ongewijzigde absolute planning en expliciete huis-zone; geen uurverschuiving door apparaatlocale | I |
-| S20 | Twee kamado's, drie unieke voorbereidingstaken, dezelfde geplande tijd voor twee activiteiten, verschillende type/IDs | Taaksortering exact `(at, type, kamadoId, dishId, id)`; datumtaak zonder tijd blijft expliciet `timeKnown=false`, geen dubbele IDs of verzonnen definitieve tijd | I |
+| S20 | Twee kamado's, drie unieke voorbereidingstaken, waarvan één zonder tijd; meerdere taken op gelijke tijd | Sorteer op `(at, type, kamadoId, dishId, id)`; `at:null` krijgt **begin van `localDate` in de huiszone** als sorteersleutel, `timeKnown=false` blijft, `prep`-typeprioriteit geldt, geen fictieve kloktijd in de taak | I |
 
 ## C. Live, echte voortgang, onzekerheid, leren en schaal (S21–S30)
 
@@ -73,23 +74,38 @@ Elke rij noemt primair testtype: **E** = exact tijdstip, **I** = invariant, **C*
 **Beoordeling gevraagd:** aanvullen/corrigeren van onvolledige orakels vóór bouwen, niet bevestigen dat bestaande app dit al ondersteunt.
 
 
-## Nieuwe aanvalsscenario's N01–N10 — voorlopige specificatie
 
-**Herkomst en betrouwbaarheid:** de exacte Claude-review is niet beschikbaar in PR #31. Onderstaande N01–N10 zijn daarom **voorlopige voorstel-fixtures**, niet letterlijk geverifieerde Claude-orakels. Vervang of corrigeer ze aan de hand van Claudes bronrapport vóór een ontwerp-GO.
+## V01–V10 — eerdere, door ChatGPT voorgestelde aanvalsscenario's
 
-| ID | Invoer | Expliciet oracle | Bouwfase |
+**Historische herkomst:** dit zijn de oude voorlopige N-scenario's van ChatGPT, nu **V** om niet te botsen met Claudes originele N01–N10. V04 was een duplicaat van S18 en is geschrapt.
+
+| ID | Invoer | Verwacht oracle | Scope |
 | --- | --- | --- | --- |
-| N01 | `cook=-5` of rust negatief | `INVALID_DURATION`, `planStatus='unknown'`; geen automatische nul | PR1 |
-| N02 | Twee gerechten met hetzelfde `id` | `DUPLICATE_ID`, `infeasible`; nooit taken samenvoegen | PR1 |
-| N03 | Legacy-gerecht met `kamado='other'` | `UNKNOWN_KAMADO`, `infeasible`, geen stille toewijzing aan `large` | PR1 |
-| N04 | `2027-10-31 02:30 Europe/Amsterdam`, geen disambiguatie | `AMBIGUOUS_LOCAL_TIME`; met `earlier/later` precies 60 min verschil | PR1 |
-| N05 | Twee opeenvolgende gerechten met verschillende roosters/temperaturen, overstap zonder bevestigd herstelvenster | `CHANGEOVER_UNVERIFIED` en `conditional`, indien geen harde blocker | PR1 |
-| N06 | Voorbereiding is om 18:00 gepland, maar gerecht moet 17:15 beginnen | `PREP_AFTER_START`, `infeasible` | PR1 |
-| N07 | Live hertekening op dezelfde iPhone-sessie na paginawissel en reload | Bestaande identiteiten/uitklapstatus/voortgang blijven behouden; geen stille nieuwe sessie | PR4 |
-| N08 | Actieve bereiding vertraagd, oude taak afgevinkt, serveertijd staat vast | Herplanning is preview; afgevinkte/gestarte taken niet gewijzigd zonder bevestiging | PR4 |
-| N09 | `cook=10001` minuten of `transitionMins>10000` | `OUT_OF_RANGE`, `unknown`, geen truncatie naar 10000 | PR1 |
-| N10 | `Date.now()`, `localStorage`, `window` en `document` gooien bij aanroep | `fromLegacyState()` en `plan()` blijven puur, input onveranderd en fingerprint stabiel | PR1 |
+| V01 | Cookduur −5 of rust negatief | Validatie `INVALID_DURATION`, `unknown` | PR1 |
+| V02 | Twee gerechten met dezelfde dish-ID | `DUPLICATE_ID` met severity `unknown`; slechts eerste gerecht verwerkt en geen dubbele taak-ID's | PR1 |
+| V03 | Gerecht met niet-bestaande kamado | `UNKNOWN_KAMADO` met severity `unknown`; geen ongefundeerde automatische toewijzing | PR1 |
+| V05 | Twee opeenvolgende gerechten met andere roosters en grote temperatuurstijging zonder bevestigde wisseltijd | `CHANGEOVER_UNVERIFIED`, `conditional` als verder geldige invoer | PR1 |
+| V06 | Voorbereiding eindigt na verplichte start | `PREP_AFTER_START` blocker | PR1 |
+| V07 | Open Live-details gevolgd door hertekenen/reload | Geen verlies van afvinkstatus of sessie-identiteit | PR4 |
+| V08 | Vertraagde lopende bereiding en vast serveermoment | Alle verschuivingen eerst preview, geen automatische wijziging | PR4 |
+| V09 | Cook/transition >10.000 minuten | `OUT_OF_RANGE`, `unknown`, geen truncatie | PR1 |
+| V10 | `Date.now`, DOM en storage geven fout bij gebruik | Adapter en checker blijven puur en onveranderlijk | PR1 |
 
-**Prioriteit voor alle statussen:** `infeasible > unknown > conditional > feasible`. Dit komt overeen met de expliciete gebruikersopdracht; de letterlijke Claude-formulering blijft onbevestigd.
+## N01–N10 — Claude, onafhankelijke reviewronde 1 (letterlijke overdracht)
 
-**Niet alle nieuwe scenario's horen in PR1.** N07/N08 vereisen latere Live-sessieverankering; S25/S28 blijven eveneens vervolgspecificaties.
+| ID | Invoer | Correct oracle | Scope |
+| --- | --- | --- | --- |
+| N01 | Serve **2027-03-28 12:00**, cook **14 uur**, geen extra rust | Start **2027-03-27 21:00 CET** (de DST-nacht kent 23 uren) | PR1 |
+| N02 | Serve **2027-10-31 12:00**, cook **14 uur**, prep **1 kalenderdag vooraf 19:00** | Start **2027-10-30 23:00 CEST**, prep **2027-10-30 19:00 CEST** | PR1 |
+| N03 | Eerdere sear **250 °C tot 16:20**, low **120 °C vanaf 17:00**, dezelfde kamado | `conditional` en `CHANGEOVER_UNVERIFIED`; daling >60 °C zonder opgegeven afkoeltijd | PR1 |
+| N04 | Optimizer stelt alternatieven voor terwijl een gerecht pinned of cooking is | Vaste en lopende gerechten blijven ongewijzigd | PR2 |
+| N05 | Voorgerecht eindigt na hoofdgerecht | `SLOT_ORDER` voorwaardelijke waarschuwing; geen stil wijzigen serveermomenten | PR1 |
+| N06 | Prep 16:50, duurt 30 min; kookstart 17:15 | `PREP_AFTER_START` blocker vanwege eindtijd 17:20 | PR1 |
+| N07 | Datumwijziging in Live met afgevinkte taken | Afvinkstatus blijft behouden, geen stil dataverlies | PR4 |
+| N08 | Automatische datummodus passeert middernacht tijdens een lopende sessie | Actieve sessiedatum blijft verankerd, geen automatisch doorrollen | PR4 |
+| N09 | MEATER-probe toegewezen aan afgerond én lopend gerecht | Duplicaatcontrole telt alleen niet-afgeronde gerechten | PR4 |
+| N10 | Cook 20.000 / rust −5 / dubbele ID | `OUT_OF_RANGE` / `INVALID_DURATION` / `DUPLICATE_ID`, alle `unknown` | PR1 |
+
+**Statusvoorwaarde:** adaptervalidatie is unknown, niet blocker. Alleen met bewezen geldige data mag een harde planinvariant tot blocker leiden. Het PR1-shadowmodel negeert `actuals` en `status` totdat PR4 dat veilig implementeert.
+
+**Volgorde:** D1–D3 documentatie-PR eerst afronden, dan P1–P8 en onafhankelijke tests in PR #32; beide blijven draft en ongemerged. PR2 pas na expliciet GO op beide PR's.

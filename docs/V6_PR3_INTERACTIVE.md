@@ -12,10 +12,12 @@ De publieke v5.1.1-app en `dist/`, `sw.js`, `index.html`, manifest, HACS en best
 - `v6/preview-model.mjs`: pure presentatie van gerechten, serveerslots, voorbereiding, aansteken, opleggen, ombouwen, rusten, serveren, kamadotijdlijnen, conflicten, maximaal drie alternatieven en `budget_exhausted`.
 - `v6/regisseur-view.mjs` + `v6/regisseur.css`: geïsoleerde mobile-first UI op een expliciet aangeleverde DOM-root. Tekstinhoud via `textContent` (geen onveilige HTML-injectie).
 - `tests/v6-pr3.mjs`: regressies op brondata-onveranderlijkheid, beide kamado's, alternatieven, XSS, dubbele bevestiging, stale Worker-responses en echte Worker-terminatie.
+- `v6/apply-proposal.mjs`: pure fail-closed preflight die een gecontroleerd optimizer-alternatief naar een kopie van de bestaande v5-planning vertaalt. Controleert actuele dish-/slot-/kamadodata tegen de v6-ingang, beide fingerprints, complete serveerslotvertraging, datum/DST-representatie en weigert onzekere fysieke geschiktheid zonder expliciete toestemming. **Schrijft niets weg**.
+- `tests/v6-pr3-apply-proposal.mjs`: ongewijzigde v5-veldnamen, bron-immutabiliteit, stale en tampered voorstellen, actieve bereidingen, serveervertraging en voorwaarden.
 - `v6/sandbox.html` met `v6/sandbox.mjs`: apart, werkend browserharnas met duidelijk gelabelde fictieve data; bereikbaar via een lokale HTTP-server op `/v6/sandbox.html`, nooit via bestaande productie-ingang.
 - `tests/v6-pr3-browser.mjs`: browserregressie via lokale HTTP-server voor echte module-Worker, Chromium en WebKit, 320/390/1024px, horizontale overflow en de uitgeschakelde opslagactie.
 
-De view heeft geen automatische start, live-navigatie of opslag. Zonder `onApply` is de knop **Toepassen** uitgeschakeld. Met een expliciete callback vergt Toepassen een aparte bevestigingsstap. Een callback moet vóór productie-integratie atomair de huidige sessie-fingerprint controleren, de oorspronkelijke sessie als rollback-snapshot bewaren, pas na alle validaties schrijven, en kunnen terugdraaien bij fout. De huidige PR3-slice levert die storage-adapter **nog niet** en is daarom **niet productie- of mergeklaar**.
+De view heeft geen automatische start, live-navigatie of opslag. Zonder `onApply` is de knop **Toepassen** uitgeschakeld. Met een expliciete callback vergt Toepassen een aparte bevestigingsstap. Een callback moet vóór productie-integratie atomair de huidige sessie-fingerprint controleren, de oorspronkelijke sessie als rollback-snapshot bewaren, pas na alle validaties schrijven, en kunnen terugdraaien bij fout. De pure preflight bestaat nu, maar er is **geen duurzame backup-/commit-/rollbackstorage-adapter**. De huidige PR3-slice is daarom **niet productie- of mergeklaar**.
 
 ## Precies afgebakende huidige scope
 

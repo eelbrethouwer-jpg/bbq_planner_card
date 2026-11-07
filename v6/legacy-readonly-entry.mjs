@@ -92,7 +92,7 @@ export function mountLegacyReadOnlyPreview({
       discard.disabled=!withDraftLock;
     }catch(error){
       if(disposed||sequence!==draftCheck)return;
-      savedStatus.textContent='Conceptstatus niet beschikbaar: '+(error?.message||error);
+      savedStatus.textContent='Conceptstatus niet beschikbaar: '+friendlyPreviewError(error);
       discard.hidden=true;
     }
   }
@@ -218,14 +218,14 @@ export function mountLegacyReadOnlyPreview({
       if(disposed||serial!==started||error?.name==='AbortError')return;
       latestOutcome=null;
       render(baseline);
-      setStatus('Berekening mislukt: '+(error?.message||'onbekende fout'));
+      setStatus('Berekening mislukt: '+friendlyPreviewError(error));
     }finally{
       if(!disposed&&serial===started)
         calculate.disabled=!input?.dishes.length||baseline?.planStatus==='unknown';
     }
   }
   const refreshClick=()=>{try{refreshSnapshot();}catch(error){
-    calculate.disabled=true;setStatus('Verversen mislukt: '+(error?.message||error));
+    calculate.disabled=true;setStatus('Verversen mislukt: '+friendlyPreviewError(error));
   }};
   const storageChanged=event=>{
     if(event.key===PLAN_KEY||event.key===null){
@@ -243,7 +243,7 @@ export function mountLegacyReadOnlyPreview({
       });
       await refreshDraftStatus();
     }catch(error){
-      savedStatus.textContent='Concept verwijderen mislukt: '+(error?.message||error);
+      savedStatus.textContent='Concept verwijderen mislukt: '+friendlyPreviewError(error);
       discard.disabled=false;
     }
   };

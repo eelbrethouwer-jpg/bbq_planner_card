@@ -199,6 +199,62 @@ try{
         console.log('PASS helpful preview error '+browserType.name()+' '+fixture.id);
         checks++;
       }
+      // Two actual preview tabs: competing first saves must yield ONE
+      // separate metadata record, never an unconfirmed silent overwrite.
+      const duo=await browser.newContext({viewport:{width:390,height:844}});
+      await duo.addInitScript(state=>{
+        if(localStorage.getItem('kamado-bereidingsplanner-v1')===null)
+          localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(state));
+      },sample);
+      const first=await duo.newPage(),second=await duo.newPage();
+      await Promise.all([first.goto(previewUrl),second.goto(previewUrl)]);
+      await Promise.all([
+        first.locator('#bbq6-beta-panel .bbq6-title').waitFor(),
+        second.locator('#bbq6-beta-panel .bbq6-title').waitFor()
+      ]);
+      await Promise.all([calculated(first),calculated(second)]);
+      first.on('dialog',d=>d.dismiss());
+      second.on('dialog',d=>d.dismiss());
+      await Promise.all([
+        first.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click(),
+        second.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click()
+      ]);
+      await Promise.all([first,second].map(page=>page.waitForFunction(()=>
+        /Concept (opgeslagen|niet opgeslagen)/.test(
+          document.querySelector('#bbq6-beta-panel .bbq6-notice')?.textContent||''
+        ),null,{timeout:10000})));
+      const firstNotice=await first.locator('#bbq6-beta-panel .bbq6-notice').innerText();
+      const secondNotice=await second.locator('#bbq6-beta-panel .bbq6-notice').innerText();
+      assert.equal([firstNotice,secondNotice].filter(t=>t.includes('Concept opgeslagen')).length,
+        1,'only one simultaneous initial draft save may succeed');
+      const initialDraft=await first.evaluate(()=>
+        localStorage.getItem('bbq-v6-proposal-draft-v1'));
+      assert.ok(initialDraft,'single concept must exist');
+      assert.equal(await second.evaluate(()=>
+        localStorage.getItem('bbq-v6-proposal-draft-v1')),initialDraft);
+      const loser=firstNotice.includes('Concept opgeslagen')?second:first;
+      await loser.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
+      await loser.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
+        ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:10000});
+      assert.equal(await loser.evaluate(()=>
+        localStorage.getItem('bbq-v6-proposal-draft-v1')),initialDraft,
+        'dismiss must preserve original concept');
+      // The explicit accept is allowed to replace the single saved concept.
+      loser.removeAllListeners('dialog');
+      loser.once('dialog',d=>d.accept());
+      await loser.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
+      await loser.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
+        ?.textContent?.includes('Concept opgeslagen'),null,{timeout:10000});
+      assert.equal(JSON.parse(await loser.evaluate(()=>
+        localStorage.getItem('bbq-v6-proposal-draft-v1'))).version,1);
+      assert.equal(await loser.evaluate(()=>
+        localStorage.getItem('kamado-bereidingsplanner-v1')),JSON.stringify(sample));
+      assert.equal(await loser.evaluate(()=>
+        [...Array(localStorage.length)].map((_,i)=>localStorage.key(i))
+          .filter(k=>k==='bbq-v6-proposal-draft-v1').length),1);
+      await duo.close();
+      console.log('PASS 2 preview tabs: simultaneous save, dismiss and explicit accept '+browserType.name());
+      checks++;
       for(const journal of ['','{corrupt',JSON.stringify({
         version:1,stage:'prepared',before:JSON.stringify(sample),
         after:JSON.stringify({...sample,mealTime:'19:00'})

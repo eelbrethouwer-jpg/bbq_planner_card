@@ -1,46 +1,76 @@
-/* PR3 fail-closed preboot guard: no live plan loads while recovery is pending. */
+/* PR3 route (b): recovery controls on the separate preview (NOT dist/v5). */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {PLAN_KEY,JOURNAL_KEY} from '../v6/storage-journal.mjs';
-const source=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
+
+const BACKUP='bbq-v5-previous-plan-v1';
+const recovery=fs.readFileSync('v6/preview-recovery.js','utf8');
+const html=fs.readFileSync('v6/preview.html','utf8')
+  .replace('<script src="./preview-recovery.js"></script>',
+    '<script>'+recovery+'</script>');
 const state={date:'2026-11-14',dateMode:'manual',mealTime:'18:30',
   dishes:[{id:'a',name:'FICTIEF',kamado:'large',cook:60,rest:15,grill:120,
     method:'indirect',mode:'auto',phase:'waiting',prepTasks:[]}]};
 const raw=JSON.stringify(state);
 let count=0;
 for(const journal of [
-  'corrupt journal bytes',
+  '{corrupt',
+  '',
   JSON.stringify({version:1,stage:'prepared',before:raw,
-    after:JSON.stringify({...state,mealTime:'19:00'})}),
-  JSON.stringify({version:1,stage:'committed',before:raw,
     after:JSON.stringify({...state,mealTime:'19:00'})})
 ]){
-  const errors=[];
-  const dom=new JSDOM(source,{
-    url:'https://planner.test.invalid/dist/BBQ_bereidingsplanner_MEATER_v4.html',
+  let approve=false,captured=null,downloaded=null;
+  const dom=new JSDOM(html,{
+    url:'https://planner.test.invalid/v6/preview.html',
     pretendToBeVisual:true,runScripts:'dangerously',beforeParse(w){
       w.localStorage.setItem(PLAN_KEY,raw);
       w.localStorage.setItem(JOURNAL_KEY,journal);
-      w.localStorage.setItem('bbq-v5-previous-plan-v1','OLD-BACKUP');
-      w.addEventListener('error',e=>errors.push(e.error?.message||e.message));
+      w.localStorage.setItem(BACKUP,'OLD-BACKUP');
+      w.confirm=()=>approve;
+      w.URL.createObjectURL=blob=>{captured=blob;return 'blob:emergency';};
+      w.URL.revokeObjectURL=()=>{};
+      w.HTMLAnchorElement.prototype.click=function(){
+        downloaded={filename:this.download,url:this.href};
+      };
     }
   });
   try{
-    assert.ok(dom.window.document.querySelector('#bbq6-recovery-blocked'),
-      'pending journal must prevent v5 startup');
-    assert.equal(dom.window.document.querySelector('#v5-root'),null);
-    const heading=dom.window.document.querySelector('#bbq6-recovery-blocked h1');
-    assert.ok(heading.textContent.includes('veilig herstel'));
-    assert.equal(dom.window.localStorage.getItem(PLAN_KEY),raw,
-      'guard must not mutate the v5 plan');
-    assert.equal(dom.window.localStorage.getItem(JOURNAL_KEY),journal,
-      'guard must preserve recovery evidence');
-    assert.equal(dom.window.localStorage.getItem('bbq-v5-previous-plan-v1'),
-      'OLD-BACKUP');
-    assert.deepEqual(errors,[]);
+    const w=dom.window,root=w.document.getElementById('bbq6-recovery-root');
+    assert.equal(w.__bbq6PreviewBlocked,true);
+    assert.equal(root.hidden,false);
+    assert.ok(root.textContent.includes('geen')||root.textContent.includes('niet'));
+    assert.equal(w.localStorage.getItem(PLAN_KEY),raw);
+    const download=w.document.getElementById('bbq6-download-emergency');
+    assert.ok(download);
+    download.click();
+    assert.ok(captured);
+    const payload=JSON.parse(await captured.text());
+    assert.equal(payload.keys[PLAN_KEY],raw);
+    assert.equal(payload.keys[JOURNAL_KEY],journal);
+    assert.equal(payload.keys[BACKUP],'OLD-BACKUP');
+    assert.ok(downloaded.filename.endsWith('.json'));
+    const discard=w.document.getElementById('bbq6-discard-journal');
+    discard.click();
+    assert.equal(w.localStorage.getItem(JOURNAL_KEY),journal,
+      'cancel must preserve journal');
+    assert.equal(w.localStorage.getItem(PLAN_KEY),raw);
+    approve=true;
+    discard.click();
+    assert.equal(w.localStorage.getItem(JOURNAL_KEY),null,
+      'confirmed discard must remove only journal');
+    assert.equal(w.localStorage.getItem(PLAN_KEY),raw);
+    assert.equal(w.localStorage.getItem(BACKUP),'OLD-BACKUP');
     count++;
   }finally{dom.window.close();}
 }
-console.log('PASS '+count+
-  ' PR3 preboot blocks corrupt, prepared and committed journals before v5 reads its state; no writes');
+{
+  const dom=new JSDOM(html,{url:'https://planner.test.invalid/v6/preview.html',
+    runScripts:'dangerously',beforeParse(w){w.localStorage.setItem(PLAN_KEY,raw);}});
+  assert.equal(dom.window.__bbq6PreviewBlocked,false);
+  assert.equal(dom.window.document.getElementById('bbq6-recovery-root').hidden,true);
+  assert.equal(dom.window.localStorage.getItem(PLAN_KEY),raw);
+  dom.window.close();
+  count++;
+}
+console.log('PASS '+count+' PR3 standalone preview recovery cases: corrupt/empty/prepared journal, JSON export, cancel, confirm, unchanged plan');

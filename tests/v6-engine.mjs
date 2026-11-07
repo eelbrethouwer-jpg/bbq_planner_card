@@ -280,7 +280,7 @@ caseOf('P8-EXTRAS',()=>{
 
 caseOf('X1',()=>{
  const o=expected(state([item('a',{prepTasks:[
- {id:'rub',daysBefore:1,time:'19:00',duration:10}]}],
+ {id:'rub',daysBefore:1,time:'19:00',duration:10}]})],
  {availableFrom:'16:30'}),'feasible');
  assert.equal(o.conflicts.length,0);
  assert.equal(o.proposedTasks.find(t=>t.id==='a:prep:rub').at,Date.parse('2026-11-13T18:00:00Z'));
@@ -293,7 +293,7 @@ caseOf('X2',()=>{
 caseOf('X4',()=>{
  const o=expected(state([item('a',{prepTasks:[
   {id:'rub',daysBefore:2,time:'19:00',duration:10},
-  {id:'rub',daysBefore:1,time:'19:00',duration:10}]}],
+  {id:'rub',daysBefore:1,time:'19:00',duration:10}]})],
  {availableFrom:''}),'unknown',['DUPLICATE_ID']);
  const preps=o.proposedTasks.filter(t=>t.type==='prep');
  assert.equal(preps.length,1,'duplicate prep-ID skipped');

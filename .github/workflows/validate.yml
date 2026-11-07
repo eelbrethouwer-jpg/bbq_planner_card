@@ -53,6 +53,13 @@ jobs:
           node tests/v510-smoke.mjs
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs
+          node tests/v6-pr3.mjs
+          node tests/v6-pr3-apply-proposal.mjs
+          node tests/v6-pr3-storage.mjs
+          node tests/v6-pr3-live-apply.mjs
+          node tests/v6-pr3-proposal-draft.mjs
+          node tests/v6-pr3-preboot.mjs
+          node tests/v6-pr3-legacy-bridge.mjs
           TZ=America/New_York node tests/v6-engine.mjs && TZ=Pacific/Kiritimati node tests/v6-engine.mjs
           TZ=America/New_York node tests/v6-optimizer.mjs && TZ=Pacific/Kiritimati node tests/v6-optimizer.mjs
 
@@ -66,11 +73,21 @@ jobs:
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium webkit
       - name: Controleer iPhone-formulierbreedtes (Chromium/WebKit) en HA-iframe
-        run: node tests/mobile-bounds.mjs
+        run: |
+          node tests/mobile-bounds.mjs
+          node tests/v6-pr3-browser.mjs
+          node tests/v6-pr3-lock-browser.mjs
+          node tests/v6-pr3-real-v5-browser.mjs
 
   version-consistency:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Bewaak bestaande v5-publicatiebestanden tegen main
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          git diff --exit-code origin/main -- dist index.html sw.js
       - name: Controleer dynamisch versiecontract en mutatie-regressies
-        run: node tests/version-consistency.mjs
+        run: |
+          node tests/version-consistency.mjs
+          node tests/v6-pr3-publish-guard.mjs

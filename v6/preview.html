@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>BBQ Regisseur v6 — vrijblijvende preview</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#0c1318;color:#f5f1e8;font:15px/1.5 system-ui,-apple-system,sans-serif}
+    .bbq6-preview-layout{max-width:1040px;margin:auto;padding:14px}
+    .bbq6-preview-header{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .bbq6-preview-header h1{font-size:clamp(22px,5vw,30px);margin:0}
+    .bbq6-preview-header p{margin:5px 0;color:#a9bec1;font-size:13px}
+    .bbq6-preview-header a{color:#f2a561;font-weight:750}
+    #bbq6-recovery-root:not([hidden]){max-width:700px;margin:8vh auto;border:1px solid #d8a268;
+      border-radius:16px;background:#19282e;padding:20px}
+    #bbq6-recovery-root h1{font-size:23px}
+    #bbq6-recovery-root button{background:#efb684;border:1px solid #efb684;color:#191715;
+      min-height:44px;padding:10px 12px;border-radius:10px;font-weight:750;margin:7px 8px 7px 0}
+    #bbq6-recovery-root button:disabled{opacity:.5}
+    #bbq6-recovery-root p{line-height:1.65}
+    .bbq6-beta-shell{margin:0 auto 16px;border:1px solid #49665f;border-radius:16px;
+      background:#10191e;color:#f3f4ee;overflow:hidden}
+    .bbq6-beta-toolbar{padding:13px 14px;border-bottom:1px solid #34484b;
+      display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+    .bbq6-beta-toolbar p:first-child{flex-basis:100%;margin:0;color:#a4e4c4;font-weight:750}
+    .bbq6-beta-toolbar button{background:#22333a;border:1px solid #50616a;
+      color:#f3f4ee;min-height:44px;padding:10px 12px;border-radius:10px;font:inherit;font-weight:750}
+    .bbq6-beta-toolbar button:disabled{opacity:.45}
+    .bbq6-beta-toolbar #bbq6-beta-status{flex-basis:100%;margin:0}
+    .bbq6-beta-shell .bbq6-root .bbq6-screen{padding-bottom:18px}
+  </style>
+</head>
+<body>
+  <div class="bbq6-preview-layout">
+    <header class="bbq6-preview-header">
+      <div>
+        <h1>BBQ Regisseur — testpreview</h1>
+        <p>Leest de planning uit dezelfde browser · toepassen blijft uit</p>
+      </div>
+      <a href="../dist/BBQ_bereidingsplanner_MEATER_v4.html">Open bestaande BBQ Planner</a>
+    </header>
+    <section id="bbq6-recovery-root" aria-live="polite" hidden></section>
+    <main id="v5-root" hidden></main>
+  </div>
+  <script src="./preview-recovery.js"></script>
+  <script type="module" src="./preview-entry.mjs?v=6.0.0-beta.1"></script>
+</body>
+</html>

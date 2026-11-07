@@ -134,8 +134,12 @@ let passes=0;
 {
   const s=new Storage(state),locks=new SharedLocks(),a=makeTab(s,locks,{broken:true});
   await assert.rejects(a.adapter.apply({input,outcome,alternativeId:option.id,
-    expectedFingerprint:fingerprint}),/BROKEN_LIVE_BRIDGE/);
+    expectedFingerprint:fingerprint}),/RECOVERY_REQUIRED/);
   assert.equal(s.getItem(PLAN_KEY),before);
+  assert.equal(JSON.parse(s.getItem(JOURNAL_KEY)).stage,'prepared',
+    'failed rollback requires preserved recovery journal');
+  const recovered=await createPreloadRecovery({storage:s,lockManager:locks})();
+  assert.equal(recovered.status,'discarded');
   assert.equal(s.getItem(JOURNAL_KEY),null);
   passes++;
 }

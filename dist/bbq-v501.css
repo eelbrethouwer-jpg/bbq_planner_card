@@ -37,7 +37,7 @@ body.v5-ready.v5-legacy #v47-planning .setup-grid{min-width:0}
 #v47-recipes .v501-recipe-intro{font-size:13px;line-height:1.55;color:#b4cac7;margin:0 0 12px}
 #v47-recipes #recipe-importer,#v47-recipes #library-panel,#v47-recipes #v48-catalog{max-width:100%;min-width:0}
 @media(max-width:700px){
- body.v5-ready .shell{padding-top:max(66px,calc(15px + env(safe-area-inset-top,0px)))}
+ body.v5-ready.v5-legacy .shell{padding-top:max(66px,calc(15px + env(safe-area-inset-top,0px)))}
  #v5-root .v5-card>.v5-grid{grid-template-columns:minmax(0,1fr)}
  #v5-root .v5-dishline{gap:9px}
  #v5-root .v5-dishline>div{flex:1 1 160px}

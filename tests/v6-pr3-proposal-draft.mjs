@@ -181,9 +181,35 @@ let count=0;
   const a=make();
   await saveProposalDraft(a);
   const saved=a.storage.getItem(DRAFT_KEY);
-  await saveProposalDraft(a);
-  assert.equal(a.storage.getItem(DRAFT_KEY),saved,'same draft deterministic with explicit time');
+  await assert.rejects(saveProposalDraft(a),/DRAFT_CHANGED/,
+    'implicit overwrite must fail closed');
+  assert.equal(a.storage.getItem(DRAFT_KEY),saved);
+  const replacement=await saveProposalDraft({...a,replaceExisting:true,
+    expectedDraftJSON:saved});
+  assert.equal(replacement.status,'saved');
+  assert.equal(a.storage.getItem(DRAFT_KEY),saved,
+    'replacement with identical timestamp is deterministic');
   assertProtected(a.storage);
+  count++;
+}
+{
+  const a=make();
+  const observed=a.storage.getItem(DRAFT_KEY);
+  await saveProposalDraft(a);
+  const original=a.storage.getItem(DRAFT_KEY);
+  await assert.rejects(saveProposalDraft({...a,replaceExisting:true,
+    expectedDraftJSON:observed}),/DRAFT_CHANGED/);
+  assert.equal(a.storage.getItem(DRAFT_KEY),original,
+    'concurrent tab must not overwrite an unseen concept');
+  count++;
+}
+{
+  const a=make();
+  await saveProposalDraft(a);
+  const original=a.storage.getItem(DRAFT_KEY);
+  await assert.rejects(saveProposalDraft({...a,replaceExisting:true,
+    expectedDraftJSON:'old-bytes'}),/DRAFT_CHANGED/);
+  assert.equal(a.storage.getItem(DRAFT_KEY),original);
   count++;
 }
 assert.equal(JSON.stringify(state),base);

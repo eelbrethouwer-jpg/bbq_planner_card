@@ -84,6 +84,9 @@ export function mountLegacyReadOnlyPreview({
         corrupt:'Bewaard concept is ongeldig. Verwijder het en bereken opnieuw.'
       };
       savedStatus.textContent=labels[result.status]||'Conceptstatus onbekend';
+      if(result.status==='current'&&result.record?.planStatus==='conditional')
+        savedStatus.textContent=
+          'Bewaard concept onder voorwaarden; fysieke geschiktheid eerst controleren.';
       discard.hidden=result.status==='none';
       discard.disabled=!withDraftLock;
     }catch(error){
@@ -105,6 +108,7 @@ export function mountLegacyReadOnlyPreview({
       storage:win.localStorage,legacyState:legacySnapshot,
       readLiveState:getLegacyState,input,outcome:latestOutcome,
       alternativeId:selected.id,expectedStorageJSON:lastStoredJSON,
+      allowConditional:selected.planStatus==='conditional',
       subtle:win.crypto?.subtle,withExclusiveLock:withDraftLock
     });
     await refreshDraftStatus();
@@ -113,8 +117,8 @@ export function mountLegacyReadOnlyPreview({
   function render(state){
     if(rendered)rendered.dispose();
     rendered=mountRegisseurPreview(viewRoot,{
-      input,outcome:state,onSaveDraft:state===latestOutcome&&withDraftLock?
-        saveDraftChoice:null
+      input,outcome:state,onSaveDraft:state===latestOutcome&&withDraftLock&&
+        typeof lastStoredJSON==='string'?saveDraftChoice:null
     });
   }
   function loadSnapshot(){

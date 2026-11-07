@@ -139,7 +139,8 @@ export function plan(input){
       const a=segments[i],b=segments[j];
       if(a.dishId===b.dishId||!overlap(a,b))continue;
       if(a.method==='changeover'||b.method==='changeover'||a.method!==b.method||
-        a.accessory!==b.accessory||Math.abs(a.heatC-b.heatC)>25){
+        a.accessory!==b.accessory||Math.abs(a.heatC-b.heatC)>
+        (isNum(input.params?.sameSetupDeltaC)?input.params.sameSetupDeltaC:25)){
         conflict('INCOMPATIBLE_SETUP',[a.dishId,b.dishId],'blocker','Simultaneous setups incompatible');
       }else{
         const capacity=k.capacity?.unit==='dishes'?k.capacity.value:k.maxConcurrent;
@@ -183,6 +184,11 @@ export function plan(input){
     }
     return Infinity;
   };
+  // The output contract exposes a calendar date and timestamp confidence on every task.
+  for(const task of proposedTasks){
+    if(task.localDate===undefined)task.localDate=isNum(task.at)?localDay(task.at):null;
+    if(task.timeKnown===undefined)task.timeKnown=isNum(task.at);
+  }
   proposedTasks.sort((a,b)=>sortAt(a)-sortAt(b)||
     (TYPE_ORDER[a.type]??99)-(TYPE_ORDER[b.type]??99)||
     idsort(a.kamadoId,b.kamadoId)||idsort(a.dishId,b.dishId)||idsort(a.id,b.id));

@@ -101,5 +101,5 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
     });
   }
   return {input:{now,timeZone:zone,localDate:date,serveSlots,availableAt,kamados,dishes,
-    validation:[...validation]},validation};
+    params:{sameSetupDeltaC:25},validation:[...validation]},validation};
 }

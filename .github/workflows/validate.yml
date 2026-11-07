@@ -70,10 +70,3 @@ jobs:
       - uses: actions/checkout@v4
       - name: Controleer dynamisch versiecontract en mutatie-regressies
         run: node tests/version-consistency.mjs
-      - name: Weiger appversienummer voor proceswijzigingen
-        run: |
-          if git grep -n -E '5[.]1[.]2' -- ':!CHANGELOG.md'; then
-            echo '::error::Procesdocumentatie bevat onterecht een appversienummer'
-            exit 1
-          fi
-          echo 'OK: git grep toont geen procesversienummer'

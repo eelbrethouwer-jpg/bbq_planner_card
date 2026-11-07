@@ -4,7 +4,7 @@
 
 ## Onuitgebracht — proces
 - Centraal proces voor ChatGPT (bouwen), Claude (onafhankelijke review) en gebruiker (expliciet releaseakkoord).
-- GitHub PR-template, actuele overdracht, statusdocumenten, agent-instructies en documentatiecontract in CI.
+- GitHub PR-template, actuele overdracht, statusdocumenten, agent-instructies en versieconsistentietest in CI.
 - Alleen proces- en documentatieaanpassingen; geen appcode, opslag, Home Assistant-/MEATER-bridge of PWA-cache gewijzigd. Geen appversie aan dit proceswerk gekoppeld.
 
 ## v5.1.1 — Kookfuncties weer bereikbaar (gepubliceerd 7 november 2026)

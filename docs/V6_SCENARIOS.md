@@ -13,30 +13,30 @@ Elke rij noemt primair testtype: **E** = exact tijdstip, **I** = invariant, **C*
 | ID | Input | Verwacht resultaat / toetsing | Type |
 | --- | --- | --- | --- |
 | S01 | Eén gerecht groot, 60 min actief + 15 min rust, serve 18:30, opstook 30 | Start **17:15**, van BBQ **18:15**, einde rust **18:30**, aansteken **16:45** | E |
-| S02 | Groot gerecht 90+15 min, klein gerecht 30+0 min, beide klaar 18:30, onafhankelijk | Groot start **16:45**, klein start **18:00**; geen kamadoconflict; beide eindigen 18:30 | E |
-| S03 | Twee gerechten op dezelfde kamado, 120 °C indirect vs 250 °C direct, overlappende intervallen | Niet 'zonder voorbehoud haalbaar'; conflict `INCOMPATIBLE_SETUP` met beide ID's, alternatief vereist tijd-/kamadokeuze | C |
+| S02 | Twee onafhankelijke kamado's: groot 90 min actief + 15 min rust; klein 30 min actief + 0 min rust; serve 18:30; beide vooraf volledig beschikbaar | Groot start **16:45**, off **18:15**, vuur **16:15**. Klein start **18:00**, off **18:30**, vuur **17:35**. Beide ready 18:30; `feasible` zonder overlap op dezelfde resource | E/C |
+| S03 | Twee gerechten met gelijke start op **dezelfde** kamado, direct 250 °C/gietijzer en indirect 120 °C/RVS, beide actief overlappend | `infeasible`; `INCOMPATIBLE_SETUP` bevat precies de twee gerecht-IDs, met overlappende halfopen segmenten | C |
 | S04 | Twee gerechten 120 °C indirect dezelfde kamado en gelijktijdig, **geen** roostercapaciteit bekend | `conditional` of `unknown`, reden `CAPACITY_UNVERIFIED`; niet hard `feasible` | C |
-| S05 | Twee identieke temperatuur/roostersituaties, expliciete capaciteit 1 gerecht tegelijk | Geen overlap; bij onvermijdelijke overlap `RESOURCE_CAPACITY` | I/C |
-| S06 | Reverse sear: fase 1 indirect 50 min, ombouw 15 min, fase 2 direct 5 min, rust 10 min | Totale kritieke keten **80 min**; bij serve 18:30 start **17:10**, omschakeling **18:00–18:15**, fase2 **18:15–18:20** | E |
-| S07 | Gerecht vaste handmatige start 17:00, 90 min actieve bereiding, serve 18:30 | Start **17:00** behouden, geen stil verplaatsen; waarschuwing of alternatief bij eventuele afwijking | E/I |
-| S08 | Beschikbaar vanaf 18:00, 60 min bereiding + 15 rust, serve vast 18:30 | `infeasible`, reden `EARLIEST_START_AFTER_REQUIRED`; bied expliciet later serveren aan | C |
-| S09 | Serve 18:30, gerecht start 17:15, groot opstook 30, beschikbaar vanaf 17:00 | Aansteken 16:45 is vóór beschikbaarheid: expliciet `PREHEAT_UNAVAILABLE`; kookstart alleen haalbaar als gebruiker regel wijzigt | E/C |
-| S10 | Geen gerechten | Leeg plan, geen fake-alarms, geen geplande vuurtijden, geen fout/crash | I |
+| S05 | Twee gelijktijdige indirecte gerechten 120 °C, expliciete capaciteit van dezelfde kamado **één gerecht tegelijk** (`capacity={unit:'dishes',value:1}`) | `infeasible` en `RESOURCE_CAPACITY`; onbekende capaciteit zou **conditional** met `CAPACITY_UNVERIFIED` zijn, niet `feasible` | C |
+| S06 | Eén reverse sear, actieve `cook=55` min (fase1 50, fase2 5), `transitionMins=15`, rust 10; serve 18:30 | Start **17:10**, fase1 **17:10–18:00**, ombouw **18:00–18:15**, fase2 **18:15–18:20**, off 18:20, ready 18:30, vuur groot **16:40** (30 min vooraf). Geen dubbel optellen van fase2 | E |
+| S07 | Eén gerecht handmatige vaste start 17:00, actieve `cook=90` min, rust **0**, serve 18:30 | `feasible`; start **exact 17:00** ongewijzigd, off/ready 18:30. Mutatie naar 17:05 zonder serveverschuiving veroorzaakt `FIXED_START_MISSES_SERVE` | E/I |
+| S08 | Start beschikbaar pas 18:00; één gerecht 60 min actief + 15 min rust, serve **vast** 18:30, groot preheat 30 | `infeasible`, `EARLIEST_START_AFTER_REQUIRED` én `PREHEAT_UNAVAILABLE`. Benodigd: gerecht 17:15, vuur 16:45. Geen automatisch uitgesteld diner | C/E |
+| S09 | Grote kamado pas vanaf 17:00 beschikbaar; gerecht 60 min actief + 15 rust, serve 18:30, preheat groot 30 | Benodigde start **17:15** en vuur **16:45**; `PREHEAT_UNAVAILABLE` blocker, **geen** `EARLIEST_START_AFTER_REQUIRED` omdat gerecht wél na 17:00 start | E/C |
+| S10 | Geldige serveertijd, maar **nul gerechten** en beide kamado's onbenut | `feasible`, `searchStatus='not_run'`, lege taken/geen conflicten, beide `fires=null`; geen fictief aansteekadvies | I |
 
 ## B. Identiteit, input, voorbereiden, daggrenzen en zomertijd (S11–S20)
 
 | ID | Input | Verwacht resultaat / toetsing | Type |
 | --- | --- | --- | --- |
-| S11 | Twee gerechten allebei 'Ribeye', verschillende unieke IDs | Taken, reviewtoewijzing en herplanning volgen IDs; geen verwisseling op naam | I |
+| S11 | Twee gerechten met dezelfde naam 'Ribeye', verschillende **unieke IDs**, onafhankelijk op groot en klein | Geen ID-menging of `DUPLICATE_ID`; taak-ID's, beide tijdlijnen en probe-koppelingen blijven bij juiste gerecht-ID | I |
 | S12 | Ongeldige datum, '25:99' of ontbrekende serveertijd | `unknown`/validatiefout met veldnaam; geen stille fallback of `NaN`-tijd op tijdlijn | I/C |
 | S13 | Onbekende cookduur of `null`/negatieve rust | Geen impliciete nulduur; validatie `DURATION_UNKNOWN` of `INVALID_DURATION` | I/C |
-| S14 | 10 uur rookbereiding + 60 min rust, serve 18:30, start 07:30 | Toon start-, vuur- en rusttijd op juiste kalenderdag; bij duur >24u een duidelijke **vorige dag** en juiste datum | E/I |
+| S14 | Eén gerecht met `cook=600` min (10 uur) en rust 60 min, serve 14 nov om 18:30, groot preheat 30 | Start **14 nov 07:30**, off **17:30**, vuur **07:00**, ready **18:30**. Een daggrens wordt pas overgestoken als de werkelijke keten dat vereist, niet automatisch omdat het long/slow is | E/I |
 | S15 | Rub één kalenderdag vooraf, tijd 19:00, serve 14 nov | Voorbereiding op **13 nov 19:00**, vóór de bereiding, geen 'vandaag 19:00' | E |
 | S16 | Pekelen twee dagen vooraf zonder expliciete tijd, serve 14 nov | Taakdatum **12 nov**, kloktijd **onbekend**; geen fictieve definitieve 12:00 | E/I |
 | S17 | Lokale start `2027-03-28 02:30 Europe/Amsterdam` (voorjaar DST) | `NONEXISTENT_LOCAL_TIME`; niet stil doorschuiven naar 03:30 | C |
 | S18 | Lokale start `2027-10-31 02:30 Europe/Amsterdam` (najaar DST) | `AMBIGUOUS_LOCAL_TIME` met expliciete eerdere/latere instantkeuze | C |
 | S19 | Dezelfde UTC-instant gepland vanaf iPhone en desktop in andere systeemzone | Ongewijzigde absolute planning en expliciete huis-zone; geen uurverschuiving door apparaatlocale | I |
-| S20 | Recept met fasen inclusief drie voorbereidende taken; twee kamado's met gelijktijdige aansteekacties | Stabiele sortering `(tijd,prioriteit,ID)`; aparte taakidentiteit en geen dubbel ingevoerde voorbereidingen | I |
+| S20 | Twee kamado's, drie unieke voorbereidingstaken, dezelfde geplande tijd voor twee activiteiten, verschillende type/IDs | Taaksortering exact `(at, type, kamadoId, dishId, id)`; datumtaak zonder tijd blijft expliciet `timeKnown=false`, geen dubbele IDs of verzonnen definitieve tijd | I |
 
 ## C. Live, echte voortgang, onzekerheid, leren en schaal (S21–S30)
 
@@ -46,12 +46,12 @@ Elke rij noemt primair testtype: **E** = exact tijdstip, **I** = invariant, **C*
 | S22 | Gerecht reeds `cooking` op groot, herplanner ziet betere score op klein | Geen kamadoverplaatsing of herstart van lopende bereiding | I |
 | S23 | Taak is afgevinkt, gebruiker opent/sluit details, Live hertekent elke 30 sec | Afvinkstatus, identiteit, geplande/werkelijke tijd en open details blijven behouden | I |
 | S24 | Publieke PWA zonder Home Assistant en zonder sensor | Geen live temp/ETA, label `geen live MEATER`; planningsvoorstellen blijven beschikbaar | I |
-| S25 | Home Assistant-ETA ontbreekt of is ouder dan het expliciete versheidsvenster | ETA niet als live gebruikt; fallback op handmatige/plandata met herkomstlabel | I/C |
+| S25 | De echte MEATER-status ontbreekt of de ETA is verouderd; **PR1 bevat geen probe-input** en rekent alleen met planduur | PR1 gebruikt geen MEATER-sensoren en geeft nergens LIVE-ETA; toekomstige Live-engine moet stale data afkeuren. **Niet** claimen dat PR1 MEATER-ETA al valideert | I |
 | S26 | Eén MEATER-probe aan twee gerechten toegewezen | Beide ETA-koppelingen geweigerd met `MEATER_DUPLICATE_ASSIGNMENT`; geen fictieve uitkomst | C |
 | S27 | Slechts één review van pulled pork, geen overige vergelijkbare data | Geen schijnprecies persoonlijk leervoorstel; standaardduur blijft leidend | I |
-| S28 | Meerdere beoordelingen van dezelfde bereiding, één evidente uitschieter en onvergelijkbare stukken | Verifieer filtering, steekproefgrootte, mediaan/bereik en uitleg; nooit automatische overname zonder akkoord | I |
+| S28 | Eerdere bereidingen met één uitschieter en niet-vergelijkbare stukken vlees; **geen reviewgegevens in PR1-checker** | **Vervolg (PR4):** vergelijkbaarheidscriteria, steekproef, mediaan/bereik en expliciete acceptatie testen. PR1 mag geen ongetest leeradvies of tijdsverandering genereren | I |
 | S29 | Gebruiker heeft fysiek 2 grote en 1 kleine kamado; huidige legacy-sleutels `large`/`small` | Optioneel 3-resource-ontwerp kan dit representeren, maar legacy krijgt geen stille migratie, hernummering of dataverlies | I |
-| S30 | 12 gerechten met verschillende fasen en vaste tijdsloten; solver overschrijdt expliciete zoeklimiet | Deterministische begrensde zoektijd; uitkomst `unknown`/partieel met budgetreden, nooit ongefundeerde `feasible`; dezelfde input levert dezelfde output | I/C |
+| S30 | 12 gerechten; checker in PR1, **nog geen optimizer**; dezelfde snapshot tweemaal | `searchStatus='not_run'`, `alternatives=[]`, `plan(input)` twee maal `deepEqual` inclusief `inputFingerprint`; Node-checkertijd **< 50 ms**. Geen claim over optimizer-timeout of bewezen globale haalbaarheid | I |
 
 ## Testmethodiek voor Claude
 
@@ -71,3 +71,25 @@ Elke rij noemt primair testtype: **E** = exact tijdstip, **I** = invariant, **C*
 - Een fysiek niet-gevalideerde capaciteits- of opwarmclaim kan nooit als gegarandeerd haalbaar resultaat verschijnen.
 
 **Beoordeling gevraagd:** aanvullen/corrigeren van onvolledige orakels vóór bouwen, niet bevestigen dat bestaande app dit al ondersteunt.
+
+
+## Nieuwe aanvalsscenario's N01–N10 — voorlopige specificatie
+
+**Herkomst en betrouwbaarheid:** de exacte Claude-review is niet beschikbaar in PR #31. Onderstaande N01–N10 zijn daarom **voorlopige voorstel-fixtures**, niet letterlijk geverifieerde Claude-orakels. Vervang of corrigeer ze aan de hand van Claudes bronrapport vóór een ontwerp-GO.
+
+| ID | Invoer | Expliciet oracle | Bouwfase |
+| --- | --- | --- | --- |
+| N01 | `cook=-5` of rust negatief | `INVALID_DURATION`, `planStatus='unknown'`; geen automatische nul | PR1 |
+| N02 | Twee gerechten met hetzelfde `id` | `DUPLICATE_ID`, `infeasible`; nooit taken samenvoegen | PR1 |
+| N03 | Legacy-gerecht met `kamado='other'` | `UNKNOWN_KAMADO`, `infeasible`, geen stille toewijzing aan `large` | PR1 |
+| N04 | `2027-10-31 02:30 Europe/Amsterdam`, geen disambiguatie | `AMBIGUOUS_LOCAL_TIME`; met `earlier/later` precies 60 min verschil | PR1 |
+| N05 | Twee opeenvolgende gerechten met verschillende roosters/temperaturen, overstap zonder bevestigd herstelvenster | `CHANGEOVER_UNVERIFIED` en `conditional`, indien geen harde blocker | PR1 |
+| N06 | Voorbereiding is om 18:00 gepland, maar gerecht moet 17:15 beginnen | `PREP_AFTER_START`, `infeasible` | PR1 |
+| N07 | Live hertekening op dezelfde iPhone-sessie na paginawissel en reload | Bestaande identiteiten/uitklapstatus/voortgang blijven behouden; geen stille nieuwe sessie | PR4 |
+| N08 | Actieve bereiding vertraagd, oude taak afgevinkt, serveertijd staat vast | Herplanning is preview; afgevinkte/gestarte taken niet gewijzigd zonder bevestiging | PR4 |
+| N09 | `cook=10001` minuten of `transitionMins>10000` | `OUT_OF_RANGE`, `unknown`, geen truncatie naar 10000 | PR1 |
+| N10 | `Date.now()`, `localStorage`, `window` en `document` gooien bij aanroep | `fromLegacyState()` en `plan()` blijven puur, input onveranderd en fingerprint stabiel | PR1 |
+
+**Prioriteit voor alle statussen:** `infeasible > unknown > conditional > feasible`. Dit komt overeen met de expliciete gebruikersopdracht; de letterlijke Claude-formulering blijft onbevestigd.
+
+**Niet alle nieuwe scenario's horen in PR1.** N07/N08 vereisen latere Live-sessieverankering; S25/S28 blijven eveneens vervolgspecificaties.

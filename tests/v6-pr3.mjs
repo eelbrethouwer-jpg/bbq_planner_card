@@ -59,8 +59,8 @@ assert.equal(root.children.length,0);
 
 const readOnly=mountRegisseurPreview(root,{input,outcome});
 root.querySelector('[data-bbq6-action="select:'+first.id+'"]').click();
-assert.equal(root.querySelector('[data-bbq6-action="apply"]').disabled,true,
-  'cannot apply unless a storage adapter was explicitly attached');
+assert.equal(root.querySelector('[data-bbq6-action="apply"]'),null,
+  'Apply must not appear without an explicitly supplied storage adapter');
 readOnly.dispose();
 
 let applied=0,received=null;

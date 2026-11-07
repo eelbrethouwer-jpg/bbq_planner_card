@@ -80,11 +80,11 @@ export async function saveProposalDraft({
   requireState(Number.isFinite(now)&&now>=0,'INVALID_TIMESTAMP');
   return withExclusiveLock(async()=>{
     const before=storage.getItem(PLAN_KEY);
+    requireState(before===expectedStorageJSON,'STALE_STORED_PLAN');
     const currentDraft=storage.getItem(DRAFT_KEY);
     requireState(currentDraft===expectedDraftJSON,'DRAFT_CHANGED');
     requireState(currentDraft===null||replaceExisting===true,'DRAFT_EXISTS');
     requireState(currentDraft!==null||replaceExisting!==true,'DRAFT_CHANGED');
-    requireState(before===expectedStorageJSON,'STALE_STORED_PLAN');
     requireState(storage.getItem(JOURNAL_KEY)===null,'RECOVERY_REQUIRED');
     const source=clone(legacyState);
     const sourceJSON=json(source);

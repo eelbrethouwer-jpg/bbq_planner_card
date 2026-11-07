@@ -46,11 +46,11 @@ try{
         assert.ok(message.startsWith('Gereed:'),browserType.name()+' '+width+': '+message);
         const opts=await page.locator('[data-bbq6-action^="select:"]').count();
         assert.ok(opts>0&&opts<=3,'expected 1..3 alternatives, got '+opts);
-        assert.ok(await page.locator('[data-bbq6-action="apply"]').isDisabled(),
-          'apply may not be available without validated storage integration');
+        assert.equal(await page.locator('[data-bbq6-action="apply"]').count(),0,
+          'Apply must be hidden without validated storage integration');
         await page.locator('[data-bbq6-action^="select:"]').first().click();
-        assert.ok(await page.locator('[data-bbq6-action="apply"]').isDisabled(),
-          'selected alternative must not bypass storage guard');
+        assert.equal(await page.locator('[data-bbq6-action="apply"]').count(),0,
+          'selected alternative must not reveal Apply');
         const metrics=await page.evaluate(()=>({
           viewport:window.innerWidth,document:document.documentElement.scrollWidth,
           timeline:document.querySelectorAll('.bbq6-lane').length,

@@ -75,6 +75,7 @@ jobs:
           node tests/mobile-bounds.mjs
           node tests/v6-pr3-browser.mjs
           node tests/v6-pr3-lock-browser.mjs
+          node tests/v6-pr3-real-v5-browser.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

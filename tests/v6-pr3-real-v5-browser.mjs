@@ -169,6 +169,36 @@ try{
         }
         await context.close();
       }
+      // Safari/Chromium: empty, damaged and malformed plan states use
+      // actionable Dutch messages; technical details stay behind disclosure.
+      for(const fixture of [
+        {id:'none',raw:null,expected:'nog geen BBQ-planning'},
+        {id:'invalid-json',raw:'{broken',expected:'kan niet worden gelezen'},
+        {id:'wrong-shape',raw:'{"dishes":"bad"}',expected:'kan niet worden gelezen'}
+      ]){
+        const context=await browser.newContext();
+        if(fixture.raw!==null){
+          await context.addInitScript(raw=>
+            localStorage.setItem('kamado-bereidingsplanner-v1',raw),fixture.raw);
+        }
+        const page=await context.newPage();
+        await page.goto(previewUrl,{waitUntil:'load'});
+        await page.locator('#bbq6-beta-status').waitFor({timeout:10000});
+        const message=await page.locator('#bbq6-beta-status').innerText();
+        assert.ok(message.includes(fixture.expected),
+          browserType.name()+' '+fixture.id+': '+message);
+        assert.doesNotMatch(message,/NO_SAVED_PLAN|INVALID_SAVED_PLAN|SyntaxError|Unexpected token/,
+          'technical code leaked into prominent message');
+        const details=page.locator('#bbq6-beta-panel details[data-bbq6-error-details]');
+        assert.equal(await details.count(),1,'technical details should be disclosure-only');
+        assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0);
+        const original=await page.evaluate(()=>
+          localStorage.getItem('kamado-bereidingsplanner-v1'));
+        assert.equal(original,fixture.raw);
+        await context.close();
+        console.log('PASS helpful preview error '+browserType.name()+' '+fixture.id);
+        checks++;
+      }
       for(const journal of ['','{corrupt',JSON.stringify({
         version:1,stage:'prepared',before:JSON.stringify(sample),
         after:JSON.stringify({...sample,mealTime:'19:00'})

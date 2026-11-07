@@ -14,10 +14,10 @@ import {saveProposalDraft,inspectProposalDraft,discardProposalDraft,DRAFT_KEY}
 const PLAN_KEY='kamado-bereidingsplanner-v1';
 const copy=o=>JSON.parse(JSON.stringify(o));
 export function mountLegacyReadOnlyPreview({
-  win=window,getLegacyState,
+  win=window,getLegacyState,standalone=false,
   maxCandidates=96
 }={}){
-  if(new URLSearchParams(win.location.search).get('v6preview')!=='1')
+  if(!standalone&&new URLSearchParams(win.location.search).get('v6preview')!=='1')
     return null;
   if(typeof getLegacyState!=='function')
     throw new Error('READONLY_SOURCE_UNAVAILABLE');
@@ -104,17 +104,50 @@ export function mountLegacyReadOnlyPreview({
       throw new Error('STALE_FINGERPRINT');
     if(JSON.stringify(getLegacyState())!==lastJSON)
       throw new Error('STALE_LIVE_PLAN');
+    const expectedDraftJSON=win.localStorage.getItem(DRAFT_KEY);
+    const replaceExisting=expectedDraftJSON!==null;
+    if(replaceExisting&&!win.confirm(
+      'Je hebt al een bewaard concept. Wil je dat concept echt vervangen?'+
+      ' Je bestaande BBQ-planning wordt niet gewijzigd.'
+    ))throw new Error('CONCEPT_OVERSCHRIJVEN_GEANNULEERD');
     const result=await saveProposalDraft({
       storage:win.localStorage,legacyState:legacySnapshot,
       readLiveState:getLegacyState,input,outcome:latestOutcome,
       alternativeId:selected.id,expectedStorageJSON:lastStoredJSON,
+      expectedDraftJSON,replaceExisting,
       allowConditional:selected.planStatus==='conditional',
       subtle:win.crypto?.subtle,withExclusiveLock:withDraftLock
     });
     await refreshDraftStatus();
     return result;
   }
+  function isSnapshotCurrent(){
+    if(lastJSON===null)return true;
+    try{
+      return JSON.stringify(getLegacyState())===lastJSON&&
+        win.localStorage.getItem(PLAN_KEY)===lastStoredJSON;
+    }catch{return false;}
+  }
+  function invalidate(reason='Planning gewijzigd. Herlaad de pagina om verder te gaan.'){
+    if(disposed||remoteStale)return;
+    started++;
+    client.cancel();
+    remoteStale=true;latestOutcome=null;
+    rendered?.dispose();rendered=null;viewRoot.replaceChildren();
+    setStatus(reason);
+    refresh.textContent='Herlaad planning';
+    calculate.disabled=true;
+    void refreshDraftStatus();
+  }
+  function checkSnapshot(){
+    if(!disposed&&!remoteStale&&lastJSON!==null&&!isSnapshotCurrent())
+      invalidate();
+  }
   function render(state){
+    if(!isSnapshotCurrent()){
+      invalidate();
+      return;
+    }
     if(rendered)rendered.dispose();
     rendered=mountRegisseurPreview(viewRoot,{
       input,outcome:state,onSaveDraft:state===latestOutcome&&withDraftLock&&
@@ -155,6 +188,7 @@ export function mountLegacyReadOnlyPreview({
     input=next.input;
     baseline=next.baseline;
     render(baseline);
+    if(remoteStale)return;
     setStatus('Actuele sessie ingelezen. Alleen bekijken; toepassen is uitgeschakeld.');
     calculate.disabled=!input.dishes.length||baseline.planStatus==='unknown';
     refresh.disabled=false;
@@ -172,9 +206,7 @@ export function mountLegacyReadOnlyPreview({
       if(disposed||serial!==started)return;
       const actual=JSON.stringify(copy(getLegacyState()));
       if(actual!==lastJSON||win.localStorage.getItem(PLAN_KEY)!==lastStoredJSON){
-        latestOutcome=null;
-        render(baseline);
-        setStatus('Planning is intussen gewijzigd. Ververs vóór je nieuwe voorstellen bekijkt.');
+        invalidate();
         return;
       }
       latestOutcome=outcome;
@@ -196,12 +228,7 @@ export function mountLegacyReadOnlyPreview({
   }};
   const storageChanged=event=>{
     if(event.key===PLAN_KEY||event.key===null){
-      started++;client.cancel();remoteStale=true;latestOutcome=null;
-      rendered?.dispose();rendered=null;viewRoot.replaceChildren();
-      setStatus('Planning in een ander tabblad gewijzigd. Herlaad de pagina om de actuele sessie te zien.');
-      refresh.textContent='Herlaad planning';
-      calculate.disabled=true;
-      void refreshDraftStatus();
+      invalidate('Planning gewijzigd in een ander tabblad. Herlaad de pagina.');
     }else if(event.key===DRAFT_KEY){
       void refreshDraftStatus();
     }
@@ -219,11 +246,17 @@ export function mountLegacyReadOnlyPreview({
       discard.disabled=false;
     }
   };
-  const onHidden=()=>{if(doc.hidden){started++;client.cancel();}};
+  const onHidden=()=>{
+    if(doc.hidden){started++;client.cancel();}
+    else checkSnapshot();
+  };
+  const onFocus=()=>checkSnapshot();
+  const healthTimer=win.setInterval(checkSnapshot,2000);
   refresh.addEventListener('click',refreshClick);
   calculate.addEventListener('click',run);
   discard.addEventListener('click',discardClick);
   win.addEventListener('storage',storageChanged);
+  win.addEventListener('focus',onFocus);
   doc.addEventListener('visibilitychange',onHidden);
   try{refreshSnapshot();}catch(error){calculate.disabled=true;setStatus('V6 preview niet beschikbaar: '+error.message);}
   return {refresh:refreshClick,dispose(){
@@ -234,7 +267,9 @@ export function mountLegacyReadOnlyPreview({
     calculate.removeEventListener('click',run);
     discard.removeEventListener('click',discardClick);
     win.removeEventListener('storage',storageChanged);
+    win.removeEventListener('focus',onFocus);
     doc.removeEventListener('visibilitychange',onHidden);
+    win.clearInterval(healthTimer);
     rendered?.dispose();
     host.remove();css.remove();
   }};

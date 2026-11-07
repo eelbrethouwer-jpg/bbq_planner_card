@@ -285,6 +285,109 @@ test('O20-EXPLICIT-NO-ALTERNATIVE-APPLY',()=>{
   assert.equal(plan(input).planStatus,'infeasible');
 });
 
+
+test('K1-UNUSED-KAMADO-PREHEAT',()=>{
+  // Input is parsed from a real legacy-shaped fixture. No preheat patches.
+  const input=build([makeDish('a'),makeDish('b',{cook:20,rest:0,
+    grill:250,method:'direct',grate:'cast'})]);
+  const small=input.kamados.find(k=>k.id==='small');
+  assert.equal(small.preheatMin,25,'unused small kamado must retain its real preheat');
+  const baseline=plan(input);
+  assert.equal(baseline.planStatus,'infeasible');
+  const out=optimize(frozen(input));
+  assert.ok(out.alternatives.length>0);
+  assert.equal(out.alternatives[0].planStatus,'conditional');
+  assert.deepEqual(out.alternatives[0].changes,
+    [{type:'kamado',dishId:'b',from:'large',to:'small'}]);
+  assert.ok(out.alternatives[0].conflicts.some(c=>c.code==='KAMADO_FIT_UNVERIFIED'));
+  assert.equal(out.alternatives[0].suggestedPlan.fires.small,at('17:45'),
+    'b starts at 18:10 and small takes 25 minutes to preheat');
+});
+test('K2-S08-90-MIN-ALLOWED-DELAY',()=>{
+  const input=build([makeDish('a')],{availableFrom:'18:00'},
+    {laterAllowedMaxMin:90,maxCandidates:100});
+  const baseline=plan(input);
+  assert.equal(baseline.planStatus,'infeasible');
+  assert.ok(codes(baseline).includes('PREHEAT_UNAVAILABLE'));
+  const out=optimize(frozen(input));
+  assert.ok(out.alternatives.length>0);
+  assert.equal(out.alternatives[0].planStatus,'feasible');
+  assert.deepEqual(out.alternatives[0].changes,[{
+    type:'serve_delay',slotId:'main',dishIds:['a'],
+    from:at('18:30'),to:at('19:45'),minutes:75
+  }]);
+  assert.equal(byId(out.alternatives[0].suggestedPlan,'a').serveAt,at('19:45'));
+  assert.equal(out.alternatives[0].suggestedPlan.fires.large,at('18:00'));
+});
+test('K3-ATOMIC-SHARED-MAIN-SLOT',()=>{
+  const input=build([makeDish('a'),makeDish('b')],{},
+    {capacity:{large:1},laterAllowedMaxMin:60,maxCandidates:100});
+  const out=optimize(frozen(input));
+  for(const alt of out.alternatives){
+    assert.equal(byId(alt.suggestedPlan,'a').serveAt,
+      byId(alt.suggestedPlan,'b').serveAt,'one course must have one serve time');
+    for(const change of alt.changes.filter(c=>c.type==='serve_delay')){
+      assert.equal(change.slotId,'main');
+      assert.deepEqual(change.dishIds,['a','b']);
+    }
+  }
+  assert.equal(input.serveSlots[0].at,at('18:30'));
+});
+test('K4-ALTERNATIVES-DISABLED',()=>{
+  const input=build([makeDish('a'),makeDish('b',{
+    grill:250,method:'direct',grate:'cast'})],{},
+    {maxAlternatives:0,laterAllowedMaxMin:90});
+  const original=plan(input),out=optimize(input);
+  assert.equal(out.planStatus,original.planStatus);
+  assert.equal(out.searchStatus,'not_run');
+  assert.equal(out.optimization.reason,'alternatives_disabled');
+  assert.equal(out.optimization.testedCandidates,0);
+  assert.deepEqual(out.alternatives,[]);
+});
+test('K5-PRESERVE-ACTIVE-KAMADO-IGNITION',()=>{
+  const input=build([
+    makeDish('active',{kamado:'small',phase:'cooking',startedAt:at('18:00'),
+      cook:30,rest:0,grill:250,method:'direct',grate:'cast'}),
+    makeDish('a',{grill:250,method:'direct',grate:'cast'}),
+    makeDish('b',{grill:120,method:'indirect',grate:'rvs'})
+  ],{}, {maxCandidates:100,fit:{small:['a']}});
+  const baseline=plan(input);
+  assert.equal(baseline.planStatus,'infeasible');
+  assert.equal(baseline.fires.small,at('17:35'));
+  const trial=structuredClone(input);
+  trial.dishes.find(d=>d.id==='a').currentKamadoId='small';
+  const checked=plan(trial);
+  assert.equal(checked.planStatus,'conditional','without safety gate this move looks plausible');
+  assert.equal(checked.fires.small,at('16:50'),'but it would move active ignition');
+  const out=optimize(frozen(input));
+  assert.ok(out.alternatives.every(alt=>
+    alt.suggestedPlan.fires.small===baseline.fires.small),
+    'never change fire on a kamado with a locked active dish');
+  assert.equal(out.alternatives.length,0,'no otherwise-safe option in this fixture');
+});
+test('K6-INVALID-FLEXIBILITY-PRESERVES-BASELINE',()=>{
+  const input=build([makeDish('a'),makeDish('b',{
+    grill:250,method:'direct',grate:'cast'})]);
+  input.serveSlots[0].laterAllowedMaxMin=-4;
+  const baseline=plan(input),out=optimize(input);
+  assert.equal(out.planStatus,baseline.planStatus);
+  assert.equal(out.searchStatus,'not_run');
+  assert.equal(out.optimization.reason,'invalid_flexibility');
+  assert.ok(out.validation.some(v=>v.code==='INVALID_FLEXIBILITY'));
+  assert.ok(out.conflicts.some(c=>c.code==='INVALID_FLEXIBILITY'&&c.severity==='unknown'));
+});
+test('K7-UNUSED-INVALID-PREHEAT-NOT-VALIDATED',()=>{
+  const state=makeState([makeDish('a')],{preheatSmall:-7});
+  const {input,validation}=fromLegacyState(state,{houseZone:zone,now:at('12:00')});
+  assert.deepEqual(validation,[],'unused invalid small kamado may not invalidate main cook');
+  assert.equal(input.kamados.find(k=>k.id==='small').preheatMin,null);
+  assert.equal(plan(input).planStatus,'feasible');
+  const state2=makeState([makeDish('a',{kamado:'small'})],{preheatSmall:null});
+  const r=fromLegacyState(state2,{houseZone:zone,now:at('12:00')});
+  assert.ok(r.validation.some(v=>v.code==='DURATION_UNKNOWN'&&
+    v.affectedIds.includes('small:preheat')));
+});
+
 const failures=results.filter(r=>!r.ok);
 console.log('OPTIMIZER_ORACLES '+results.map(r=>r.id+'='+(r.ok?'PASS':'FAIL')).join(' '));
 if(failures.length)throw Error(failures.length+' PR2 oracle(s) failed: '+failures.map(x=>x.id).join(','));

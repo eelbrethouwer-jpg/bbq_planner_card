@@ -4,7 +4,7 @@ Dit proces verbindt ChatGPT (bouwer), Claude (onafhankelijk reviewer), GitHub (b
 
 ## Bronnen: altijd live controleren
 1. Lees actuele GitHub-main en SHA, nieuwste gepubliceerde Release/tag, open PR's, Actions-runs en de relevante bronbestanden.
-2. Lees daarna [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) en [../PROJECT_STATUS.md](../PROJECT_STATUS.md). Dit zijn momentopnamen; de repository en actuele GitHub API zijn leidend.
+2. Lees daarna [PROJECT_STATUS.md](../PROJECT_STATUS.md). Dit zijn momentopnamen; de repository en actuele GitHub API zijn leidend.
 3. Meld elke aanname als AANNAME en onderscheid Geverifieerd, Advies en Openstaand. Raad de geïnstalleerde HACS/PWA-versie of hardwareteststatus niet.
 4. ChatGPT en Claude hebben **geen automatische onderlinge chat of gegevensuitwisseling**. De gebruiker deelt een PR-link/review of gebruikt een omgeving die beide dezelfde repo laat inzien. Een AI-samenvatting vervangt nooit de oorspronkelijke code/diff.
 
@@ -24,7 +24,7 @@ Dit proces verbindt ChatGPT (bouwer), Claude (onafhankelijk reviewer), GitHub (b
 5. **Review:** bied Claude de **daadwerkelijke PR-diff** aan. Vraag bestand/regel, ernst (BLOCKER/HOOG/MIDDEL/LAAG), reproduceerbaar bewijs en kleine veilige fix.
 6. **Herstel & herreview:** wijzig dezelfde branch, draai checks opnieuw en controleer eerder gemelde risico's.
 7. **Publicatie:** alleen na expliciete toestemming van de gebruiker. Merge PR, controleer main, publiceer tag/release op exacte doelcommit en verifieer de GitHub Release plus CI/Pages afzonderlijk.
-8. **Overdracht:** update handoff, projectstatus, changelog en release-notities waar nodig. Vermeld wat getest is en wat niet.
+8. **Overdracht:** update PROJECT_STATUS.md, changelog en release-notities waar nodig. Vermeld wat getest is en wat niet.
 
 ## Contracten die niet stilzwijgend mogen wijzigen
 - V4-kookengine, timing, recepten, import/export, reviews, Home Assistant-/MEATER-bridge en bestaande opslagstructuren.
@@ -40,10 +40,10 @@ Dit proces verbindt ChatGPT (bouwer), Claude (onafhankelijk reviewer), GitHub (b
 - Gevalideerde daggrenzen/tijdzones, indien het werk planning raakt.
 - Echte iPhone/PWA en Home Assistant **apart** beoordelen; geen automatische test als praktijktest presenteren.
 - MEATER Pro/Plus: verse/verouderde/ontbrekende data met fixtures testen; hardwareproef blijft open tot echt uitgevoerd.
-- Documentatiecontract: node tests/docs-contract.mjs.
+- Versieconsistentie: node tests/version-consistency.mjs.
 - CI en review zijn voorwaarden voor een release, **niet** zelf een merge-/releaseakkoord.
 
 ## Format van Claudes review
 **Bron:** actuele main SHA, PR HEAD SHA, tag, datum. **Bevindingen:** ernst, bestand/regel, bewijs, reproduceerbaarheid, risico en advies. **Testmatrix:** zelf uitgevoerd / GitHub Actions / niet uitgevoerd. **Eindoordeel:** GO, GO MET OPMERKINGEN of NO-GO. **Vervolg:** kleinst mogelijke veilige stap.
 
-Bij nieuwe ontwikkelrondes: lees [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md), controleer GitHub opnieuw en schrijf na afloop de handoff bij.
+Bij nieuwe ontwikkelrondes: lees [PROJECT_STATUS.md](../PROJECT_STATUS.md), controleer GitHub opnieuw en werk na afloop PROJECT_STATUS.md bij.

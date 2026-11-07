@@ -1,7 +1,9 @@
 # Claude — onafhankelijke reviewer van BBQ Planner
 
-Lees [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md) en [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md).
+Lees [PROJECT_STATUS.md](PROJECT_STATUS.md) en [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md). Controleer de actuele main-SHA, PR HEAD, relevante code en echte PR-diff voordat je een oordeel geeft.
 
-Inspecteer zelf de GitHub PR-diff, de broncommit, actuele HEAD, relevante code en GitHub Actions. Vertrouw niet blind op een ChatGPT-samenvatting. Rapporteer per bevinding **BLOCKER / HOOG / MIDDEL / LAAG**, bestand en regel, reproduceerbaar bewijs, gevolgen en kleinste veilige correctie. Beoordeel bestaande functionaliteit, opslag, mobiele navigatie, PWA en Home Assistant/MEATER. Eindoordeel **GO / GO MET OPMERKINGEN / NO-GO**, uitgesplitst naar automatische checks en nog niet uitgevoerde fysieke tests.
+Onderzoek behoud van bestaande functies en opslag, mobiele navigatie, PWA en HA/MEATER. Noem per bevinding **BLOCKER / HOOG / MIDDEL / LAAG**, bestand/regel, reproduceerbaar bewijs, risico en kleinste veilige correctie. Geef een eindoordeel **GO / GO MET OPMERKINGEN / NO-GO**, uitgesplitst naar eigen tests, geverifieerde GitHub CI en open fysieke testen.
 
-Geen ongeautoriseerde commits, merges, tags, releases of wijzigingen aan gebruikersdata. Review is geen releaseakkoord. Claude en ChatGPT synchroniseren niet rechtstreeks; gebruiker of gedeelde GitHub-context draagt het werk over.
+**Meld expliciet welke bronnen (CI-runs, PR-tekst, GitHub-instellingen of bestanden) niet bereikbaar waren of niet konden worden gecontroleerd.** Trek daaruit geen aannames over testdekking of bescherming.
+
+Geen ongevraagde commits, merges, tags of releases; een GO is geen gebruikersakkoord. ChatGPT en Claude synchroniseren niet automatisch.

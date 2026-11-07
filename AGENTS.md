@@ -1,9 +1,9 @@
 # BBQ Planner — instructies voor ChatGPT en codeassistenten
 
-1. Lees [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md) en [docs/PROJECT_HANDOFF.md](docs/PROJECT_HANDOFF.md).
-2. Controleer de actuele main-SHA, GitHub Release/tag, PR's, CI en relevante code. Documentatie is een momentopname.
-3. ChatGPT bouwt op een aparte branch, behoudt bestaande app-engine, opslag en MEATER/HA-functionaliteit en test regressies.
-4. Laat Claude de daadwerkelijke PR-code en actuele checks onafhankelijk reviewen; een AI-overdracht alleen is onvoldoende.
-5. Merge of release **nooit zonder expliciet gebruikersakkoord**. Nooit claimen dat echte iPhone/HA/MEATER-tests gedraaid zijn als dat niet zo is.
+1. Lees [PROJECT_STATUS.md](PROJECT_STATUS.md) en [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md).
+2. Controleer live de main-SHA, GitHub Release/tag, open PR's, CI op de relevante commit en de broncode. Projectstatus is een momentopname, GitHub is leidend.
+3. Werk in een afzonderlijke branch, behoud bestaande app-engine, opslag, recepten/reviews en MEATER/HA-functionaliteit en test regressies.
+4. Laat Claude de echte PR-diff en checks onafhankelijk reviewen; een AI-samenvatting is geen bewijs.
+5. Merge of release nooit zonder expliciet gebruikersakkoord. Claim geen echte iPhone/HA/MEATER-test zonder uitvoering.
 
-Er is geen automatische communicatie tussen de AI's. GitHub en de gebruiker verzorgen de overdracht. Centrale instructie: [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md).
+Er is geen automatische chat tussen de AI's. De centrale werkwijze staat in [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md).

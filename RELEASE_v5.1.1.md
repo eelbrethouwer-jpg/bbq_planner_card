@@ -16,7 +16,7 @@ Bron: `main` commit `fad295cf7a147b0de160069e529da45bd2b7a13d`. Gepubliceerde v5
 Opslagsleutels, v4-engine, MEATER-integratie, recepten en reviews ongewijzigd. Geen migratie.
 
 ## Validatie
-Bestaande DOM- en PWA-regressietests uitgebreid met kookscherm en bereikbare MEATER-/focusknoppen, navigatie, daggrenzen en lege kamado. Alle bestaande checks moeten groen zijn. Fysieke iPhone, Home Assistant en echte MEATER-metingen blijven voor praktijkacceptatie open.
+Bestaande DOM- en PWA-regressietests uitgebreid met kookscherm en bereikbare MEATER-/focusknoppen, navigatie, daggrenzen en lege kamado. CI voor de geteste code is geslaagd: [GitHub Actions-run](https://github.com/eelbrethouwer-jpg/bbq_planner_card/actions/runs/42358802061), SHA `8afb5a89c7d2af975f6cddcbb97598682906e543`. Fysieke iPhone, Home Assistant en echte MEATER-metingen blijven voor praktijkacceptatie open.
 
 ## Releasebeleid
 **PR #28 en #29 gemerged; GitHub Release/tag v5.1.1 gepubliceerd en gecontroleerd.** De workflowmerge na de codecommit wijzigt geen appcode. Geïnstalleerde HACS-/PWA-versie is niet bevestigd.

@@ -2,16 +2,16 @@
 
 > Actueel gepubliceerd: [v5.1.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1) (7 november 2026). Oude termen “releasekandidaat” in historische versies beschrijven de status op het moment van schrijven, niet de huidige uitgave.
 
-## v5.1.2 — Samenwerking & kwaliteit (in voorbereiding, docs-only)
+## Onuitgebracht — proces
 - Centraal proces voor ChatGPT (bouwen), Claude (onafhankelijke review) en gebruiker (expliciet releaseakkoord).
 - GitHub PR-template, actuele overdracht, statusdocumenten, agent-instructies en documentatiecontract in CI.
-- **Geen** gewijzigde appcode, opslag, Home Assistant-/MEATER-bridge, PWA-cache of nieuwe HACS-versie; geen merge of publicatie.
+- Alleen proces- en documentatieaanpassingen; geen appcode, opslag, Home Assistant-/MEATER-bridge of PWA-cache gewijzigd. Geen appversie aan dit proceswerk gekoppeld.
 
 ## v5.1.1 — Kookfuncties weer bereikbaar (gepubliceerd 7 november 2026)
 - Vanuit Live toegang tot de bestaande MEATER-grafiek en focusmodus; correcte actieve navigatie en terugknop.
 - Planningstab, datum bij taken op andere dagen en lege kamado-weergave verbeterd.
 - Versies in PWA/HA-brug bijgewerkt naar 5.1.1, zonder datamigratie of nieuwe opslagsleutels.
-- HACS, JavaScript/PWA, DOM/opslag en Chromium/WebKit-regressies geslaagd; echte iPhone/HA/MEATER-proeven nog open.
+- HACS, JavaScript/PWA, DOM/opslag en Chromium/WebKit-regressies: [GitHub Actions-run](https://github.com/eelbrethouwer-jpg/bbq_planner_card/actions/runs/42358802061), code/main-SHA `8afb5a89c7d2af975f6cddcbb97598682906e543`; echte iPhone/HA/MEATER-proeven nog open.
 
 ## v5.1.0 — Eén app, rustig koken (gepubliceerd 7 november 2026)
 

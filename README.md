@@ -24,7 +24,7 @@ Een mobiele BBQ-bereidingsplanner voor **één grote en één kleine kamado**, m
 ## Openbare website om met vrienden te delen
 
 Je kunt deze planner ook **zonder Home Assistant** als website gebruiken, op iPhone of Android.
-De website is [BBQ Planner op GitHub Pages](https://eelbrethouwer-jpg.github.io/bbq_planner_card/). De Pages-deployment is op 7 november 2026 op GitHub als geslaagd gecontroleerd. Voor installatie/updaten: [WEBSITE.md](WEBSITE.md).
+De website is [BBQ Planner op GitHub Pages](https://eelbrethouwer-jpg.github.io/bbq_planner_card/). Voor installatie en updates: [WEBSITE.md](WEBSITE.md). Status van een deployment: **niet herverifieerd** in deze README; controleer GitHub Actions.
 
 De vaste webpagina `index.html` opent automatisch de bestaande zelfstandige HTML-planner onder `dist/`, zodat de Home Assistant-code en de openbare website dezelfde planner blijven gebruiken.
 
@@ -59,11 +59,9 @@ Deze release verwacht de volgende sensorprefixes (op maat voor deze installatie)
 
 Bij andere apparaten of entiteitsnamen zijn deze prefixes in `dist/bbq_planner_card.js` aan te passen.
 
-## Versies
+## Releases en projectinformatie
 
-**Gepubliceerde release: v5.1.1 — [Kookfuncties weer bereikbaar](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1).** De daadwerkelijk geïnstalleerde HACS-/PWA-versie kan verschillen. Controleer GitHub Releases voor de nieuwste versie.
-
-**In voorbereiding: v5.1.2 — Samenwerking & kwaliteit** (alleen documentatie/proces; nog geen nieuwe appversie). Zie [PROJECT_STATUS](PROJECT_STATUS.md), [AI_WORKFLOW](docs/AI_WORKFLOW.md), [PROJECT_HANDOFF](docs/PROJECT_HANDOFF.md) en de [CHANGELOG](CHANGELOG.md). Historische kandidaatteksten hieronder zijn **niet** de actuele releasestatus.
+Zie [GitHub Releases](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases) voor versies. Samenwerking en technisch overzicht: [PROJECT_STATUS.md](PROJECT_STATUS.md) en [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md). De historische functieomschrijvingen hieronder zijn geen actuele statusbron.
 
 ## Historische functiebeschrijving rond v4.5.0
 

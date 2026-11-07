@@ -62,7 +62,7 @@ test('O01-REASSIGN',()=>{
   const result=optimize(frozen(input));
   assertSource(input,result);
   assert.equal(result.searchStatus,'complete');
-  assert.equal(result.optimization.testedCandidates,2);
+  assert.equal(result.optimization.testedCandidates,3); // two single moves + one two-dish combination
   assert.ok(result.alternatives.length>0);
   const best=result.alternatives[0];
   assert.equal(best.planStatus,'feasible');
@@ -153,7 +153,7 @@ test('O08-PURITY-NO-IO',()=>{
       Object.defineProperty(globalThis,k,{configurable:true,get(){throw Error(k+' forbidden')}});
     }
     const out=optimize(input);
-    assert.equal(out.optimization.testedCandidates,2);
+    assert.equal(out.optimization.testedCandidates,3); // no time/IO needed for bounded candidate count
   }finally{
     Date.now=dateNow;
     for(const k of ['window','document','localStorage']){

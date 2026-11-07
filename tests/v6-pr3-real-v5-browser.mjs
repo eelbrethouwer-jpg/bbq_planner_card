@@ -175,9 +175,11 @@ try{
       })]){
         const context=await browser.newContext({acceptDownloads:true});
         await context.addInitScript(({PLAN,DRAFT,JOURNAL,BACKUP,sample,journal})=>{
+          if(sessionStorage.getItem('__bbq6_test_injected'))return;
           localStorage.setItem(PLAN,JSON.stringify(sample));
           localStorage.setItem(JOURNAL,journal);
           localStorage.setItem(BACKUP,'ORIGINAL_BACKUP');
+          sessionStorage.setItem('__bbq6_test_injected','1');
         },{PLAN,DRAFT,JOURNAL,BACKUP,sample,journal});
         const page=await context.newPage();
         await page.goto(previewUrl);

@@ -1,123 +1,127 @@
-# BBQ Regisseur v6.0 — PR3 interactieve planning (lopende draft)
+# BBQ Regisseur v6.0 — PR3 interactieve planning
 
-## Ontwikkelstatus
+**Status: draft, nog niet merge- of releaseklaar.** De gepubliceerde v5.1.1-app,
+de bestaande sessiesleutels en main zijn niet veranderd. De featurebranch heeft
+wel een **opt-in** wijziging in `dist/BBQ_bereidingsplanner_MEATER_v4.html`.
+Er is geen v6-functie actief op de normale v5.1.1-productie-URL.
 
-Eerste PR3-slice op een eigen featurebranch. Niet gemerged, geen tag of release.
-De gepubliceerde v5.1.1-app blijft ongemoeid. Deze draft wijzigt inmiddels een kleine, uitsluitend opt-in loader in de v5-HTML in `dist/`; `sw.js`, `index.html`, manifest, HACS en bestaande storage-contracten blijven ongemoeid.
+## Functionaliteit en bescherming
 
-## Architectuur
+| Onderdeel | Geïmplementeerd in draft | Productie |
+| --- | --- | --- |
+| Engine/optimizer in module-Web-Worker | Ja; opzeggen en stale-responses | Uit |
+| Mobiele v6-tijdlijnen, maximaal drie alternatieven | Ja, afzonderlijke view | Uit |
+| Testweergave via `?v6preview=1` in echte v5-HTML | Ja; actuele *kopie* van v5-live-state | Uit |
+| Een alternatief bewaren als apart concept | Ja, alleen na expliciete klik | Uit |
+| Alternatief toepassen op de v5-planning | Isolatieadapter getest, **niet aangesloten** | Uit |
+| Herstel na onderbroken schrijftransactie | Journal-helper en tests bestaan | Niet automatisch |
+| Detectie onafgerond herstel **vóór v5-boot** | Ja; blokkeert boot zonder iets te schrijven | Alleen op draft |
+| Bescherming tegen al geopende oude v5-schrijvers | **Niet afdwingbaar** in een reeds geopende v5-tab | Blokkerend |
 
-- `v6/optimizer-worker.mjs`: roept de bestaande `engine/optimizer.mjs` uitsluitend in een module-Web-Worker aan.
-- `v6/optimizer-client.mjs`: fresh Worker per aanvraag; `cancel()` termineert werkelijk de lopende Worker; request-ID voorkomt stale replies. Geen fallback die op de hoofdthread optimaliseert.
-- `v6/preview-model.mjs`: pure presentatie van gerechten, serveerslots, voorbereiding, aansteken, opleggen, ombouwen, rusten, serveren, kamadotijdlijnen, conflicten, maximaal drie alternatieven en `budget_exhausted`.
-- `v6/regisseur-view.mjs` + `v6/regisseur.css`: geïsoleerde mobile-first UI op een expliciet aangeleverde DOM-root. Tekstinhoud via `textContent` (geen onveilige HTML-injectie).
-- `tests/v6-pr3.mjs`: regressies op brondata-onveranderlijkheid, beide kamado's, alternatieven, XSS, dubbele bevestiging, stale Worker-responses en echte Worker-terminatie.
-- `v6/apply-proposal.mjs`: pure fail-closed preflight die een gecontroleerd optimizer-alternatief naar een kopie van de bestaande v5-planning vertaalt. Controleert actuele dish-/slot-/kamadodata tegen de v6-ingang, beide fingerprints, complete serveerslotvertraging, datum/DST-representatie en weigert onzekere fysieke geschiktheid zonder expliciete toestemming. **Schrijft niets weg**.
-- `tests/v6-pr3-apply-proposal.mjs`: ongewijzigde v5-veldnamen, bron-immutabiliteit, stale en tampered voorstellen, actieve bereidingen, serveervertraging en voorwaarden.
-- `v6/storage-journal.mjs`: losstaande write-ahead journal- en recovery-adapter met een eigen `bbq-v6-apply-journal-v1` sleutel. De oude v5-backup `bbq-v5-previous-plan-v1` wordt **niet** hergebruikt. Iedere wijziging legt vóór het opslaan de originele JSON duurzaam vast, verifieert plan en live geheugen, en herstelt bij een mislukte commit. Na een onderbroken schrijfactie kan `recoverJournal()` vóór het opnieuw laden van v5 herstellen.
-- `tests/v6-pr3-storage.mjs`: tests met uitsluitend fictieve/mock-localStorage voor succesvolle writes, stale opgeslagen en in-memory plannen, corrupte journal, write-/cleanup-fouten, rollback-fout, onderbreking na opslaan, hervatting, conflicterende derde partij en behoud van eerdere sessiebackup/recepten.
+### Preview en conceptopslag
 
-### PR3 stap 3 — geïsoleerde live-koppeling en meerdere tabbladen
+De beta opent uitsluitend via
+`/dist/BBQ_bereidingsplanner_MEATER_v4.html?v6preview=1`. Zonder de
+queryparameter wordt geen v6-module geladen, geen v6-DOM-paneel opgebouwd,
+geen globale read-only-bridge aangemaakt en geen opslag voor v6-concepten
+aangeraakt.
 
-- `v6/plan-lock.mjs`: gedeelde exclusieve browser-`Web Locks` lock voor **samenwerkende v6-tabbladen**, met `ifAvailable` en een fail-closed fout wanneer de lock bezet is of de browser Web Locks niet ondersteunt; bewust geen localStorage-lease-fallback.
-- `v6/live-apply-adapter.mjs`: combineert `prepareLegacyApply()`, `applyWithJournal()` en `recoverJournal()` via expliciete, gecontroleerde live-statecallbacks. Controleert de in-memory/planningfingerprint en de exact opgeslagen JSON voordat een voorstel wordt doorgevoerd.
-- `tests/v6-pr3-live-apply.mjs`: gesimuleerde twee-tabbladencontroletest, stale tabs, annuleren, onbetrouwbare live-bridge, herstel, oude v5-backup en geen onverwachte opslag.
-- `tests/v6-pr3-lock-browser.mjs`: echte twee-tabbladen-`Web Locks` in Chromium en WebKit (bij browser zonder Web Locks een expliciet geteste fail-closed uitkomst).
-- `tests/v6-pr3-legacy-bridge.mjs`: echte v5.1.1-HTML en scripts via jsdom; injecteert uitsluitend **in de test** een extra setter in de bestaande v5-bridge. Beoordeelt bevestigen, annuleren, daadwerkelijke in-memory en localStorage-status, sessiebackup en herladen. Geen wijziging in `dist/`.
+`v6/legacy-readonly-entry.mjs` leest een diepe JSON-kopie van de bestaande
+v5-sessie. De optimizer draait in `v6/optimizer-worker.mjs`, beheerd door
+`v6/optimizer-client.mjs`. De resultaten zijn zichtbaar in
+`v6/regisseur-view.mjs` en `v6/regisseur.css`. De knop **Toepassen** blijft
+uitgeschakeld. Een `storage`-event uit een andere tab verwijdert alle
+voorstellen en vereist een volledige paginaherlading om v5-stale-memory
+te vermijden.
 
-**Blokkerende grens:** er zijn nog v5-tabbladen die de opslag wijzigen zonder een gedeelde lock. Oude reeds geopende browsers kunnen zelfs na een nieuwe versie blijven schrijven. Daardoor is exclusiviteit tussen alle bestaande tabbladen momenteel **niet bewezen**. De helperfuncties mogen niet worden gekoppeld aan de publieke PWA of Home Assistant zolang dit gat niet aantoonbaar is afgedicht. `recoverJournal()` moet bovendien altijd vóór het bestaande synchrone v5-opstartpad zijn voltooid. Pas daarna volgt een kleine feature-gegate runtime-integratie met volledig regressiebewijs.
+Er is nu een afzonderlijke, expliciete actie **Bewaar als concept**. De
+helper `v6/proposal-draft.mjs` slaat **uitsluitend metadata en SHA-256-
+controlesommen** op onder `bbq-v6-proposal-draft-v1`. Geen volledige
+recepten, sessies of originele/plannings-JSON worden gekopieerd.
+`kamado-bereidingsplanner-v1`, `bbq-v5-session-v1`,
+`bbq-v5-previous-plan-v1` en oude bibliotheek/review-sleutels blijven
+ongemoeid. Er wordt niets opgeslagen zonder de gebruikersklik.
 
-Deze stap blijft een veilige **test- en infrastructuurslice**, niet een werkende productieknop.
+Ook alternatieven onder voorwaarden kunnen worden bewaard, maar worden
+als **fysiek nog niet geverifieerd** gelabeld; ze worden niet toegepast.
+Een concept wordt bij laden opnieuw beoordeeld. Als de bestaande v5-planning
+wijzigt, wordt het **verouderd**: het blijft bewaard tot expliciete
+verwijdering, maar mag niet worden overgenomen. Zonder Web Locks of
+Web Crypto wordt conceptopslag geweigerd; geen onveilige fallback.
 
-### PR3 stap 4a — echte v5 testkoppeling, alleen-lezen
+### Apply en herstel — technisch aanwezig, bewust uitgeschakeld
 
-De bestaande v5.1.1 HTML is nu op de PR-branch minimaal uitgebreid met een **opt-in testpad**:
-`/dist/BBQ_bereidingsplanner_MEATER_v4.html?v6preview=1`. Zonder die queryparameter
-wordt geen v6-module geïmporteerd en geen v6-paneel of accessor aangemaakt.
-Met deze parameter wordt na het bestaande synchrone v5-opstartpad de uitsluitend
-read-only `window.__bbqV6ReadOnlyState` aangeboden. Die levert een diepe
-JSON-kopie van de in-memory sessie; `v6/legacy-readonly-entry.mjs` laadt
-voorstellen via de echte module-Web-Worker en gebruikt de reeds geteste
-`v6/regisseur-view.mjs` met `onApply=null`. Er worden geen gegevens
-geschreven, geen extra storage keys aangemaakt en geen v5-schrijfoperaties
-gemodificeerd. Dit is **geen publieke release**: het staat uitsluitend
-in de nog openstaande draft-PR.
+- `v6/apply-proposal.mjs`: pure preflight. Valideert optimizer-
+  provenance, gerechten, serveertijden, fysieke voorwaarden, tijdzone/DST
+  en maakt alleen een kopie van de v5-planning.
+- `v6/storage-journal.mjs`: afzonderlijke write-ahead journal onder
+  `bbq-v6-apply-journal-v1`, met geteste commit-/rollback-/recovery-paden.
+  Omdat localStorage geen transacties over meerdere sleutels heeft, is
+  dit **herstelbaar, niet multi-key atomair**.
+- `v6/plan-lock.mjs`: browser-Web Lock voor **meewerkende v6-tabbladen**.
+  Oudere v5-tabs nemen deze lock niet.
+- `v6/live-apply-adapter.mjs`: opt-in live-state-bridge met extra verplichte
+  `assertLegacyWriterExclusion`-controle. Ontbrekende of niet-geverifieerde
+  uitsluiting blokkeert zowel apply als automatische recovery. Het
+  `()=>true`-bewijs bestaat alleen in geïsoleerde tests en is **geen**
+  geldige productie-implementatie.
+- Bovenaan de bestaande inline v5-opstartscript staat nu een
+  `bbq-v6-apply-journal-v1`-controle. Een aanwezige journal (ook een
+  corrupte) verhindert de hele **nieuwe v5-initialisatie**, toont een
+  veiligheidsmelding en wist of herschrijft **niets**. Dit is een
+  **preboot-stop**, géén automatische herstelprocedure.
 
-`tests/v6-pr3-real-v5-browser.mjs` test in Chromium én WebKit op
-320/390/1024px dat de normale v5-URL geen v6-code activeert, de
-testparameter wel, optimizerresultaten zichtbaar worden, horizontale
-overflow uitblijft en `kamado-bereidingsplanner-v1` en de v6-journal
-door een preview onaangeraakt blijven.
+**Bewezen beperking:** een al geopend oud v5-tabblad kan de oude
+`kamado-bereidingsplanner-v1`-sleutel nog steeds zonder lock schrijven.
+Dat is vanuit JavaScript in een nieuw tabblad niet betrouwbaar te voorkomen
+of af te dwingen. Daarom mag PR3 geen live v5-plan muteren zolang deze
+oude-schrijversituatie niet door een werkelijk veilige migratie- of
+sessie-isolatiestrategie is opgelost. De nieuwe **conceptopslag onder een
+andere sleutel** blijft wél buiten bereik van oude v5-writes; iedere
+verandering van de onderliggende planning maakt het concept verouderd.
 
-### PR3 stap 4b — ongecoördineerde v5-tabbladen, fail-closed
+## Validatie
 
-De belangrijkste resterende veiligheidsgrens is nu ook in de adapter
-afgedwongen: `createLegacyApplyAdapter()` en
-`createPreloadRecovery()` eisen een
-`assertLegacyWriterExclusion()`-functie. Binnen de exclusieve Web Lock
-moet deze aantoonbaar `true` opleveren. Ontbreekt de functie, dan volgt
-`LEGACY_WRITER_EXCLUSION_REQUIRED`; geeft hij geen `true`, dan volgt
-`UNCOORDINATED_V5_WRITERS`. Geen writes en geen recovery zolang de
-voorwaarde niet gehaald wordt. **Dit is een contract voor toekomstige,
-daadwerkelijk gecontroleerde tab-isolatie, geen implementatie die oude
-v5-tabbladen magisch kan detecteren.** Alleen in geïsoleerde tests wordt
-een expliciete `()=>true`-attestatie gebruikt.
+GitHub Actions draait het volgende (actuele commit-run vereist voor GO):
 
-In de uitsluitend read-only beta wordt een write uit een ander
-v5-tabblad via het `storage`-event gesignaleerd. Oude voorstellen
-verdwijnen en alleen een **volledige paginaherlading** kan de actuele
-staat opnieuw inlezen; `getLegacyState()` uit een al geopende pagina
-zou immers de verouderde state teruggeven. De browsertest simuleert
-daarom een echte v5-wijziging vanuit een tweede tab, controleert
-dat de voorstellen verdwijnen en verifieert dat de herladen beta
-de nieuwe serveertijd gebruikt.
+- `tests/v6-engine.mjs` en `tests/v6-shadow.mjs`: baseline en
+  v5-v6-pariteit, waaronder tijdzonecases.
+- `tests/v6-optimizer.mjs`: bounded optimizer (96 standaard, maximaal 512
+  kandidaatbudget), null/locks, capaciteit en serveervertraging.
+- `tests/v6-pr3.mjs` en `tests/v6-pr3-apply-proposal.mjs`: pure UI-,
+  Worker-, annuleren-, tamper- en preflighttests.
+- `tests/v6-pr3-storage.mjs`: 17 losstaande journal-/rollbacktests.
+- `tests/v6-pr3-live-apply.mjs`: fail-closed uitsluiting,
+  twee-tabbladen-, stale state- en rollbackcases.
+- `tests/v6-pr3-proposal-draft.mjs`: metadata-only concepten, oude v5-
+  tabwrites, stale-herkenning, write failures, conditiechecks en verwijderen.
+- `tests/v6-pr3-preboot.mjs`: een onafgerond/corrupt journal blokkeert v5
+  vóór het laden; opslag blijft byte-identiek.
+- `tests/v6-pr3-legacy-bridge.mjs`: echte v5-HTML in jsdom met **alleen
+  testmatig** geïnjecteerde setter; geen productie-integratie.
+- `tests/v6-pr3-browser.mjs`, `tests/v6-pr3-lock-browser.mjs` en
+  `tests/v6-pr3-real-v5-browser.mjs`: echte Chromium en WebKit op
+  320/390/1024px, gewone URL zonder v6, opt-in v6-preview, expliciete
+  conceptopslag, oude-tabwijziging, verouderd concept, herladen, verwijderen,
+  preboot-stop en geen wijzigingen in bestaande v5-gegevens.
 
-De huidige opslagadapter is **niet ingeschakeld**. Voor productie moet
-de exclusievoorwaarde nog met een echte, browserbreed afdwingbare
-upgrade-/writercoördinatie zijn ingevuld, zonder oude sessies
-ongevraagd te overschrijven. Ook de herstel-before-load bootstrap
-is niet aangesloten.
+Een succesvolle CI-run is bewijs voor deze specifieke geteste scenario's,
+niet voor een echte iPhone, live Home Assistant, MEATER-integratie of
+onbewaakte schrijvers in reeds geopende oude v5-tabs.
 
-Dit is opzettelijk een **alleen-lezen testintegratie** en geen GO voor
-v6-sessieopslag. De nieuwe `Web Locks` kunnen oude reeds geopende v5-tabbladen
-niet blokkeren. Voor een echte apply-feature moeten alle schrijfpaden worden
-gecoördineerd, bestaande tabbladen veilig opnieuw laden/uitsluiten en herstel
-vóór opstarten bewezen zijn. Geen automatische write-fallback.
+## Vereist vóór merge en release
 
+1. Controleer de **nieuwste** CI-run, analyseer afwijkingen en laat geen
+   bekende regressies onopgelost.
+2. Maak een aantoonbaar veilige migratie-/sessiestrategie voor oude v5-tabs.
+   Als dit niet mogelijk is, beperk een eerste PR3-release expliciet tot
+   de **read-only preview en losstaand concept opslaan** en laat
+   `Toepassen` uitgeschakeld. Beslis dit afzonderlijk.
+3. Controleer mobiele toegankelijkheid met een echte iPhone, v5-navigatie,
+   recepten, reviews, MEATER en opslag na herladen.
+4. Laat Claude de **actuele PR-HEAD** onafhankelijk reviewen en verwerk
+   blokkerende punten.
+5. **Geen merge, tag of release zonder expliciet akkoord.**
 
-
-**Grenzen van deze isolatie:** v5 heeft nu nog directe opslagwrites zonder gedeelde lock. `applyWithJournal()` accepteert daarom alleen expliciet aangeleverde `readLiveState`, `commitLiveState`, `rollbackLiveState` én `withExclusiveLock`-callbacks. Een nieuw JS-only mutex is nadrukkelijk **niet** voldoende voor meerdere tabbladen: bestaande v5-schrijvers moeten aan dezelfde lock deelnemen of de integratie moet aantoonbaar anders voorkomen dat andere tabbladen een update doen. `localStorage` biedt geen transactie over twee sleutels; de oplossing is herstelbaar via write-ahead logging, niet strikt atomair. `recoverJournal()` moet op start vóór het laden van de app worden uitgevoerd. Tot dan worden deze modules **niet** productief aangeroepen.
-- `v6/sandbox.html` met `v6/sandbox.mjs`: apart, werkend browserharnas met duidelijk gelabelde fictieve data; bereikbaar via een lokale HTTP-server op `/v6/sandbox.html`, nooit via bestaande productie-ingang.
-- `tests/v6-pr3-browser.mjs`: browserregressie via lokale HTTP-server voor echte module-Worker, Chromium en WebKit, 320/390/1024px, horizontale overflow en de uitgeschakelde opslagactie.
-
-De view is standaard niet actief; opt-in `?v6preview=1` maakt een read-only paneel boven de bestaande v5-interface. Er is geen schrijfende v6-navigatie of opslag. Zonder `onApply` is de knop **Toepassen** uitgeschakeld. Met een expliciete callback vergt Toepassen een aparte bevestigingsstap. Een callback moet vóór productie-integratie atomair de huidige sessie-fingerprint controleren, de oorspronkelijke sessie als rollback-snapshot bewaren, pas na alle validaties schrijven, en kunnen terugdraaien bij fout. Een afzonderlijke backup-/commit-/rollbackadapter met journal bestaat nu en wordt met mocks getest. De koppeling met de echte v5-live state, de cross-tab-lock en recover-before-load ontbreken nog. De huidige PR3-slice is daarom **niet productie- of mergeklaar**.
-
-## Precies afgebakende huidige scope
-
-- In de draft-branch kan de UI met `?v6preview=1` alleen-lezen worden getest binnen de bestaande v5-pagina; in de gepubliceerde PWA/Home Assistant is deze PR nog niet beschikbaar.
-- De standaardbudgetgrens van de engine blijft 96 kandidaten; de harde enginegrens blijft 512.
-- `run(input)` berekent asynchroon in de Worker. De caller kan een laadstatus tonen; een gestopte berekening keert terug met `AbortError`.
-- `buildPreviewModel` toont `budget_exhausted` expliciet. Opties worden als previews getoond; maximaal drie.
-- De oorspronkelijke planningsuitvoer blijft de waarheid. Een gekozen alternatief is alleen een visuele preview en muteert input niet.
-- Bestaande v5.1.1-opslag, recepten, reviews, MEATER en appversie blijven onaangeroerd.
-
-## Vervolg binnen PR3
-
-1. Volledige browsertest van de geïsoleerde view in Chromium én WebKit, inclusief iPhone-breedtes 320/375/390px, touch en safe-area.
-2. Inspecteer de v5-sessie-invarianten en ontwerp een versievaste rollbackbare **apply-adapter**. Voeg vervolgens echte tests toe voor expliciet toepassen, annuleren, stale fingerprint, storage-falen, reload, herstel en oude data.
-3. Sluit de nieuwe pagina aan op de bestaande navigatie zonder import/export, recepten, reviews of v5-live-functies te verbreken. Houd een featurepoort/rollbackpad aan.
-4. Realistische Worker-benchmarks op mobiele apparaten met 20 gerechten en budgets 96/256/512.
-5. Laat Claude de werkelijke PR-code onafhankelijk reviewen. Daarna pas eventueel afzonderlijk mergeakkoord.
-6. Neem Claudes PR2-opmerkingen (lege slots, volledig menu later, score-tie-break, issue-contract) apart op in de scope en tests; wijzig de optimizer niet impliciet tijdens UI-integratie.
-
-## Acceptatiecriteria voor volledige PR3
-
-- Alle gerechten, gezamenlijke serveertijd, taken per kamado en risico's direct zichtbaar.
-- Maximaal drie previews inclusief concrete verschillen, status, loading en budgetwaarschuwing.
-- Geen impliciete veranderingen: toepassen alleen met actuele fingerprint, duidelijke bevestiging en gecontroleerd herstelpad.
-- Geen regressie in v5-data of lokale opslagcontracten.
-- CI groen, onafhankelijke review, mobiel bruikbaar, expliciet akkoord vóór merge en aparte toestemming vóór release.
-
-## Testbeperkingen
-
-Node/jsdom-tests zijn geen fysieke iPhone-tests. GitHub Chromium/WebKit-CI voor v5 is geen bewijs dat de nieuw geïsoleerde v6-view al op echte hardware werkt. Geen Home Assistant- of MEATER-hardwaretests uitgevoerd.
+Bewaar onderscheid tussen testcode, draft-PR en daadwerkelijk
+gepubliceerde versie v5.1.1.

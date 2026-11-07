@@ -136,7 +136,7 @@ try{
           page.once('dialog',dialog=>dialog.dismiss());
           await page.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
           await page.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
-            ?.textContent?.includes('GEANNULEERD'),null,{timeout:5000});
+            ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:5000});
           assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
             draft,'declined overwrite altered existing draft');
 

@@ -214,7 +214,8 @@ test('O13-EXACT-DELAY-BOUND',()=>{
     {capacity:{large:1},laterAllowedMaxMin:17,maxCandidates:100});
   const out=optimize(input);
   assert.ok(out.optimization.testedCandidates>0);
-  assert.ok(out.alternatives.every(a=>a.changes.every(c=>c.minutes<=17)));
+  assert.ok(out.alternatives.every(a=>a.changes.every(c=>c.type!=='serve_delay'||c.minutes<=17)),
+    'only serve-delay changes have a minutes field; each must respect the 17 minute bound');
   assert.equal(out.searchStatus,'complete');
 });
 test('O14-NO-SILENT-SHARED-SLOT-CHANGES',()=>{

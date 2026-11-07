@@ -40,7 +40,8 @@ function legacy(s) {
  return calculated;
 }
 function compare(id,s){
- const old=legacy(s),{input,validation}=fromLegacyState(s,{houseZone:zone,now:at('12:00')});
+ const now=s.dateMode==='auto'?Date.now():at('12:00');
+ const old=legacy(s),{input,validation}=fromLegacyState(s,{houseZone:zone,now});
  assert.deepEqual(validation,[],id+' adapter validation');
  const shadow=plan(input);
  assert.ok(['feasible','conditional'].includes(shadow.planStatus),id+' shadow '+shadow.planStatus);
@@ -56,6 +57,10 @@ compare('S02',sample([item('a',{cook:90}),item('b',{kamado:'small',cook:30,rest:
 compare('S06',sample([item('a',{cook:55,rest:10,method:'combo',
  transitionMins:15,phase2Minutes:5,phase2Temp:250})]));
 compare('S14',sample([item('a',{cook:600,rest:60})]));
+compare('STRING-TEMPERATURES',sample([
+ item('a',{cook:90,rest:15,grill:'120'}),
+ item('b',{kamado:'small',cook:30,rest:0,grill:'250'})]));
+compare('AUTO-DATE',sample([item('a')],{date:'2026-11-10',dateMode:'auto'}));
 const intentional={
  S03:{s:sample([item('a'),item('b',{grill:250,method:'direct',grate:'cast'})]),
    code:'INCOMPATIBLE_SETUP',status:'infeasible',
@@ -67,7 +72,7 @@ const intentional={
    reason:'legacy advises later serving; shadow reports infeasible without changing serve slot'},
  S13:{s:sample([item('a',{cook:null})]),code:'DURATION_UNKNOWN',status:'unknown',
    reason:'legacy sanitizes null to zero; shadow retains explicit unknown duration'},
- N03:{s:sample([item('a',{kamado:'unregistered'})]),code:'UNKNOWN_KAMADO',status:'infeasible',
+ N03:{s:sample([item('a',{kamado:'unregistered'})]),code:'UNKNOWN_KAMADO',status:'unknown',
    reason:'legacy can calculate a dish not assigned to large/small; shadow rejects unknown resource'}
 };
 for(const [id,fixture] of Object.entries(intentional)){
@@ -77,7 +82,15 @@ for(const [id,fixture] of Object.entries(intentional)){
  assert.ok(old&&Array.isArray(old.dishes)&&Array.isArray(old.alerts),id+' legacy did not compute');
  assert.equal(shadow.planStatus,fixture.status,id+' status');
  assert.ok(shadow.conflicts.some(c=>c.code===fixture.code),id+' missing '+fixture.code);
+ if(id==='S13')assert.equal(old.dishes[0].cook,0,'legacy clamps null cook to zero');
+ if(id==='S03')assert.ok(old.alerts.some(a=>/Verschillende/.test(a.message)),
+   'legacy reports incompatible setup text');
+ if(id==='N03'){
+   assert.equal(old.alerts.length,0,'legacy does not warn unknown kamado in calc');
+   assert.equal(old.fires.large,null,'unknown kamado has no legacy large fire');
+   assert.equal(old.fires.small,null,'unknown kamado has no legacy small fire');
+ }
  assert.ok(fixture.reason.length>30);
  console.log('PASS intentional difference '+id+': '+fixture.code+' / '+fixture.reason);
 }
-console.log('PASS v6-shadow 4 parity and 5 explicit intentional differences');
+console.log('PASS v6-shadow 6 parity and 5 explicit intentional differences');

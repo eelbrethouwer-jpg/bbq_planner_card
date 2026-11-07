@@ -1,16 +1,18 @@
 /* Read-only conversion of raw legacy state. No mutation, DOM, localStorage or clock calls. */
-import {toInstant,subtractLocalDays} from './time.mjs';
+import {toInstant,subtractLocalDays,localParts} from './time.mjs';
 const MISS='DURATION_UNKNOWN',BAD='INVALID_DURATION';
-function numeric(raw,id,issues,{required=true,max=10000}={}){
+function numeric(raw,id,issues,{required=true,max=10000,missingCode=MISS,invalidCode=BAD,positive=false,integer=false}={}){
   if(raw===null||raw===undefined||raw===''||(typeof raw==='string'&&!raw.trim())){
-    if(required)issues.push({code:MISS,affectedIds:[id]});
+    if(required)issues.push({code:missingCode,affectedIds:[id]});
     return null;
   }
   if(!((typeof raw==='number'&&Number.isFinite(raw))||(typeof raw==='string'&&/^-?\d+(?:\.\d+)?$/.test(raw.trim())))){
-    issues.push({code:BAD,affectedIds:[id]});return null;
+    issues.push({code:invalidCode,affectedIds:[id]});return null;
   }
   const value=Number(raw);
-  if(!Number.isFinite(value)||value<0){issues.push({code:BAD,affectedIds:[id]});return null;}
+  if(!Number.isFinite(value)||value<0||(positive&&value===0)||(integer&&!Number.isInteger(value))){
+    issues.push({code:invalidCode,affectedIds:[id]});return null;
+  }
   if(value>max){issues.push({code:'OUT_OF_RANGE',affectedIds:[id]});return null;}
   return value;
 }
@@ -23,33 +25,41 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
   }
   const state=plainStateJSON,zone=houseZone||'Europe/Amsterdam';
   if(!Number.isFinite(now))validation.push({code:'INVALID_NOW',affectedIds:[]});
-  const date=state.date;
-  const serveSlots=[{id:'main',at:instant(date,state.mealTime,zone,'main',validation)}];
+  // Follow legacy automatic-date semantics, but use the explicitly injected house clock.
+  const today=Number.isFinite(now)?localParts(now,zone).localDate:null;
+  const mode=state.dateMode==='auto'||state.dateMode==='manual'?state.dateMode:
+    typeof state.date==='string'&&today&&state.date>today?'manual':'auto';
+  const date=mode==='auto'&&today?today:state.date;
+  const serveSlots=[{id:'main',at:instant(date,state.mealTime,zone,'main',validation),toleranceMin:0,laterAllowedMaxMin:0}];
   if(state.v46MultiServe){
     for(const [id,field,fallback] of [['starter','v46Starter','17:30'],['dessert','v46Dessert','19:15']]){
-      serveSlots.push({id,at:instant(date,state[field]||fallback,zone,id,validation)});
+      serveSlots.push({id,at:instant(date,state[field]||fallback,zone,id,validation),toleranceMin:0,laterAllowedMaxMin:0});
     }
   }
-  const availableAt=state.availableFrom===null||state.availableFrom===undefined?
+  const availableAt=state.availableFrom===null||state.availableFrom===undefined||state.availableFrom===''?
     null:instant(date,state.availableFrom,zone,'availability',validation);
+  const rawDishes=Array.isArray(state.dishes)?state.dishes:[];
+  const used=new Set(rawDishes.filter(d=>d&&typeof d==='object').map(d=>d.kamado));
   const kamados=['large','small'].map(id=>({
-    id,preheatMin:numeric(state[id==='large'?'preheatLarge':'preheatSmall'],id+':preheat',validation),
+    id,preheatMin:used.has(id)?numeric(state[id==='large'?'preheatLarge':'preheatSmall'],id+':preheat',validation):null,
     capacity:null
   }));
   const seen=new Set(),dishes=[];
-  for(const [index,d] of (Array.isArray(state.dishes)?state.dishes:[]).entries()){
+  for(const [index,d] of rawDishes.entries()){
     if(!d||typeof d!=='object'){validation.push({code:'INVALID_DISH',affectedIds:[String(index)]});continue;}
     const id=typeof d.id==='string'&&d.id.trim()?d.id:'__dish_'+index;
-    if(seen.has(id))validation.push({code:'DUPLICATE_ID',affectedIds:[id]});
+    if(seen.has(id)){validation.push({code:'DUPLICATE_ID',affectedIds:[id]});continue;}
     seen.add(id);
     const kamado=d.kamado;
     if(!['large','small'].includes(kamado))validation.push({code:'UNKNOWN_KAMADO',affectedIds:[id]});
-    const cook=numeric(d.cook,id+':cook',validation),restMin=numeric(d.rest,id+':rest',validation);
+    const cook=numeric(d.cook,id+':cook',validation,{positive:true}),restMin=numeric(d.rest,id+':rest',validation);
     const multi=['combo','directindirect'].includes(d.method);
     const transition=multi?numeric(d.transitionMins,id+':transition',validation):0;
     const phase2=multi?numeric(d.phase2Minutes,id+':phase2',validation):null;
+    const heat=numeric(d.grill,id+':temp',validation,{max:500,missingCode:'TEMPERATURE_UNKNOWN',invalidCode:'INVALID_TEMPERATURE'});
+    const heat2=multi?numeric(d.phase2Temp,id+':phase2:temp',validation,{max:500,missingCode:'TEMPERATURE_UNKNOWN',invalidCode:'INVALID_TEMPERATURE'}):null;
     let segments=[];
-    const base={heatC:d.grill,accessory:d.grate||'rvs'};
+    const base={heatC:heat,accessory:d.grate||'rvs'};
     if(multi&&cook!==null&&transition!==null&&phase2!==null){
       // Mirrors phaseSegments(): phase 2 is at least 1 min, capped at active cook.
       const p2=Math.min(Math.max(1,phase2),Math.max(1,cook));
@@ -58,7 +68,7 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
         method:d.method==='combo'?'indirect':'direct',accessory:base.accessory});
       if(transition>0)segments.push({id:id+':changeover',durationMin:transition,
         heatC:null,method:'changeover',accessory:'changeover'});
-      segments.push({id:id+':phase2',durationMin:p2,heatC:d.phase2Temp,
+      segments.push({id:id+':phase2',durationMin:p2,heatC:heat2,
         method:d.method==='combo'?'direct':'indirect',accessory:d.grate2||'cast'});
     }else if(!multi&&cook!==null){
       segments=[{id:id+':cook',durationMin:cook,heatC:base.heatC,
@@ -74,8 +84,8 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
       const pid=String(p.id||'prep-'+pi),taskId=id+':prep:'+pid;
       if(prepIds.has(pid))validation.push({code:'DUPLICATE_ID',affectedIds:[taskId]});
       prepIds.add(pid);
-      const days=numeric(p.daysBefore,taskId+':daysBefore',validation,{max:366});
-      if(days===null||!Number.isInteger(days)){if(days!==null)validation.push({code:'INVALID_DATE',affectedIds:[taskId]});continue;}
+      const days=numeric(p.daysBefore,taskId+':daysBefore',validation,{max:366,integer:true});
+      if(days===null)continue;
       const localDate=subtractLocalDays(date,days),timeKnown=typeof p.time==='string'&&p.time.trim()!=='';
       let at=null;
       if(timeKnown)at=instant(localDate,p.time,zone,taskId,validation);
@@ -84,7 +94,7 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
     }
     dishes.push({id,name:String(d.name||id),currentKamadoId:kamado,slotId,
       status:['waiting','cooking','resting','done'].includes(d.phase)?d.phase:'waiting',
-      segments,restMin,preparation,
+      segments,restMin,maxHoldMin:null,preparation,
       startConstraint:d.mode==='manual'?{kind:'fixed',at:fixed}:null,
       original:{method:d.method,mode:d.mode},immutableActuals:{
         startedAt:d.startedAt??null,restAt:d.restAt??null,doneAt:d.doneAt??null}

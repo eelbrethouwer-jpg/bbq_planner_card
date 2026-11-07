@@ -2815,7 +2815,23 @@ if(typeof window.initBBQV5==='function'){
     syncLegacy:()=>{initValuesOnly();renderAll();}
   });
 }
+// PR3 beta is deliberately read-only and opt-in. Existing v5 flow is untouched.
+if(new URLSearchParams(location.search).get('v6preview')==='1'){
+  window.__bbqV6ReadOnlyState=()=>JSON.parse(JSON.stringify(state));
+}
 })();
+</script>
+<script type="module">
+  // No imports, styles, workers or side effects on the normal v5 URL.
+  if(new URLSearchParams(location.search).get('v6preview')==='1'){
+    import('../v6/legacy-readonly-entry.mjs').then(({mountLegacyReadOnlyPreview})=>{
+      mountLegacyReadOnlyPreview({
+        win:window,getLegacyState:window.__bbqV6ReadOnlyState
+      });
+    }).catch(error=>{
+      console.error('v6 read-only preview unavailable',error);
+    });
+  }
 </script>
 </body>
 </html>

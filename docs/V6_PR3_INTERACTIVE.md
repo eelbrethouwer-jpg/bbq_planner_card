@@ -17,6 +17,19 @@ De publieke v5.1.1-app en `dist/`, `sw.js`, `index.html`, manifest, HACS en best
 - `v6/storage-journal.mjs`: losstaande write-ahead journal- en recovery-adapter met een eigen `bbq-v6-apply-journal-v1` sleutel. De oude v5-backup `bbq-v5-previous-plan-v1` wordt **niet** hergebruikt. Iedere wijziging legt vóór het opslaan de originele JSON duurzaam vast, verifieert plan en live geheugen, en herstelt bij een mislukte commit. Na een onderbroken schrijfactie kan `recoverJournal()` vóór het opnieuw laden van v5 herstellen.
 - `tests/v6-pr3-storage.mjs`: tests met uitsluitend fictieve/mock-localStorage voor succesvolle writes, stale opgeslagen en in-memory plannen, corrupte journal, write-/cleanup-fouten, rollback-fout, onderbreking na opslaan, hervatting, conflicterende derde partij en behoud van eerdere sessiebackup/recepten.
 
+### PR3 stap 3 — geïsoleerde live-koppeling en meerdere tabbladen
+
+- `v6/plan-lock.mjs`: gedeelde exclusieve browser-`Web Locks` lock voor **samenwerkende v6-tabbladen**, met `ifAvailable` en een fail-closed fout wanneer de lock bezet is of de browser Web Locks niet ondersteunt; bewust geen localStorage-lease-fallback.
+- `v6/live-apply-adapter.mjs`: combineert `prepareLegacyApply()`, `applyWithJournal()` en `recoverJournal()` via expliciete, gecontroleerde live-statecallbacks. Controleert de in-memory/planningfingerprint en de exact opgeslagen JSON voordat een voorstel wordt doorgevoerd.
+- `tests/v6-pr3-live-apply.mjs`: gesimuleerde twee-tabbladencontroletest, stale tabs, annuleren, onbetrouwbare live-bridge, herstel, oude v5-backup en geen onverwachte opslag.
+- `tests/v6-pr3-lock-browser.mjs`: echte twee-tabbladen-`Web Locks` in Chromium en WebKit (bij browser zonder Web Locks een expliciet geteste fail-closed uitkomst).
+- `tests/v6-pr3-legacy-bridge.mjs`: echte v5.1.1-HTML en scripts via jsdom; injecteert uitsluitend **in de test** een extra setter in de bestaande v5-bridge. Beoordeelt bevestigen, annuleren, daadwerkelijke in-memory en localStorage-status, sessiebackup en herladen. Geen wijziging in `dist/`.
+
+**Blokkerende grens:** er zijn nog v5-tabbladen die de opslag wijzigen zonder een gedeelde lock. Oude reeds geopende browsers kunnen zelfs na een nieuwe versie blijven schrijven. Daardoor is exclusiviteit tussen alle bestaande tabbladen momenteel **niet bewezen**. De helperfuncties mogen niet worden gekoppeld aan de publieke PWA of Home Assistant zolang dit gat niet aantoonbaar is afgedicht. `recoverJournal()` moet bovendien altijd vóór het bestaande synchrone v5-opstartpad zijn voltooid. Pas daarna volgt een kleine feature-gegate runtime-integratie met volledig regressiebewijs.
+
+Deze stap blijft een veilige **test- en infrastructuurslice**, niet een werkende productieknop.
+
+
 **Grenzen van deze isolatie:** v5 heeft nu nog directe opslagwrites zonder gedeelde lock. `applyWithJournal()` accepteert daarom alleen expliciet aangeleverde `readLiveState`, `commitLiveState`, `rollbackLiveState` én `withExclusiveLock`-callbacks. Een nieuw JS-only mutex is nadrukkelijk **niet** voldoende voor meerdere tabbladen: bestaande v5-schrijvers moeten aan dezelfde lock deelnemen of de integratie moet aantoonbaar anders voorkomen dat andere tabbladen een update doen. `localStorage` biedt geen transactie over twee sleutels; de oplossing is herstelbaar via write-ahead logging, niet strikt atomair. `recoverJournal()` moet op start vóór het laden van de app worden uitgevoerd. Tot dan worden deze modules **niet** productief aangeroepen.
 - `v6/sandbox.html` met `v6/sandbox.mjs`: apart, werkend browserharnas met duidelijk gelabelde fictieve data; bereikbaar via een lokale HTTP-server op `/v6/sandbox.html`, nooit via bestaande productie-ingang.
 - `tests/v6-pr3-browser.mjs`: browserregressie via lokale HTTP-server voor echte module-Worker, Chromium en WebKit, 320/390/1024px, horizontale overflow en de uitgeschakelde opslagactie.

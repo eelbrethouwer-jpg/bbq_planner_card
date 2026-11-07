@@ -7,6 +7,7 @@ import {plan} from '../engine/check.mjs';
 import {toInstant} from '../engine/time.mjs';
 process.env.TZ='Europe/Amsterdam';
 const date='2026-11-14',zone='Europe/Amsterdam';
+const FIXED_NOW=Date.parse('2026-11-14T11:00:00Z');
 const at=time=>{const r=toInstant(date,time,zone);assert.ok(r.ok);return r.at};
 const item=(id,extra={})=>({id,name:id,kamado:'large',cook:60,rest:15,grill:120,
   grate:'rvs',grate2:'cast',method:'indirect',mode:'auto',phase:'waiting',
@@ -15,7 +16,7 @@ const item=(id,extra={})=>({id,name:id,kamado:'large',cook:60,rest:15,grill:120,
 const sample=(dishes,other={})=>({date,dateMode:'manual',mealTime:'18:30',availableFrom:'00:00',
  preheatLarge:30,preheatSmall:25,equipment:{large:[],small:[]},smart:{enabled:true,mode:'fixed'},
  dishes,v46MultiServe:false,v46Done:{},v5Actual:{},...other});
-function legacy(s) {
+function legacy(s,now=FIXED_NOW) {
  let html=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
  for(const file of ['bbq-v5.js','bbq-v501.js']){
   const regex=new RegExp('<script src="\\./'+file.replace('.','\\.')+'\\?v=[^"]+"></script>');
@@ -25,6 +26,12 @@ function legacy(s) {
  const errors=[];
  const dom=new JSDOM(html,{url:'https://planner.test.invalid/dist/planner.html',
    runScripts:'dangerously',pretendToBeVisual:true,beforeParse(w){
+     // Freeze the jsdom realm clock; the adapter receives the same instant.
+     const NativeDate=w.Date;
+     w.Date=class FixedDate extends NativeDate{
+       constructor(...args){super(...(args.length?args:[now]));}
+       static now(){return now;}
+     };
      w.localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(s));
      w.confirm=()=>true;w.alert=()=>{};w.prompt=()=>null;w.print=()=>{};
      w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};
@@ -40,8 +47,8 @@ function legacy(s) {
  return calculated;
 }
 function compare(id,s){
- const now=s.dateMode==='auto'?Date.now():at('12:00');
- const old=legacy(s),{input,validation}=fromLegacyState(s,{houseZone:zone,now});
+ const now=FIXED_NOW;
+ const old=legacy(s,now),{input,validation}=fromLegacyState(s,{houseZone:zone,now});
  assert.deepEqual(validation,[],id+' adapter validation');
  const shadow=plan(input);
  assert.ok(['feasible','conditional'].includes(shadow.planStatus),id+' shadow '+shadow.planStatus);
@@ -73,7 +80,11 @@ const intentional={
  S13:{s:sample([item('a',{cook:null})]),code:'DURATION_UNKNOWN',status:'unknown',
    reason:'legacy sanitizes null to zero; shadow retains explicit unknown duration'},
  V03:{s:sample([item('a',{kamado:'unregistered'})]),code:'UNKNOWN_KAMADO',status:'unknown',
-   reason:'legacy can calculate a dish not assigned to large/small; shadow rejects unknown resource'}
+   reason:'legacy can calculate a dish not assigned to large/small; shadow rejects unknown resource'},
+ PHASE2:{s:sample([item('a',{cook:55,rest:10,method:'combo',
+    transitionMins:15,phase2Minutes:0,phase2Temp:250})]),
+   code:'INVALID_DURATION',status:'unknown',
+   reason:'legacy clamps invalid phase2 but shadow rejects raw duration'}
 };
 for(const [id,fixture] of Object.entries(intentional)){
  const old=legacy(fixture.s);
@@ -83,6 +94,12 @@ for(const [id,fixture] of Object.entries(intentional)){
  assert.equal(shadow.planStatus,fixture.status,id+' status');
  assert.ok(shadow.conflicts.some(c=>c.code===fixture.code),id+' missing '+fixture.code);
  if(id==='S13')assert.equal(old.dishes[0].cook,0,'legacy clamps null cook to zero');
+ if(id==='PHASE2'){
+   assert.equal(old.dishes.length,1,'legacy computes despite zero phase2');
+   assert.ok(Number.isFinite(old.dishes[0].start),'legacy has a calculated start');
+   assert.ok(shadow.validation.some(v=>v.code==='INVALID_DURATION'&&v.field==='a:phase2'),
+     'shadow reports invalid raw phase2');
+ }
  if(id==='S03')assert.ok(old.alerts.some(a=>/Verschillende/.test(a.message)),
    'legacy reports incompatible setup text');
  if(id==='V03'){
@@ -93,4 +110,4 @@ for(const [id,fixture] of Object.entries(intentional)){
  assert.ok(fixture.reason.length>30);
  console.log('PASS intentional difference '+id+': '+fixture.code+' / '+fixture.reason);
 }
-console.log('PASS v6-shadow 6 parity and 5 explicit intentional differences');
+console.log('PASS v6-shadow 6 parity and 6 explicit intentional differences');

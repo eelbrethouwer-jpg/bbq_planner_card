@@ -63,3 +63,10 @@ jobs:
           npx playwright install --with-deps chromium webkit
       - name: Controleer iPhone-formulierbreedtes (Chromium/WebKit) en HA-iframe
         run: node tests/mobile-bounds.mjs
+
+  docs-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Controleer gedeelde AI-overdracht
+        run: node tests/docs-contract.mjs

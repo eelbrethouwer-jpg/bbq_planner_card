@@ -1,6 +1,6 @@
 # BBQ Planner v5.1.1 — Kookfuncties weer bereikbaar
 
-**Status: releasekandidaat. Niet mergen of publiceren zonder expliciet akkoord.**
+**Status: gepubliceerd op 7 november 2026.** [GitHub Release v5.1.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1); code/tag-commit 8afb5a89c7d2af975f6cddcbb97598682906e543 (PR #28). Publicatie via PR #29. Echte iPhone/HA/MEATER-proeven nog open.
 
 Bron: `main` commit `fad295cf7a147b0de160069e529da45bd2b7a13d`. Gepubliceerde v5.1.0-tag verwijst naar `e2b1a861d745c6fcd77ff39515330995673c4d43`.
 
@@ -19,4 +19,4 @@ Opslagsleutels, v4-engine, MEATER-integratie, recepten en reviews ongewijzigd. G
 Bestaande DOM- en PWA-regressietests uitgebreid met kookscherm en bereikbare MEATER-/focusknoppen, navigatie, daggrenzen en lege kamado. Alle bestaande checks moeten groen zijn. Fysieke iPhone, Home Assistant en echte MEATER-metingen blijven voor praktijkacceptatie open.
 
 ## Releasebeleid
-Dit is alleen een kandidaat. **Geen merge of GitHub Release uitgevoerd.**
+**PR #28 en #29 gemerged; GitHub Release/tag v5.1.1 gepubliceerd en gecontroleerd.** De workflowmerge na de codecommit wijzigt geen appcode. Geïnstalleerde HACS-/PWA-versie is niet bevestigd.

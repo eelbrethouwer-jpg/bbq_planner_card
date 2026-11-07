@@ -1,6 +1,19 @@
 # Changelog
 
-## v5.1.0 — Eén app, rustig koken (releasekandidaat)
+> Actueel gepubliceerd: [v5.1.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1) (7 november 2026). Oude termen “releasekandidaat” in historische versies beschrijven de status op het moment van schrijven, niet de huidige uitgave.
+
+## v5.1.2 — Samenwerking & kwaliteit (in voorbereiding, docs-only)
+- Centraal proces voor ChatGPT (bouwen), Claude (onafhankelijke review) en gebruiker (expliciet releaseakkoord).
+- GitHub PR-template, actuele overdracht, statusdocumenten, agent-instructies en documentatiecontract in CI.
+- **Geen** gewijzigde appcode, opslag, Home Assistant-/MEATER-bridge, PWA-cache of nieuwe HACS-versie; geen merge of publicatie.
+
+## v5.1.1 — Kookfuncties weer bereikbaar (gepubliceerd 7 november 2026)
+- Vanuit Live toegang tot de bestaande MEATER-grafiek en focusmodus; correcte actieve navigatie en terugknop.
+- Planningstab, datum bij taken op andere dagen en lege kamado-weergave verbeterd.
+- Versies in PWA/HA-brug bijgewerkt naar 5.1.1, zonder datamigratie of nieuwe opslagsleutels.
+- HACS, JavaScript/PWA, DOM/opslag en Chromium/WebKit-regressies geslaagd; echte iPhone/HA/MEATER-proeven nog open.
+
+## v5.1.0 — Eén app, rustig koken (gepubliceerd 7 november 2026)
 
 - Eén zichtbare navigatie in alle schermen; contextuele terugknop en leesbare datum.
 - Compact Live-scherm met serveertijd, voortgang, één hoofdtaak en vijf vervolgtaken.
@@ -9,7 +22,7 @@
 - F2: recept openen via gerecht-ID, ook bij aansteektaken.
 - F3: Eigen/Voorbeeld-badges en tijdelijke herkomstfilters.
 - Geen wijzigingen aan v4-berekeningen of opslagstructuren. Zie `RELEASE_v5.1.0.md` voor tests, risico’s en praktijkacceptatie.
-- Nog niet gemerged of gepubliceerd.
+- [Gepubliceerd op GitHub](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.0); fysieke iPhone/HA/MEATER-acceptatie blijft apart open.
 
 
 ## v5.0.3 — Warmgerookte zalm op brioche (releasekandidaat)

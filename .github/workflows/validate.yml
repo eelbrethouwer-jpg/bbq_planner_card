@@ -51,6 +51,7 @@ jobs:
           node tests/v5-smoke.mjs
           node tests/v501-smoke.mjs
           node tests/v510-smoke.mjs
+          node tests/v6-engine.mjs && node tests/v6-shadow.mjs
 
   mobile-browser:
     # Playwright 1.56.1 ondersteunt ubuntu 26.04 nog niet; pin mobiele browserchecks op 24.04.

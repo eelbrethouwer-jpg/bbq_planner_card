@@ -56,6 +56,7 @@ const makeTab=(storage,locks,{broken=false}={})=>{
   let live=copy(state),refreshes=0;
   const bridge={
     storage,lockManager:locks,
+    assertLegacyWriterExclusion:config.isolated===false?()=>false:()=>true,
     readLiveState:()=>live,
     replaceLiveState:async next=>{
       live=copy(next);
@@ -138,14 +139,16 @@ let passes=0;
   assert.equal(s.getItem(PLAN_KEY),before);
   assert.equal(JSON.parse(s.getItem(JOURNAL_KEY)).stage,'prepared',
     'failed rollback requires preserved recovery journal');
-  const recovered=await createPreloadRecovery({storage:s,lockManager:locks})();
+  const recovered=await createPreloadRecovery({storage:s,lockManager:locks,
+    assertLegacyWriterExclusion:()=>true})();
   assert.equal(recovered.status,'discarded');
   assert.equal(s.getItem(JOURNAL_KEY),null);
   passes++;
 }
 {
   const s=new Storage(state),locks=new SharedLocks();
-  const recover=createPreloadRecovery({storage:s,lockManager:locks});
+  const recover=createPreloadRecovery({storage:s,lockManager:locks,
+    assertLegacyWriterExclusion:()=>true});
   assert.deepEqual(await recover(),{status:'clean'});
   const after=copy(state);after.dishes[1].kamado='small';
   s.setItem(JOURNAL_KEY,JSON.stringify({
@@ -171,6 +174,41 @@ let passes=0;
   assert.throws(()=>createPlanLock({lockManager:null}),/WEB_LOCKS_UNAVAILABLE/);
   assert.throws(()=>createLegacyApplyAdapter({storage:new Storage(state),
     readLiveState:()=>state,replaceLiveState:()=>{}}),/WEB_LOCKS_UNAVAILABLE/);
+  passes++;
+}
+
+{
+  const s=new Storage(state),locks=new SharedLocks();
+  const tab=makeTab(s,locks,{isolated:false});
+  await assert.rejects(tab.adapter.apply({input,outcome,alternativeId:option.id,
+    expectedFingerprint:fingerprint}),/UNCOORDINATED_V5_WRITERS/);
+  assert.equal(s.getItem(PLAN_KEY),before);
+  assert.equal(s.getItem(JOURNAL_KEY),null);
+  passes++;
+}
+{
+  const s=new Storage(state),locks=new SharedLocks();
+  const absent=createLegacyApplyAdapter({
+    storage:s,lockManager:locks,
+    readLiveState:()=>state,replaceLiveState:()=>{}
+  });
+  await assert.rejects(absent.apply({input,outcome,alternativeId:option.id,
+    expectedFingerprint:fingerprint}),/LEGACY_WRITER_EXCLUSION_REQUIRED/);
+  assert.equal(s.getItem(PLAN_KEY),before);
+  assert.equal(s.getItem(JOURNAL_KEY),null);
+  passes++;
+}
+{
+  const s=new Storage(state),locks=new SharedLocks();
+  s.setItem(JOURNAL_KEY,JSON.stringify({version:1,stage:'prepared',
+    before,after:JSON.stringify({...state,mealTime:'19:00'})}));
+  await assert.rejects(createPreloadRecovery({storage:s,lockManager:locks})(),
+    /LEGACY_WRITER_EXCLUSION_REQUIRED/);
+  assert.equal(s.getItem(PLAN_KEY),before);
+  assert.ok(s.getItem(JOURNAL_KEY));
+  await assert.rejects(createPreloadRecovery({storage:s,lockManager:locks,
+    assertLegacyWriterExclusion:()=>false})(),/UNCOORDINATED_V5_WRITERS/);
+  assert.ok(s.getItem(JOURNAL_KEY));
   passes++;
 }
 console.log('PASS '+passes+

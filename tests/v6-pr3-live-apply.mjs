@@ -52,11 +52,11 @@ const option=outcome.alternatives.find(a=>a.planStatus==='feasible');
 assert.ok(option);
 const fingerprint=outcome.provenance.inputFingerprint;
 const before=JSON.stringify(state);
-const makeTab=(storage,locks,{broken=false}={})=>{
+const makeTab=(storage,locks,{broken=false,isolated=true}={})=>{
   let live=copy(state),refreshes=0;
   const bridge={
     storage,lockManager:locks,
-    assertLegacyWriterExclusion:config.isolated===false?()=>false:()=>true,
+    assertLegacyWriterExclusion:()=>isolated===true,
     readLiveState:()=>live,
     replaceLiveState:async next=>{
       live=copy(next);

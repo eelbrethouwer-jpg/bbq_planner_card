@@ -220,19 +220,20 @@ try{
         second.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click()
       ]);
       await Promise.all([first,second].map(page=>page.waitForFunction(()=>
-        /Concept (opgeslagen|niet opgeslagen)/.test(
+        /^Concept (opgeslagen|bewaard|niet opgeslagen)/.test(
           document.querySelector('#bbq6-beta-panel .bbq6-notice')?.textContent||''
         ),null,{timeout:10000})));
       const firstNotice=await first.locator('#bbq6-beta-panel .bbq6-notice').innerText();
       const secondNotice=await second.locator('#bbq6-beta-panel .bbq6-notice').innerText();
-      assert.equal([firstNotice,secondNotice].filter(t=>t.includes('Concept opgeslagen')).length,
-        1,'only one simultaneous initial draft save may succeed');
+      const isSaved=t=>/^Concept (opgeslagen|bewaard)/.test(t);
+      assert.equal([firstNotice,secondNotice].filter(isSaved).length,
+        1,'only one simultaneous initial draft save may succeed; notices='+JSON.stringify([firstNotice,secondNotice]));
       const initialDraft=await first.evaluate(()=>
         localStorage.getItem('bbq-v6-proposal-draft-v1'));
       assert.ok(initialDraft,'single concept must exist');
       assert.equal(await second.evaluate(()=>
         localStorage.getItem('bbq-v6-proposal-draft-v1')),initialDraft);
-      const loser=firstNotice.includes('Concept opgeslagen')?second:first;
+      const loser=isSaved(firstNotice)?second:first;
       await loser.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
       await loser.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
         ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:10000});
@@ -244,7 +245,7 @@ try{
       loser.once('dialog',d=>d.accept());
       await loser.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
       await loser.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
-        ?.textContent?.includes('Concept opgeslagen'),null,{timeout:10000});
+        ?.textContent?.match(/^Concept (opgeslagen|bewaard)/),null,{timeout:10000});
       assert.equal(JSON.parse(await loser.evaluate(()=>
         localStorage.getItem('bbq-v6-proposal-draft-v1'))).version,1);
       assert.equal(await loser.evaluate(()=>

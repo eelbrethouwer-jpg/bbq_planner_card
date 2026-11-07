@@ -1,11 +1,15 @@
 /* PR3 gated read-only integration into the real legacy v5 runtime.
- * Activation: explicit ?v6preview=1 only; zero storage writes and zero apply API.
+ * Activation: explicit ?v6preview=1 only; writes only isolated concept metadata
+ * on explicit user click and NEVER touches the live v5 plan or apply API.
  * Main v5 navigation and its existing storage code remain untouched.
  */
 import {fromLegacyState} from '../engine/adapter.mjs';
 import {plan} from '../engine/check.mjs';
 import {createOptimizerClient} from './optimizer-client.mjs';
 import {mountRegisseurPreview} from './regisseur-view.mjs';
+import {createPlanLock} from './plan-lock.mjs';
+import {saveProposalDraft,inspectProposalDraft,discardProposalDraft,DRAFT_KEY}
+  from './proposal-draft.mjs';
 
 const PLAN_KEY='kamado-bereidingsplanner-v1';
 const copy=o=>JSON.parse(JSON.stringify(o));
@@ -32,7 +36,7 @@ export function mountLegacyReadOnlyPreview({
   const header=doc.createElement('div');
   header.className='bbq6-beta-toolbar';
   const info=doc.createElement('p');
-  info.textContent='v6 testweergave · Alleen lezen · Wijzigt je planning niet';
+  info.textContent='v6 testweergave · Concept apart bewaren · Je actieve planning blijft ongewijzigd';
   const refresh=doc.createElement('button');
   refresh.id='bbq6-refresh';refresh.type='button';refresh.textContent='Ververs planning';
   const calculate=doc.createElement('button');
@@ -41,9 +45,15 @@ export function mountLegacyReadOnlyPreview({
   const status=doc.createElement('p');
   status.id='bbq6-beta-status';status.setAttribute('role','status');
   status.setAttribute('aria-live','polite');
+  const savedStatus=doc.createElement('p');
+  savedStatus.id='bbq6-draft-status';
+  savedStatus.setAttribute('role','status');
+  const discard=doc.createElement('button');
+  discard.id='bbq6-discard-draft';discard.type='button';
+  discard.textContent='Verwijder bewaard concept';discard.hidden=true;
   const viewRoot=doc.createElement('div');
   viewRoot.id='bbq6-beta-view';
-  header.append(info,refresh,calculate,status);
+  header.append(info,refresh,calculate,status,savedStatus,discard);
   host.append(header,viewRoot);
   shell.insertBefore(host,app);
   const css=doc.createElement('link');
@@ -52,14 +62,66 @@ export function mountLegacyReadOnlyPreview({
   css.dataset.bbq6BetaCss='1';
   doc.head.append(css);
   const client=createOptimizerClient();
+  let withDraftLock=null;
+  try{withDraftLock=createPlanLock({lockManager:win.navigator.locks});}
+  catch{ /* no fallback: saving concepts is disabled without Web Locks */ }
   let rendered=null,started=0,disposed=false,remoteStale=false,lastJSON=null;
-  let input=null,baseline=null;
+  let lastStoredJSON=null,legacySnapshot=null,latestOutcome=null;
+  let input=null,baseline=null,draftCheck=0;
+  async function refreshDraftStatus(){
+    const sequence=++draftCheck;
+    try{
+      const result=await inspectProposalDraft({
+        storage:win.localStorage,liveState:getLegacyState(),
+        subtle:win.crypto?.subtle
+      });
+      if(disposed||sequence!==draftCheck)return;
+      const labels={
+        none:'Nog geen voorstel als concept bewaard.',
+        current:'Bewaard concept past bij deze planning; nog niet toegepast.',
+        outdated:'Bewaard concept is verouderd. Bereken opnieuw en bewaar een nieuw voorstel.',
+        unsafe_recovery:'Herstel van een eerdere wijziging is vereist; concept niet toepassen.',
+        corrupt:'Bewaard concept is ongeldig. Verwijder het en bereken opnieuw.'
+      };
+      savedStatus.textContent=labels[result.status]||'Conceptstatus onbekend';
+      discard.hidden=result.status==='none';
+      discard.disabled=!withDraftLock;
+    }catch(error){
+      if(disposed||sequence!==draftCheck)return;
+      savedStatus.textContent='Conceptstatus niet beschikbaar: '+(error?.message||error);
+      discard.hidden=true;
+    }
+  }
+  async function saveDraftChoice(selected,{expectedFingerprint}={}){
+    if(!withDraftLock)throw new Error('WEB_LOCKS_UNAVAILABLE');
+    if(remoteStale||!latestOutcome||!selected||
+      latestOutcome.alternatives?.find(a=>a.id===selected.id)!==selected)
+      throw new Error('STALE_SELECTION');
+    if(expectedFingerprint!==latestOutcome.provenance?.inputFingerprint)
+      throw new Error('STALE_FINGERPRINT');
+    if(JSON.stringify(getLegacyState())!==lastJSON)
+      throw new Error('STALE_LIVE_PLAN');
+    const result=await saveProposalDraft({
+      storage:win.localStorage,legacyState:legacySnapshot,
+      readLiveState:getLegacyState,input,outcome:latestOutcome,
+      alternativeId:selected.id,expectedStorageJSON:lastStoredJSON,
+      subtle:win.crypto?.subtle,withExclusiveLock:withDraftLock
+    });
+    await refreshDraftStatus();
+    return result;
+  }
   function render(state){
     if(rendered)rendered.dispose();
-    rendered=mountRegisseurPreview(viewRoot,{input,outcome:state});
+    rendered=mountRegisseurPreview(viewRoot,{
+      input,outcome:state,onSaveDraft:state===latestOutcome&&withDraftLock?
+        saveDraftChoice:null
+    });
   }
   function loadSnapshot(){
+    const stored=win.localStorage.getItem(PLAN_KEY);
     const source=copy(getLegacyState());
+    if(stored!==win.localStorage.getItem(PLAN_KEY))
+      throw new Error('STALE_STORED_PLAN');
     if(!source||!Array.isArray(source.dishes))
       throw new Error('INVALID_LEGACY_STATE');
     const json=JSON.stringify(source);
@@ -69,7 +131,7 @@ export function mountLegacyReadOnlyPreview({
     if(!converted.input)throw new Error('INVALID_V6_INPUT');
     const next=converted.input;
     next.limits={maxCandidates,maxAlternatives:3};
-    return {json,input:next,baseline:plan(next)};
+    return {json,stored,source,input:next,baseline:plan(next)};
   }
   function setStatus(message){status.textContent=message;}
   function refreshSnapshot(){
@@ -83,12 +145,16 @@ export function mountLegacyReadOnlyPreview({
     client.cancel();
     const next=loadSnapshot();
     lastJSON=next.json;
+    lastStoredJSON=next.stored;
+    legacySnapshot=next.source;
+    latestOutcome=null;
     input=next.input;
     baseline=next.baseline;
     render(baseline);
     setStatus('Actuele sessie ingelezen. Alleen bekijken; toepassen is uitgeschakeld.');
     calculate.disabled=!input.dishes.length||baseline.planStatus==='unknown';
     refresh.disabled=false;
+    void refreshDraftStatus();
   }
   async function run(){
     if(disposed||remoteStale||!input)return;
@@ -101,16 +167,19 @@ export function mountLegacyReadOnlyPreview({
       const outcome=await client.run(input);
       if(disposed||serial!==started)return;
       const actual=JSON.stringify(copy(getLegacyState()));
-      if(actual!==lastJSON){
+      if(actual!==lastJSON||win.localStorage.getItem(PLAN_KEY)!==lastStoredJSON){
+        latestOutcome=null;
         render(baseline);
         setStatus('Planning is intussen gewijzigd. Ververs vóór je nieuwe voorstellen bekijkt.');
         return;
       }
+      latestOutcome=outcome;
       render(outcome);
       setStatus('Gereed: '+outcome.alternatives.length+
         ' voorstellen. Toepassen blijft uitgeschakeld.');
     }catch(error){
       if(disposed||serial!==started||error?.name==='AbortError')return;
+      latestOutcome=null;
       render(baseline);
       setStatus('Berekening mislukt: '+(error?.message||'onbekende fout'));
     }finally{
@@ -123,16 +192,33 @@ export function mountLegacyReadOnlyPreview({
   }};
   const storageChanged=event=>{
     if(event.key===PLAN_KEY||event.key===null){
-      started++;client.cancel();remoteStale=true;
+      started++;client.cancel();remoteStale=true;latestOutcome=null;
       rendered?.dispose();rendered=null;viewRoot.replaceChildren();
       setStatus('Planning in een ander tabblad gewijzigd. Herlaad de pagina om de actuele sessie te zien.');
       refresh.textContent='Herlaad planning';
       calculate.disabled=true;
+      void refreshDraftStatus();
+    }else if(event.key===DRAFT_KEY){
+      void refreshDraftStatus();
+    }
+  };
+  const discardClick=async()=>{
+    if(!withDraftLock)return;
+    discard.disabled=true;
+    try{
+      await discardProposalDraft({
+        storage:win.localStorage,withExclusiveLock:withDraftLock
+      });
+      await refreshDraftStatus();
+    }catch(error){
+      savedStatus.textContent='Concept verwijderen mislukt: '+(error?.message||error);
+      discard.disabled=false;
     }
   };
   const onHidden=()=>{if(doc.hidden){started++;client.cancel();}};
   refresh.addEventListener('click',refreshClick);
   calculate.addEventListener('click',run);
+  discard.addEventListener('click',discardClick);
   win.addEventListener('storage',storageChanged);
   doc.addEventListener('visibilitychange',onHidden);
   try{refreshSnapshot();}catch(error){calculate.disabled=true;setStatus('V6 preview niet beschikbaar: '+error.message);}
@@ -142,6 +228,7 @@ export function mountLegacyReadOnlyPreview({
     client.dispose();
     refresh.removeEventListener('click',refreshClick);
     calculate.removeEventListener('click',run);
+    discard.removeEventListener('click',discardClick);
     win.removeEventListener('storage',storageChanged);
     doc.removeEventListener('visibilitychange',onHidden);
     rendered?.dispose();

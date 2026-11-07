@@ -7,6 +7,7 @@ window.initBBQV5=function(b){
   const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
   const clock=t=>Number.isFinite(t)?new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}):'—';
   const day=t=>Number.isFinite(t)?new Date(t).toLocaleDateString('nl-NL',{weekday:'short',day:'numeric',month:'short'}):'Datum onbekend';
+  const taskTime=t=>Number.isFinite(t)&&new Date(t).toDateString()!==new Date().toDateString()?day(t)+' '+clock(t):clock(t);
   const labelKam=k=>k==='large'?'Grote kamado':k==='small'?'Kleine kamado':'Algemeen';
   const categoryIcon={rund:'🥩',varken:'🥓',gevogelte:'🍗',vis:'🐟',lam:'🍖',groenten:'🥦',vegetarisch:'🥬',dessert:'🍰',overig:'🍽️'};
   let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',showAllTasks=false,recipeFilter='all';
@@ -103,6 +104,7 @@ window.initBBQV5=function(b){
     '<div class="v5-row">'+action('← Planning','setup')+action('🔥 Start live BBQ-sessie','live','primary')+'</div>';
   }
   function probe(d,p){
+    if(!d)return '<div class="v5-probe-plan">Niet in gebruik</div>';
     return p?.ok?'<div class="v5-number">'+escape(p.core.toFixed(1))+' °C</div><div class="v5-muted">● LIVE · MEATER</div>':
       '<div class="v5-probe-plan">Doel BBQ '+escape(d?.grill||'—')+' °C</div><div class="v5-muted">'+escape(p?.note||'Geen gerecht met live MEATER-meting')+'</div>';
   }
@@ -112,9 +114,9 @@ window.initBBQV5=function(b){
     const finished=all.length-upcoming.length,remaining=Math.max(0,Math.ceil((c.serve-now)/60000));
     const countdown=Number.isFinite(c.serve)&&c.serve>now?'nog '+Math.floor(remaining/60)+' u '+remaining%60+' min':'serveertijd verstreken';
     const follow=upcoming.filter(t=>t.id!==next?.id),rows=showAllTasks?follow:follow.slice(0,5);
-    const taskRow=t=>({id:t.id,title:t.title,time:t.time,when:'Gepland '+clock(t.time),detail:''});
+    const taskRow=t=>({id:t.id,title:t.title,time:t.time,when:'Gepland '+taskTime(t.time),detail:''});
     let hero=next?
-       '<div class="v5-hero"><div class="v5-between"><span class="v5-nowtag">'+(next.time<=now+10*60000?'🔥 NU DOEN':'⏱️ HIERNA')+'</span><span>'+clock(next.time)+'</span></div>'+
+       '<div class="v5-hero"><div class="v5-between"><span class="v5-nowtag">'+(next.time<=now+10*60000?'🔥 NU DOEN':'⏱️ HIERNA')+'</span><span>'+taskTime(next.time)+'</span></div>'+
        '<h2>'+escape(next.title)+'</h2><p>'+escape(labelKam(next.k))+' · '+(next.time<now-10*60000?'Geplande tijd verstreken; controleer of dit nog nodig is.':'Geplande handeling · tijd is indicatief.')+'</p>'+
        '<div class="v5-row">'+action('✓ Markeer uitgevoerd','done:'+next.id,'primary')+action('📖 Recept bekijken','recipe-in-live')+'</div></div>':
        '<div class="v5-hero"><h2>✅ Alle geplande handelingen afgevinkt</h2><p>Controleer de gaarheid voordat je serveert.</p>'+action('Sessie afronden','finish','primary')+'</div>';
@@ -131,7 +133,7 @@ window.initBBQV5=function(b){
     (all.some(t=>done[t.id])?'<details class="v5-card" data-v5-key="completed"><summary>Afgeronde handelingen ('+finished+')</summary>'+checklist(all.filter(t=>done[t.id]).map(taskRow))+'</details>':'')+
     '<div class="v5-sectionhead">📖 Receptfasen per gerecht</div>'+dishes().map(d=>liveDish(d)).join('')+
     (c.alerts.length?'<details class="v5-card v5-alerts" data-v5-key="alerts"><summary>⚠️ Planning: '+c.alerts.length+' aandachtspunt(en)</summary>'+c.alerts.slice(0,10).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'')+
-    '<div class="v5-row">'+action('✎ Planning aanpassen','planning')+action('Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
+    '<div class="v5-row">'+action('📈 MEATER-grafiek & focusmodus','cooking')+action('✎ Planning aanpassen','planning')+action('Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
   }
   function liveDish(d){
     const s=state(),p=b.getProbe(d),stages=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
@@ -150,7 +152,7 @@ window.initBBQV5=function(b){
       '</details>';
   }
   function renderNav(){
-    const current=document.body.classList.contains('v5-legacy')?(legacyTab==='recipes'?'recipes':'more'):screen;
+    const current=document.body.classList.contains('v5-legacy')?(legacyTab==='recipes'?'recipes':legacyTab==='cooking'?'live':legacyTab==='planning'?(legacyFrom==='live'?'live':'home'):'more'):screen;
     $('v5-nav').innerHTML=[['home','⌂','Vandaag'],['recipes','▤','Recepten'],['live','🔥','Live'],['more','•••','Meer']].map(([act,ic,label])=>
       '<button type="button" data-v5-act="'+act+'"'+(current===act?' aria-current="page"':'')+'><span class="v5-ico" aria-hidden="true">'+ic+'</span><span>'+label+'</span></button>').join('');
   }
@@ -168,7 +170,7 @@ window.initBBQV5=function(b){
   function legacy(tab,recipeTab){
     legacyFrom=screen;legacyTab=tab;
     if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
-    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyFrom==='live'?'← Live':'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyFrom==='live'||tab==='cooking'?'← Live':'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
   }
   function exitLegacy(){
     document.body.classList.remove('v5-legacy');$('v5-back').style.display='none';b.syncLegacy();screen=legacyFrom;legacyTab='';render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
@@ -261,6 +263,7 @@ window.initBBQV5=function(b){
     if(act==='recipe-junkie'){legacy('recipes','junkie');return}
     if(act==='history'||act==='more'){legacy('more');return}
     if(act==='planning'){legacy('planning');return}
+    if(act==='cooking'){legacy('cooking');return}
     if(act==='recipe-in-live'){openDish(heroDish());return}
     if(act.startsWith('dish:')){openDish(act.slice(5));return}
     if(act.startsWith('phase:')){const [,id,phase]=act.split(':'),d=dishes().find(d=>d.id===id);if(d&&['cooking','resting','done'].includes(phase)){setPhase(d,phase);commit();render()}return}

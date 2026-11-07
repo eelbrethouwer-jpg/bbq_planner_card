@@ -31,8 +31,9 @@ publicatie nog geen GO. Voor de volgende ontwikkelronde is uit voorzorg
   `v6/preview-recovery.js` knoppen voor `Download noodkopie` (alle drie de
   ruwe sleutels: journal, actieve v5-planning en v5-backup) en
   `Journal verwijderen en planner openen`. De laatste knop vergt
-  expliciete bevestiging, verwijdert **uitsluitend** de journal en laadt
-  opnieuw. **Het verwijderen is geen rollback en kan herstel onmogelijk maken.**
+  expliciete bevestiging, verwijdert **uitsluitend** de journal en opent
+  de ongewijzigde bestaande v5-planner. **Het verwijderen is geen rollback en
+  kan herstel onmogelijk maken.**
   De gebruiker moet de noodkopie eerst controleren.
 - Omdat route (b) `dist/` ongemoeid houdt, **kan de oude v5-pagina niet
   worden geblokkeerd bij een bestaande journal**. Dat is een bewuste beperking

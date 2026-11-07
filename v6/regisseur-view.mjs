@@ -138,8 +138,9 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
     }else{
       actions.append(button('Annuleren','cancel',!model.selected||applying));
       if(typeof onSaveDraft==='function')
-        actions.append(button('Bewaar als concept','save',
-          !model.selected||model.selected.status!=='feasible'||applying));
+        actions.append(button(model.selected?.status==='conditional'?
+          'Bewaar concept (voorwaarden controleren)':'Bewaar als concept','save',
+          !model.selected||!['feasible','conditional'].includes(model.selected.status)||applying));
       actions.append(button('Toepassen','apply',
         !model.selected||typeof onApply!=='function'||applying));
     }
@@ -159,13 +160,15 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
       const model=buildPreviewModel({
         input:sourceInput,outcome:sourceOutcome,selectedId
       });
-      if(!model.selected||model.selected.status!=='feasible')return;
+      if(!model.selected||!['feasible','conditional'].includes(model.selected.status))return;
       applying=true;draw();
       try{
         await onSaveDraft(model.selected.raw,{
           expectedFingerprint:model.baselineFingerprint
         });
-        message='Concept opgeslagen. De bestaande BBQ-planning is niet gewijzigd.';
+        message=model.selected.status==='conditional'?
+          'Concept bewaard onder voorwaarden; fysieke geschiktheid nog controleren. Je bestaande planning is niet gewijzigd.':
+          'Concept opgeslagen. De bestaande BBQ-planning is niet gewijzigd.';
       }catch(error){
         message='Concept niet opgeslagen: '+
           (error instanceof Error?error.message:'onbekende fout');

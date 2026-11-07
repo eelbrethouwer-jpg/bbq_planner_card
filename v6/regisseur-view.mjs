@@ -141,8 +141,9 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
         actions.append(button(model.selected?.status==='conditional'?
           'Bewaar concept (voorwaarden controleren)':'Bewaar als concept','save',
           !model.selected||!['feasible','conditional'].includes(model.selected.status)||applying));
-      actions.append(button('Toepassen','apply',
-        !model.selected||typeof onApply!=='function'||applying));
+      if(typeof onApply==='function')
+        actions.append(button('Toepassen','apply',
+          !model.selected||applying));
     }
     wrapper.append(actions);
     root.replaceChildren(wrapper);

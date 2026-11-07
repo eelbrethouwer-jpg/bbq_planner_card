@@ -53,33 +53,62 @@ De MVP moet ook **zonder MEATER** bruikbaar blijven. Receptvoorkeur "geen ui" en
 
 **Geen één onverklaard 'magisch scoregetal'.** Sorteer lexicografisch: eerst haalbaarheid/vaste wensen, daarna veilige marge, dan gemakken. Noem niet-meetbare capaciteit/temperatuurherstel geen harde zekerheid.
 
-## 6. Voorlopig engine-contract (Claude mag verbeteren)
+## 6. Gecorrigeerd PR1-contract — verifieer nog tegen de letterlijke Claude-review
 
-**AANNAME — ontwerpkeuze, nog niet gebouwd:** los, testbaar, frameworkvrij JavaScript-modulecontract. Alle tijdstippen zijn milliseconden sinds epoch, plus `timeZone` voor lokale presentatie en validatie. Werk met lokale kalenderdagen voor de dagervoor-taken. Gedurende de bouw is schema/converter onderwerp van review.
+**Bronstatus:** deze tabel volgt de expliciete gebruikersopdracht voor stap 1. De oorspronkelijke tekst van Claude (HOOG-1 t/m HOOG-4 en het gecorrigeerde contract) is **niet** beschikbaar via PR #31, GitHub-comments of de projectbestanden. De hier vastgelegde afspraken zijn daarom een *voorlopige implementatiebaseline*, niet een geverifieerde letterlijke kopie van Claude's review. Ontwerp-GO vereist bronvergelijking door Claude.
+
+**Statusvoorrang:** `infeasible > unknown > conditional > feasible` — als zowel harde blokkade als onbekende invoer voorkomen, wint `infeasible`; anders wint `unknown` van `conditional`. `searchStatus='not_run'` is de enige geldige waarde in PR1: geen optimizer, geen alternatieven en geen claim op globale haalbaarheid.
+
+**PR1-modules (read-only, niet in app geladen):**
+- `engine/time.mjs`: `toInstant(localDate,localTime,zone,disambiguation?)` retourneert `{ok:true,at}` of `{ok:false,code}`; alleen Intl. Codes: `NONEXISTENT_LOCAL_TIME`, `AMBIGUOUS_LOCAL_TIME`, `INVALID_DATE`, `INVALID_TIME`. `localParts(at,zone)` voor presentatie. Geen verborgen DST-correctie.
+- `engine/adapter.mjs`: `fromLegacyState(plainStateJSON,{houseZone,now})` retourneert `{input,validation}`. Bewaak **ruwe** waarden: `null` is niet nul; negatief is ongeldig; >10.000 minuten buiten bereik; dubbele gerecht-ID's en onbekende kamado's blijven zichtbare fouten. Compatibiliteitsmapping volgt `phaseSegments()`: `cook` is totale actieve fase-duur, `phase2Minutes` daarvan afgetrokken, `transitionMins` daarbovenop.
+- `engine/check.mjs`: `plan(input)` retourneert een **deterministische**, bijwerkingsvrije backwards-planning per gerecht, inclusief preheat op kamado, voorbereiding met `localDate`/`timeKnown`, conflicten en gesorteerde taken. Geen DOM/localStorage/Date.now. Nooit zelf een fixed start of serveertijd wijzigen.
 
 ```ts
+type ValidationIssue = {code:string; affectedIds:string[]};
+type ServeSlot = {id:string; at:number|null};
+type Kamado = {id:string; preheatMin:number|null;
+  capacity:null|{unit:"dishes";value:number}};
+type Segment = {id:string; durationMin:number; heatC:number|null;
+  method:string; accessory:string};
+type Preparation = {id:string; localDate:string|null;
+  localTime:string|null; timeKnown:boolean; at:number|null; durationMin:number|null};
+type Dish = {
+  id:string; name:string; currentKamadoId:string; slotId:string;
+  status:"waiting"|"cooking"|"resting"|"done";
+  segments:Segment[]; restMin:number|null; preparation:Preparation[];
+  startConstraint:null|{kind:"fixed";at:number|null};
+  immutableActuals:{startedAt:number|null;restAt:number|null;doneAt:number|null};
+};
 type Input = {
-  now: number;                   // geïnjecteerde klok
-  timeZone: "Europe/Amsterdam";  // MVP; uitbreiden pas na review
-  serveSlots: Array<{id:string; localDate:string; localTime:string; fixed:boolean}>;
-  kamados: Array<{id:string; accessories:string[]; capacity?:{unit:string; value:number}}>;
-  dishes: Array<{
-    id:string; slotId:string; currentKamadoId:string; status:"waiting"|"cooking"|"resting"|"done";
-    segments:Array<{id:string; durationMin:number|null; heatC:number|null; method:string; accessory:string}>;
-    restMin:number|null; startConstraint?:{kind:"fixed"|"earliest"; instant:number};
-    preparation:Array<{id:string; daysBefore:number; localTime?:string; durationMin?:number}>;
-    immutableActuals?:{startedAt?:number; offAt?:number; doneAt?:number};
-  }>;
-  assumptions:{maxSearchMs:number; maxAlternatives:number; unknownCapacityPolicy:"conditional"};
+  now:number;timeZone:string;localDate:string;
+  serveSlots:ServeSlot[];availableAt:number|null;
+  kamados:Kamado[];dishes:Dish[];validation:ValidationIssue[];
 };
 type Output = {
-  feasibility:"feasible"|"conditional"|"infeasible"|"unknown";
-  proposedTasks:Array<{id:string; dishId?:string; kamadoId?:string; start:number|null; end:number|null}>;
-  conflicts:Array<{code:string; affectedIds:string[]; severity:"blocker"|"warning"|"unknown"; explanation:string}>;
-  alternatives:Array<{id:string; changes:string[]; rationale:string; feasibleUnderAssumptions:boolean}>;
-  provenance:{engineVersion:string; assumptions:string[]; inputFingerprint:string};
+  planStatus:"infeasible"|"unknown"|"conditional"|"feasible";
+  searchStatus:"not_run";
+  dishes:Array<{id:string;kamadoId:string;slotId:string;
+    start:number;cookEnd:number;end:number;serveAt:number;
+    restMin:number;cookMin:number;fixed:boolean}>;
+  fires:Record<string,number|null>;
+  proposedTasks:Array<{id:string;type:string;at:number|null;
+    end?:number;dishId?:string;kamadoId?:string;
+    localDate?:string|null;timeKnown?:boolean}>;
+  conflicts:Array<{code:string;affectedIds:string[];
+    severity:"blocker"|"unknown"|"warning";explanation:string}>;
+  alternatives:[];
+  provenance:{engineVersion:string;inputFingerprint:string};
 };
 ```
+
+**Harde conflictregels van PR1:** `INCOMPATIBLE_SETUP`, `CAPACITY_UNVERIFIED`, `RESOURCE_CAPACITY`, `CHANGEOVER_UNVERIFIED`, `PREHEAT_UNAVAILABLE`, `EARLIEST_START_AFTER_REQUIRED`, `FIXED_START_MISSES_SERVE`, `HOLD_UNVERIFIED`, `PREP_AFTER_START`. Daarnaast invoervalidatie `DURATION_UNKNOWN`, `INVALID_DURATION`, `OUT_OF_RANGE`, `DUPLICATE_ID`, `UNKNOWN_KAMADO` en tijd-/datumcodes. Bewaak expliciet *halfopen* resource-intervallen `[start,end)`.
+
+**Taakordening:** `(at, type, kamadoId, dishId, id)` met gedocumenteerde `type`-prioriteit en stabiele tie-break. Voorbereidingen zonder tijd krijgen `at:null`, `timeKnown:false` en behouden hun kalenderdatum.
+
+**Geen stilzwijgende compatibiliteitsclaim:** `calc()` blijft huidige waarheid; PR1 mag bewust strengere statussen geven dan legacy. Verwacht exacte tijdpariteit S01/S02/S06/S14 en verklaarde semantische afwijkingen S03/S04/S08/S13/N03.
+
+**Test- en releasepoort:** echte `node tests/v6-engine.mjs`-orakels + `node tests/v6-shadow.mjs` naast bestaande CI, <50 ms op S30, mutatietests (dubbele bezetting, vaste start), geen runtime-filewijzigingen. Nog geen v6-apprelease, geen import in de publieke app.
 
 **Belangrijk:** deze types zijn een eerste ontwerp, géén toezegging van opslagwijzigingen. Maak een **adapter** van bestaande `state` naar het nieuwe model, schrijf geen nieuw schema naar de bestaande localStorage-sleutels. Behoud de bestaande `large`/`small`-mapping in legacy-modus. De gebruiker heeft fysiek meer kamado's genoemd, maar dwing uitbreiding niet via een ongeteste migratie af. Plan ondersteunt meer apparatuur pas wanneer compatibiliteit en configuratie betrouwbaar zijn ontworpen.
 

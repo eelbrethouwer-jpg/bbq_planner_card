@@ -56,6 +56,7 @@ jobs:
           node tests/v6-pr3.mjs
           node tests/v6-pr3-apply-proposal.mjs
           node tests/v6-pr3-storage.mjs
+          node tests/v6-pr3-live-apply.mjs
           TZ=America/New_York node tests/v6-engine.mjs && TZ=Pacific/Kiritimati node tests/v6-engine.mjs
           TZ=America/New_York node tests/v6-optimizer.mjs && TZ=Pacific/Kiritimati node tests/v6-optimizer.mjs
 
@@ -72,6 +73,7 @@ jobs:
         run: |
           node tests/mobile-bounds.mjs
           node tests/v6-pr3-browser.mjs
+          node tests/v6-pr3-lock-browser.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

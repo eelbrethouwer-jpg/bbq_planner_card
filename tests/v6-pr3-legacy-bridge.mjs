@@ -72,6 +72,8 @@ try{
   const lockManager={request:async (name,opts,fn)=>fn({name,mode:'exclusive'})};
   const gateway=createLegacyApplyAdapter({
     storage:w.localStorage,lockManager,
+    // Test-only attestation: this jsdom fixture contains no other writer.
+    assertLegacyWriterExclusion:()=>true,
     readLiveState:()=>b.getState(),replaceLiveState:next=>b.__v6TestReplace(next)
   });
   const root=w.document.createElement('section');
@@ -93,7 +95,8 @@ try{
   assert.equal(w.localStorage.getItem(JOURNAL_KEY),null);
   assert.equal(w.localStorage.getItem('bbq-v5-previous-plan-v1'),'EXISTING-BACKUP');
   assert.equal(JSON.parse(w.localStorage.getItem('bbq-v5-session-v1')).version,1);
-  assert.equal((await createPreloadRecovery({storage:w.localStorage,lockManager})()).status,
+  assert.equal((await createPreloadRecovery({storage:w.localStorage,lockManager,
+    assertLegacyWriterExclusion:()=>true})()).status,
     'clean','reload recovery must not disturb a committed plan');
   view.dispose();
   assert.deepEqual(errors,[],'unhandled real v5 errors');

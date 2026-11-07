@@ -104,11 +104,19 @@ caseOf('N01',()=>expected(state([item('a',{cook:-5})]),'unknown',['INVALID_DURAT
 caseOf('N02',()=>expected(state([item('dup'),item('dup',{kamado:'small'})]),'infeasible',['DUPLICATE_ID']));
 caseOf('N03',()=>expected(state([item('a',{kamado:'other'})]),'infeasible',['UNKNOWN_KAMADO']));
 caseOf('N05',()=>expected(state([
- item('a',{cook:60,rest:0,mode:'manual',fixedStart:'16:00',grill:120}),
- item('b',{cook:60,rest:0,mode:'manual',fixedStart:'17:00',grill:250,method:'direct',grate:'cast'})
- ]),'infeasible',['FIXED_START_MISSES_SERVE']));
+ item('a',{cook:60,rest:60,mode:'manual',fixedStart:'16:30',grill:120}),
+ item('b',{cook:60,rest:0,grill:250,method:'direct',grate:'cast'})
+ ]),'conditional',['CHANGEOVER_UNVERIFIED']));
 caseOf('N06',()=>expected(state([item('a',{prepTasks:[{id:'late',daysBefore:0,time:'18:00',duration:10}]})]),
  'infeasible',['PREP_AFTER_START']));
+caseOf('N04',()=>{const a=toInstant('2027-10-31','02:30',Z,'earlier');
+ const b=toInstant('2027-10-31','02:30',Z,'later');
+ assert.equal(b.at-a.at,3600000)});
+caseOf('N09',()=>expected(state([item('a',{cook:10001})]),'unknown',['OUT_OF_RANGE']));
+caseOf('STATUS-PRIORITY',()=>expected(state([
+ item('a',{cook:null}),
+ item('b',{kamado:'missing'})
+ ]),'infeasible',['DURATION_UNKNOWN','UNKNOWN_KAMADO']));
 caseOf('N10',()=>{
  const s=state([item('a')]),before=JSON.stringify(s);
  const savedNow=Date.now;Date.now=()=>{throw Error('forbidden Date.now')};

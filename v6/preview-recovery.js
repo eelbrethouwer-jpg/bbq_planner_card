@@ -78,8 +78,8 @@
       window.localStorage.removeItem(JOURNAL);
       if(window.localStorage.getItem(JOURNAL)!==null)
         throw new Error('JOURNAL_DELETE_FAILED');
-      status.textContent='Journaal verwijderd. De preview wordt opnieuw geladen.';
-      window.location.reload();
+      status.textContent='Journaal verwijderd. De bestaande v5-planner wordt geopend.';
+      window.location.assign('../dist/BBQ_bereidingsplanner_MEATER_v4.html');
     }catch(error){
       status.textContent='Journaal verwijderen mislukt: '+(error?.message||error);
     }

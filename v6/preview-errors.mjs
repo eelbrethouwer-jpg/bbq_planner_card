@@ -11,7 +11,21 @@ const details = [
   ['STALE_LIVE_PLAN',
    'De BBQ-planning is gewijzigd. Herlaad de pagina om de nieuwste planning te bekijken.'],
   ['WEB_LOCKS_UNAVAILABLE',
-   'De browser ondersteunt de vereiste opslagbeveiliging niet. Je kunt de voorstellen bekijken, maar geen concept bewaren.']
+   'De browser ondersteunt de vereiste opslagbeveiliging niet. Je kunt de voorstellen bekijken, maar geen concept bewaren.'],
+  ['DIGEST_UNAVAILABLE',
+   'Je browser ondersteunt de vereiste veiligheidscontrole niet. Het concept is niet opgeslagen.'],
+  ['CONCEPT_OVERSCHRIJVEN_GEANNULEERD',
+   'Vervangen geannuleerd. Het bestaande concept is behouden.'],
+  ['DRAFT_CHANGED',
+   'Het bewaarde concept is ondertussen gewijzigd in een ander tabblad. Bekijk de huidige conceptstatus en probeer opnieuw.'],
+  ['DRAFT_EXISTS',
+   'Er bestaat al een concept. Bevestig eerst dat je dit wilt vervangen.'],
+  ['RECOVERY_REQUIRED',
+   'Er is een openstaande herstelactie. De preview heeft geen gegevens gewijzigd.'],
+  ['STALE_SELECTION',
+   'Dit voorstel is verouderd. Bereken eerst nieuwe voorstellen.'],
+  ['STALE_FINGERPRINT',
+   'Dit voorstel is verouderd. Bereken eerst nieuwe voorstellen.']
 ];
 export function friendlyPreviewError(error){
   const message=String(error?.message||error||'');

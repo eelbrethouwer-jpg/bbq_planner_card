@@ -157,6 +157,30 @@ try{
         }
         await context.close();
       }
+      // No automatic recovery before the old v5 synchronous state loader:
+      // pending/corrupt journal must hard-block initialization.
+      const pending=JSON.stringify({
+        version:1,stage:'prepared',before:JSON.stringify(sample),
+        after:JSON.stringify({...sample,mealTime:'19:00'})
+      });
+      const blockedContext=await browser.newContext();
+      await blockedContext.addInitScript(({sample,pending})=>{
+        localStorage.setItem('kamado-bereidingsplanner-v1',JSON.stringify(sample));
+        localStorage.setItem('bbq-v6-apply-journal-v1',pending);
+      },{sample,pending});
+      const blockedPage=await blockedContext.newPage();
+      await blockedPage.goto(origin+mainPath,{waitUntil:'load'});
+      assert.ok(await blockedPage.locator('#bbq6-recovery-blocked').count());
+      assert.equal(await blockedPage.locator('#v5-root').count(),0);
+      const blockedData=await blockedPage.evaluate(()=>({
+        current:localStorage.getItem('kamado-bereidingsplanner-v1'),
+        journal:localStorage.getItem('bbq-v6-apply-journal-v1')
+      }));
+      assert.equal(blockedData.current,JSON.stringify(sample));
+      assert.equal(blockedData.journal,pending);
+      await blockedContext.close();
+      console.log('PASS preboot journal blocks actual v5 '+browserType.name());
+      checks++;
     }finally{await browser.close();}
   }
 }finally{await new Promise(resolve=>server.close(resolve));}

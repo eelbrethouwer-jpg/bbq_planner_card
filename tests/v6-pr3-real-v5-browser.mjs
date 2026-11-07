@@ -60,7 +60,7 @@ try{
         await page.goto(origin+mainPath+'?v6preview=1',{waitUntil:'load'});
         await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
         assert.ok((await page.locator('#bbq6-beta-panel').innerText())
-          .includes('Alleen lezen'));
+          .includes('Concept apart bewaren'));
         assert.equal(await page.locator('#bbq6-beta-panel .bbq6-dish').count(),2);
         assert.ok(await page.locator('#v5-root').count());
         assert.equal(await page.evaluate(()=>
@@ -73,7 +73,22 @@ try{
         assert.ok(alternatives>0&&alternatives<=3,'invalid alternative count');
         await page.locator('#bbq6-beta-panel [data-bbq6-action^="select:"]').first().click();
         assert.ok(await page.locator('#bbq6-beta-panel [data-bbq6-action="apply"]').isDisabled(),
-          'beta must never write even after selecting a proposal');
+          'beta must never apply live plan changes');
+        const draftSave=page.locator('#bbq6-beta-panel [data-bbq6-action="save"]');
+        assert.ok(await draftSave.count(),'save-concept action missing');
+        assert.ok(await draftSave.isEnabled(),'selected alternative must allow concept save');
+        await draftSave.click();
+        await page.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
+          ?.textContent?.includes('Concept'),null,{timeout:10000});
+        const savedDraft=await page.evaluate(()=>
+          localStorage.getItem('bbq-v6-proposal-draft-v1'));
+        assert.ok(savedDraft,'explicit concept save missing');
+        const draft=JSON.parse(savedDraft);
+        assert.ok(['conditional','feasible'].includes(draft.planStatus));
+        assert.equal(draft.version,1);
+        assert.ok(draft.sourceHash?.length===64);
+        assert.ok(!savedDraft.includes('Aardappeltjes'));
+        assert.ok(!savedDraft.includes('Ribeye'));
         assert.equal(await page.evaluate(()=>
           localStorage.getItem('kamado-bereidingsplanner-v1')),before,
         'read-only optimizer modified storage');
@@ -87,7 +102,7 @@ try{
           browserType.name()+' '+width+' overflow '+JSON.stringify(bounds));
         assert.deepEqual(errors,[],'browser script errors on gated real v5');
         console.log('PASS real v5 preview '+browserType.name()+' '+width+
-          'px; alternatives='+alternatives+'; writes=0');
+          'px; alternatives='+alternatives+'; live-plan writes=0, concept saved');
         checks++;
         if(width===390){
           // A plain old v5 tab bypasses Web Locks; it must invalidate any
@@ -106,6 +121,9 @@ try{
             return status.includes('ander tabblad');
           },null,{timeout:10000});
           assert.ok(await page.locator('#bbq6-calculate').isDisabled());
+          assert.equal(await page.evaluate(()=>
+            localStorage.getItem('bbq-v6-proposal-draft-v1')),savedDraft,
+            'old v5 writer must not modify saved v6 draft');
           assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0,
             'stale alternatives should disappear');
           const written=await page.evaluate(()=>
@@ -120,6 +138,15 @@ try{
           await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
           const fresh=await page.evaluate(()=>window.__bbqV6ReadOnlyState()?.mealTime);
           assert.equal(fresh,'19:00','reload must read the newly saved legacy state');
+          await page.waitForFunction(()=>document.getElementById('bbq6-draft-status')
+            ?.textContent?.includes('verouderd'),null,{timeout:10000});
+          assert.equal(await page.evaluate(()=>
+            localStorage.getItem('bbq-v6-proposal-draft-v1')),savedDraft);
+          await page.locator('#bbq6-discard-draft').click();
+          await page.waitForFunction(()=>
+            localStorage.getItem('bbq-v6-proposal-draft-v1')===null,null,{timeout:10000});
+          assert.equal(await page.evaluate(()=>
+            localStorage.getItem('bbq-v6-proposal-draft-v1')),null);
           assert.equal(await page.evaluate(()=>
             localStorage.getItem('kamado-bereidingsplanner-v1')),written);
           assert.equal(await page.evaluate(()=>

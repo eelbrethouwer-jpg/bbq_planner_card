@@ -1,0 +1,50 @@
+/* v5.1.0 — one navigation, compact recipes and calm live focus. */
+#v5-root button,#v5-root summary,#v5-root input,#v5-root select{min-height:44px}
+#v5-root summary{display:flex;align-items:center;gap:6px}
+#v5-root .v5-check{align-items:center;padding:8px;gap:8px}
+#v5-root .v5-check input{width:44px;height:44px;margin:0;flex:0 0 44px}
+#v5-root .v5-check label{min-height:44px;display:flex;flex-direction:column;justify-content:center}
+#v5-root .v5-top{margin-bottom:12px}
+#v5-root .v5-h1{font-size:25px}
+#v5-root .v5-copy{line-height:1.4;font-size:12px;margin-bottom:8px}
+#v5-root .v5-steps{margin:10px 0}
+#v5-root .v5-filter{margin:8px 0}
+#v5-root .v5-recipes{gap:8px}
+#v5-root .v5-recipe{min-height:110px;border-radius:12px}
+#v5-root .v5-recipe img,#v5-root .v5-recipe .v5-recipe-icon{height:40px;max-height:56px;font-size:27px;flex:0 0 40px}
+#v5-root .v5-recipe-body{padding:7px;gap:3px}
+#v5-root .v5-recipe-name{font-size:12px;line-height:1.25}
+#v5-root .v5-recipe-foot{font-size:10px;line-height:1.2}
+#v5-root .v5-sticky-actions{position:fixed;left:14px;right:14px;bottom:calc(70px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:850px;z-index:400;padding:8px}
+#v5-root[data-screen=select]{padding-bottom:80px}
+#v5-root .v5-origin-filters{display:flex;gap:6px;margin:8px 0}
+#v5-root .v5-origin-filters button{min-width:60px;padding:7px 10px}
+#v5-root .v5-origin-filters [aria-pressed=true]{border-color:#6dd3ad;background:#25453f;color:#b9f1d7}
+.v5-origin{align-self:flex-start;font-size:10px;color:#bddad3;background:#263d3c;border-radius:4px;padding:1px 5px;line-height:1.4}
+#v5-root .v5-live-bar{position:sticky;top:0;z-index:20;background:#10232af5;padding:9px 10px;border:1px solid #3d5b61;border-radius:10px;margin-bottom:8px;font-size:12px}
+#v5-root .v5-live-bar .v5-between{gap:8px;flex-wrap:wrap}
+#v5-root .v5-live-bar progress{display:block;appearance:none;width:100%;height:3px;margin-top:6px;border:0;border-radius:4px;background:#34484f;accent-color:#6dd3ad}
+#v5-root .v5-live-bar progress::-webkit-progress-bar{background:#34484f}
+#v5-root .v5-live-bar progress::-webkit-progress-value{background:#6dd3ad}
+#v5-root .v5-live-title{font-size:17px;margin:0 0 5px}
+#v5-root .v5-live-status{background:transparent;border:0;padding:0;font-size:10px;line-height:1.4;margin-bottom:8px;color:#b6c6c8}
+#v5-root .v5-hero{padding:12px;margin-bottom:10px}
+#v5-root .v5-hero h2{font-size:18px;line-height:1.25;margin:7px 0}
+#v5-root .v5-hero p{font-size:11px;line-height:1.4;margin:6px 0 10px}
+#v5-root .v5-hero>.v5-row{gap:6px}
+#v5-root .v5-hero .v5-btn{font-size:12px;padding:9px}
+#v5-root .v5-probe{padding:9px;min-width:0;overflow-wrap:anywhere}
+#v5-root .v5-probe strong{font-size:12px}
+#v5-root .v5-probe .v5-muted{font-size:11px;line-height:1.3}
+#v5-root .v5-probe .v5-btn{font-size:11px;margin-top:8px;padding:6px}
+#v5-root .v5-probe-plan{font-size:12px;margin:6px 0;font-weight:700}
+#v5-root .v5-sectionhead{margin:14px 0 8px}
+#v5-root [data-v5-dish]{scroll-margin-top:90px}
+#v5-nav button{font:inherit;font-size:11px;cursor:pointer;touch-action:manipulation}
+#v5-nav button:focus-visible{outline:3px solid #6dd3ad;outline-offset:-3px}
+body.v5-ready #v5-back{min-height:44px}
+@media(min-width:600px){#v5-root .v5-recipes{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media print{#v5-nav{display:none!important}}
+/* Keep a full-size checkbox target with an explicit dark-theme appearance. */
+#v5-root .v5-check input[type=checkbox]{appearance:none;border:1px solid #688c8c;border-radius:10px;background:#102128;cursor:pointer}
+#v5-root .v5-check input[type=checkbox]:checked{background:#6dd3ad url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='%23102328' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/26px no-repeat;border-color:#6dd3ad}

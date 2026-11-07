@@ -1,5 +1,15 @@
 # PROJECT_STATUS — BBQ Planner
 
+## Actuele werkstatus — 7 november 2026
+
+- Gepubliceerde basis: app v5.0.3 / GitHub-tag v5.0.3.0, main `0283c500ecee39dab940b575ce79cb1a3d33b1cb`, vooraf gecontroleerd.
+- Werkbranch: `feature/v5.1.0-een-navigatie-live-focus`; v5.1.0 is een releasekandidaat. Geen merge, publicatie of wijziging aan gebruikersdata toegestaan.
+- Scope: één navigatie, rustig Live-scherm, compacte recepten; functioneel F1–F3: uitklapstatus, ID-koppeling en read-only herkomstfilters.
+- Uitgevoerde tests en nog open praktijkchecks: `RELEASE_v5.1.0.md`; werkelijke PR-HEAD/CI-uitslag in de PR.
+- Volgende stap: PR beoordelen en na groene CI fysieke iPhone/PWA/HA/MEATER- en VoiceOver-acceptatie uitvoeren.
+- Onderstaande secties zijn historische momentopnamen; kandidaatlabels daar zijn geen actuele publicatiestatus.
+
+
 > **Momentopname:** gecontroleerd op 23 oktober 2026 via GitHub. Dit bestand is een overdracht voor nieuwe chats, geen live statusmonitor. Controleer altijd de huidige repository, releases, pull requests en CI voordat je werkzaamheden begint.
 
 ## Huidige status (geverifieerd op GitHub)

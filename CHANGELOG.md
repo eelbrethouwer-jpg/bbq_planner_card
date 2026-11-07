@@ -1,5 +1,17 @@
 # Changelog
 
+## v5.1.0 — Eén app, rustig koken (releasekandidaat)
+
+- Eén zichtbare navigatie in alle schermen; contextuele terugknop en leesbare datum.
+- Compact Live-scherm met serveertijd, voortgang, één hoofdtaak en vijf vervolgtaken.
+- Verse/live en geplande temperaturen duidelijk onderscheiden; compacte receptkeuze en 44px-touchdoelen.
+- F1: uitklapstatus en scroll blijven behouden bij herrendering.
+- F2: recept openen via gerecht-ID, ook bij aansteektaken.
+- F3: Eigen/Voorbeeld-badges en tijdelijke herkomstfilters.
+- Geen wijzigingen aan v4-berekeningen of opslagstructuren. Zie `RELEASE_v5.1.0.md` voor tests, risico’s en praktijkacceptatie.
+- Nog niet gemerged of gepubliceerd.
+
+
 ## v5.0.3 — Warmgerookte zalm op brioche (releasekandidaat)
 
 - Teruggevonden zalmrecept (juli/september 2026) als afzonderlijke ingebouwde preset met citroen-roomkaascrème en honing-mosterdsaus, zonder ui.

@@ -6,8 +6,8 @@ import {JSDOM} from 'jsdom';
 const html=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
 const ui=fs.readFileSync('dist/bbq-v5.js','utf8');
 const ux501=fs.readFileSync('dist/bbq-v501.js','utf8');
-const loader='<script src="./bbq-v5.js?v=5.0.3"></script>';
-const loader501='<script src="./bbq-v501.js?v=5.0.3"></script>';
+const loader='<script src="./bbq-v5.js?v=5.1.0"></script>';
+const loader501='<script src="./bbq-v501.js?v=5.1.0"></script>';
 assert.ok(html.includes(loader),'v5 must be loaded ahead of the original planner engine');
 assert.ok(html.includes(loader501),'v5.0.1 enhancer is loaded');
 const documentHtml=html.replace(loader,'<script>'+ui+'</script>').replace(loader501,'<script>'+ux501+'</script>');
@@ -30,7 +30,7 @@ const dom=new JSDOM(documentHtml,{
 });
 const {window}=dom,doc=window.document,$=id=>doc.getElementById(id);
 const click=el=>{assert.ok(el,'Missing clickable element');el.click()};
-const press=act=>click(doc.querySelector('#v5-root [data-v5-act="'+act+'"]'));
+const press=act=>click(doc.querySelector('[data-v5-act="'+act+'"]'));
 const store=()=>JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1'));
 const session=()=>JSON.parse(window.localStorage.getItem('bbq-v5-session-v1'));
 const change=(el,value)=>{assert.ok(el,'Missing field');el.value=value;el.dispatchEvent(new window.Event('change',{bubbles:true}))};
@@ -38,7 +38,7 @@ try{
  assert.deepEqual(errors,[],'boot without runtime errors');
  assert.ok(doc.body.classList.contains('v5-ready'),'v5 UI activated');
  assert.ok($('v5-root'),'session dashboard exists');
- assert.equal(doc.querySelectorAll('#v5-root .v5-nav button').length,4,'compact 4-tab navigation');
+ assert.equal(doc.querySelectorAll('#v5-nav button').length,4,'compact 4-tab navigation');
  assert.match($('v5-root').textContent,/Wat gaan we bereiden/);
  assert.equal(doc.querySelectorAll('[data-v47-tab]').length,5,'legacy functions retained');
  press('new');
@@ -71,7 +71,7 @@ try{
  press('live');
  assert.equal(session().stage,'live');
  assert.match($('v5-root').textContent,/Jouw BBQ in uitvoering/);
- assert.match($('v5-root').textContent,/Geplande BBQ-temp/,'not pretending to have live data');
+ assert.match($('v5-root').textContent,/Doel BBQ/,'not pretending to have live data');
  const topAction=doc.querySelector('#v5-root [data-v5-act^="done:"]');
  assert.ok(topAction,'next timed task is actionable');
  const taskId=topAction.dataset.v5Act.slice(5);click(topAction);

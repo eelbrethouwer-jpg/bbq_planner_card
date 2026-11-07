@@ -9,7 +9,7 @@ window.initBBQV501=function(){
  if(!page||!catalog||!generator||!library||document.getElementById('v501-recipe-tabs'))return;
  const KEY='bbq-v501-recipe-tab-v1';
  const items=[
-  {id:'generate',icon:'✨',label:'Recept genereren',description:'Maak van je recepttekst of een link een bewerkbaar recept. Verwerking gebeurt lokaal; controleer altijd het resultaat.'},
+  {id:'generate',icon:'📝',label:'Recept uit tekst maken',description:'Maak van je recepttekst of een link een bewerkbaar recept. Verwerking gebeurt lokaal; controleer altijd het resultaat.'},
   {id:'library',icon:'📚',label:'Mijn bibliotheek',description:'Bekijk je opgeslagen recepten, pas ze aan of voeg ze toe aan jouw BBQ-planning.'},
   {id:'junkie',icon:'🔥',label:'BBQ Junkie',description:'Ontdek geselecteerde recepten met foto’s en bereidingstijden. Voeg ze zelf toe aan je bibliotheek.'}
  ];

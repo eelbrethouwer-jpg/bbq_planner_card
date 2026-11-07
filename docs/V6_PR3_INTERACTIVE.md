@@ -49,6 +49,35 @@ testparameter wel, optimizerresultaten zichtbaar worden, horizontale
 overflow uitblijft en `kamado-bereidingsplanner-v1` en de v6-journal
 door een preview onaangeraakt blijven.
 
+### PR3 stap 4b — ongecoördineerde v5-tabbladen, fail-closed
+
+De belangrijkste resterende veiligheidsgrens is nu ook in de adapter
+afgedwongen: `createLegacyApplyAdapter()` en
+`createPreloadRecovery()` eisen een
+`assertLegacyWriterExclusion()`-functie. Binnen de exclusieve Web Lock
+moet deze aantoonbaar `true` opleveren. Ontbreekt de functie, dan volgt
+`LEGACY_WRITER_EXCLUSION_REQUIRED`; geeft hij geen `true`, dan volgt
+`UNCOORDINATED_V5_WRITERS`. Geen writes en geen recovery zolang de
+voorwaarde niet gehaald wordt. **Dit is een contract voor toekomstige,
+daadwerkelijk gecontroleerde tab-isolatie, geen implementatie die oude
+v5-tabbladen magisch kan detecteren.** Alleen in geïsoleerde tests wordt
+een expliciete `()=>true`-attestatie gebruikt.
+
+In de uitsluitend read-only beta wordt een write uit een ander
+v5-tabblad via het `storage`-event gesignaleerd. Oude voorstellen
+verdwijnen en alleen een **volledige paginaherlading** kan de actuele
+staat opnieuw inlezen; `getLegacyState()` uit een al geopende pagina
+zou immers de verouderde state teruggeven. De browsertest simuleert
+daarom een echte v5-wijziging vanuit een tweede tab, controleert
+dat de voorstellen verdwijnen en verifieert dat de herladen beta
+de nieuwe serveertijd gebruikt.
+
+De huidige opslagadapter is **niet ingeschakeld**. Voor productie moet
+de exclusievoorwaarde nog met een echte, browserbreed afdwingbare
+upgrade-/writercoördinatie zijn ingevuld, zonder oude sessies
+ongevraagd te overschrijven. Ook de herstel-before-load bootstrap
+is niet aangesloten.
+
 Dit is opzettelijk een **alleen-lezen testintegratie** en geen GO voor
 v6-sessieopslag. De nieuwe `Web Locks` kunnen oude reeds geopende v5-tabbladen
 niet blokkeren. Voor een echte apply-feature moeten alle schrijfpaden worden

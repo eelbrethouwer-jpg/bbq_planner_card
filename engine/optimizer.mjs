@@ -15,9 +15,13 @@ const compareId = (a,b) => String(a ?? '') < String(b ?? '') ? -1 :
 const finite = Number.isFinite;
 
 function isLocked(d) {
+  // Any recorded actual is a lock—even an ISO timestamp from an older/imported session.
+  // Fail closed on unrecognised state; never replan a dish with evidence of progress.
+  const recorded = v => v !== undefined && v !== null && v !== '';
+  const hasActual = source => ['startedAt','restAt','doneAt']
+    .some(k => recorded(source?.[k]));
   return d.status !== 'waiting' || d.startConstraint?.kind === 'fixed' ||
-    ['startedAt','restAt','doneAt'].some(k => finite(d.immutableActuals?.[k])) ||
-    ['startedAt','restAt','doneAt'].some(k => finite(d.actuals?.[k]));
+    hasActual(d.immutableActuals) || hasActual(d.actuals) || hasActual(d);
 }
 function conflictCount(result, severity) {
   return result.conflicts.filter(c => c.severity === severity).length;
@@ -222,9 +226,10 @@ export function optimize(input){
   }
   const opts=candidates.options;
   // Count combinations without enumerating all of them; never allocate a factorial search tree.
-  let total=opts.length;
-  for(let i=0;i<opts.length;i++)for(let j=i+1;j<opts.length;j++)
-    if(opts[i].dishId!==opts[j].dishId)total++;
+  const perDish=new Map();
+  for(const option of opts)perDish.set(option.dishId,(perDish.get(option.dishId)||0)+1);
+  const sameDishPairs=[...perDish.values()].reduce((sum,n)=>sum+n*(n-1)/2,0);
+  const total=opts.length+opts.length*(opts.length-1)/2-sameDishPairs;
   const checked=[];
   let tested=0;
   const baselineScore=score(baseline,[]);

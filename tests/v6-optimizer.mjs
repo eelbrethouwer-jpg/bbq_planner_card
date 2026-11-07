@@ -94,11 +94,14 @@ test('N04-LOCKED-COOKING-AND-PINNED',()=>{
 test('O03-IMMUTABLE-ACTUALS',()=>{
   const input=build([
     makeDish('actual',{startedAt:at('17:15')}),
+    makeDish('iso-actual',{startedAt:'2026-11-14T16:15:00.000Z',
+      grill:230,method:'direct',grate:'cast'}),
     makeDish('waiting',{grill:250,method:'direct',grate:'cast'})
   ],{},{laterAllowedMaxMin:60});
   const original=JSON.stringify(input),result=optimize(frozen(input));
   assert.equal(JSON.stringify(input),original);
-  assert.ok(moves(result).every(c=>c.dishId!=='actual'));
+  assert.ok(moves(result).every(c=>c.dishId==='waiting'),
+    'numeric and ISO actual timestamps must both prevent alternatives');
 });
 test('O04-EXPLICIT-SERVE-FLEXIBILITY',()=>{
   const dishes=[makeDish('a'),makeDish('b')];

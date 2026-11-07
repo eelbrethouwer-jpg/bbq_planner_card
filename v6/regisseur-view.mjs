@@ -1,7 +1,8 @@
 /* PR3 isolated mobile-first view. Preview-only until a verified storage adapter is provided. */
 import {buildPreviewModel} from './preview-model.mjs';
 
-export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=null}={}){
+export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=null,
+  onSaveDraft=null}={}){
   if(!root||!root.ownerDocument)throw new TypeError('A DOM root is required');
   let sourceInput=input,sourceOutcome=outcome,isLoading=loading;
   let selectedId=null,confirming=false,applying=false,message='';
@@ -135,8 +136,12 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
       actions.append(button('Terug','back',applying),
         button('Ja, toepassen','confirm',applying));
     }else{
-      actions.append(button('Annuleren','cancel',!model.selected||applying),
-        button('Toepassen','apply',!model.selected||typeof onApply!=='function'||applying));
+      actions.append(button('Annuleren','cancel',!model.selected||applying));
+      if(typeof onSaveDraft==='function')
+        actions.append(button('Bewaar als concept','save',
+          !model.selected||model.selected.status!=='feasible'||applying));
+      actions.append(button('Toepassen','apply',
+        !model.selected||typeof onApply!=='function'||applying));
     }
     wrapper.append(actions);
     root.replaceChildren(wrapper);
@@ -150,6 +155,25 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
     }
     if(action==='cancel'){selectedId=null;confirming=false;message='';draw();return;}
     if(action==='back'){confirming=false;draw();return;}
+    if(action==='save'&&selectedId&&typeof onSaveDraft==='function'){
+      const model=buildPreviewModel({
+        input:sourceInput,outcome:sourceOutcome,selectedId
+      });
+      if(!model.selected||model.selected.status!=='feasible')return;
+      applying=true;draw();
+      try{
+        await onSaveDraft(model.selected.raw,{
+          expectedFingerprint:model.baselineFingerprint
+        });
+        message='Concept opgeslagen. De bestaande BBQ-planning is niet gewijzigd.';
+      }catch(error){
+        message='Concept niet opgeslagen: '+
+          (error instanceof Error?error.message:'onbekende fout');
+      }finally{
+        applying=false;draw();
+      }
+      return;
+    }
     if(action==='apply'){
       if(typeof onApply!=='function'||!selectedId)return;
       confirming=true;draw();return;

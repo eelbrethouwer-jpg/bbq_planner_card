@@ -22,6 +22,7 @@ function validateRecord(record){
   requireState(isObject(record)&&record.version===1&&
     Number.isFinite(record.createdAt)&&record.createdAt>=0&&
     typeof record.alternativeId==='string'&&record.alternativeId.length>0&&
+    ['feasible','conditional'].includes(record.planStatus)&&
     typeof record.sourceHash==='string'&&/^[a-f0-9]{64}$/.test(record.sourceHash)&&
     typeof record.liveHash==='string'&&/^[a-f0-9]{64}$/.test(record.liveHash)&&
     typeof record.proposedHash==='string'&&/^[a-f0-9]{64}$/.test(record.proposedHash)&&
@@ -67,7 +68,8 @@ export async function inspectProposalDraft({
  */
 export async function saveProposalDraft({
   storage,legacyState,readLiveState,input,outcome,alternativeId,
-  expectedStorageJSON,withExclusiveLock,subtle=globalThis.crypto?.subtle,
+  expectedStorageJSON,withExclusiveLock,allowConditional=false,
+  subtle=globalThis.crypto?.subtle,
   now=Date.now()
 }={}){
   validStorage(storage);
@@ -83,11 +85,18 @@ export async function saveProposalDraft({
     const sourceJSON=json(source);
     requireState(sourceJSON===json(legacyState),'INVALID_SOURCE');
     requireState(json(readLiveState())===sourceJSON,'STALE_LIVE_PLAN');
+    const selected=outcome?.alternatives?.find(a=>a.id===alternativeId);
+    requireState(selected&&
+      (selected.planStatus==='feasible'||
+        (allowConditional===true&&selected.planStatus==='conditional')),
+      'UNVERIFIED_ALTERNATIVE');
+    // Conditional concepts remain ONLY metadata; never eligible for direct
+    // apply without separate validation of physical kamado/food fit.
     const candidate=prepareLegacyApply({
-      legacyState:source,input,outcome,alternativeId,allowConditional:false
+      legacyState:source,input,outcome,alternativeId,allowConditional
     });
     const record={
-      version:1,createdAt:now,alternativeId,
+      version:1,createdAt:now,alternativeId,planStatus:selected.planStatus,
       sourceHash:await hash(before,subtle),
       liveHash:await hash(sourceJSON,subtle),
       proposedHash:await hash(candidate.proposedJSON,subtle),

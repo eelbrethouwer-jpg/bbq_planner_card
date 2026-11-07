@@ -195,8 +195,8 @@ export function optimize(input){
       optimization:{testedCandidates:0,totalCandidates:0,maxCandidates:null,reason:'invalid_limits'}};
   }
   const {maxCandidates,maxAlternatives}=limits;
-  const result=(searchStatus,alternatives,testedCandidates,totalCandidates,reason)=>
-    {...baseline,searchStatus,alternatives,optimization:{
+  const result=(searchStatus,alternatives,testedCandidates,totalCandidates,reason)=>({
+    ...baseline,searchStatus,alternatives,optimization:{
       testedCandidates,totalCandidates,maxCandidates,maxAlternatives,reason},
       provenance:{...baseline.provenance,assumptions:[
         ...baseline.provenance.assumptions,
@@ -204,7 +204,8 @@ export function optimize(input){
         'Search tests up to two waiting dishes, in 15-minute steps (plus exact allowance)',
         'Unverified destination kamado fit is conditional, not proven',
         'Complete means search space exhausted within the documented two-dish strategy, not global optimality'
-      ]}};
+      ]}});
+
   if(baseline.validation.length||baseline.planStatus==='unknown')
     return result('not_run',[],0,0,'invalid_or_unknown_input');
   if(baseline.planStatus==='feasible'||maxAlternatives===0)

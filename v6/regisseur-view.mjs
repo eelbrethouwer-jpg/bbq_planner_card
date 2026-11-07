@@ -1,5 +1,6 @@
 /* PR3 isolated mobile-first view. Preview-only until a verified storage adapter is provided. */
 import {buildPreviewModel} from './preview-model.mjs';
+import {friendlyPreviewError} from './preview-errors.mjs';
 
 export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=null,
   onSaveDraft=null}={}){
@@ -171,8 +172,7 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
           'Concept bewaard onder voorwaarden; fysieke geschiktheid nog controleren. Je bestaande planning is niet gewijzigd.':
           'Concept opgeslagen. De bestaande BBQ-planning is niet gewijzigd.';
       }catch(error){
-        message='Concept niet opgeslagen: '+
-          (error instanceof Error?error.message:'onbekende fout');
+        message='Concept niet opgeslagen: '+friendlyPreviewError(error);
       }finally{
         applying=false;draw();
       }
@@ -194,7 +194,7 @@ export function mountRegisseurPreview(root,{input,outcome,loading=false,onApply=
         message='Voorstel toegepast door de aangesloten opslagadapter.';
         selectedId=null;confirming=false;
       }catch(error){
-        message='Toepassen mislukt: '+(error instanceof Error?error.message:'onbekende fout');
+        message='Toepassen mislukt: '+friendlyPreviewError(error);
         confirming=false;
       }finally{applying=false;draw();}
     }

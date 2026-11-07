@@ -42,6 +42,36 @@ publicatie nog geen GO. Voor de volgende ontwikkelronde is uit voorzorg
   de preview. Een oude journal door andere/experimentele code blijft
   een expliciet herstelvraagstuk.
 
+## Waar werkt de beta?
+
+**Voorlopige testpreview, nog niet gepubliceerd.** De losstaande pagina
+`/v6/preview.html` leest alleen de sleutel
+`kamado-bereidingsplanner-v1` op **dezelfde origin én in dezelfde
+browseropslagcontext** als de v5-planner. De preview koppelt niet met
+accounts of clouddata. Er vindt geen synchronisatie plaats.
+
+- **Desktopbrowser:** open de gewone v5-planner en de preview in dezelfde
+  browser en op hetzelfde domein. Bewaar in die browser eerst de v5-planning.
+- **iPhone Safari:** gebruik beide pagina's in **Safari zelf** en controleer
+  eerst dat Safari de planning onder dezelfde origin heeft opgeslagen.
+  Een geïnstalleerde beginscherm-PWA kan een **eigen opslagcontext** hebben;
+  verwacht niet dat een plan uit de geïnstalleerde app automatisch in Safari
+  beschikbaar is, of omgekeerd. Dat moet afzonderlijk op een echte iPhone
+  worden getest. De preview is geen vervanging voor de bestaande PWA.
+- **Home Assistant/HACS:** deze losstaande preview heeft geen HA-data-bridge
+  en is **niet beschikbaar als geïntegreerde HA-kaart**. Een iframe of
+  WebView kan bovendien een afzonderlijke origin/opslagcontext hebben.
+- **Openbare bereikbaarheid:** een merge via GitHub Pages maakt
+  `v6/preview.html` **ook zonder navigatielink bereikbaar via de URL**.
+  Deze pagina is dus niet privé. Ze leest alleen de lokale browsersessie,
+  niet gegevens van de server of van andere gebruikers.
+- **Openbare testpagina:** `v6/sandbox.html` is herkenbaar gelabeld als
+  **TESTPAGINA – FICTIEVE DATA**; ze is geen echte planner.
+- **Beta-cache:** `v6/preview.html` en de dynamische module-import
+  gebruiken dezelfde `6.0.0-beta.1`-token. De CI vergelijkt deze
+  tokens en bewaakt `dist/`, `index.html` en `sw.js` tegen main.
+  Dit is een **ontwikkelversie**, geen tag of gepubliceerde release.
+
 ## Wat dit nadrukkelijk NIET is
 
 - Geen productiepublicatie, release, versie-update of merge.

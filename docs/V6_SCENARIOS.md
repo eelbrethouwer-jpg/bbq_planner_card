@@ -99,7 +99,7 @@ Elke rij noemt primair testtype: **E** = exact tijdstip, **I** = invariant, **C*
 | N02 | Serve **2027-10-31 12:00**, cook **14 uur**, prep **1 kalenderdag vooraf 19:00** | Start **2027-10-30 23:00 CEST**, prep **2027-10-30 19:00 CEST** | PR1 |
 | N03 | Eerdere sear **250 °C tot 16:20**, low **120 °C vanaf 17:00**, dezelfde kamado | `conditional` en `CHANGEOVER_UNVERIFIED`; daling >60 °C zonder opgegeven afkoeltijd | PR1 |
 | N04 | Optimizer stelt alternatieven voor terwijl een gerecht pinned of cooking is | Vaste en lopende gerechten blijven ongewijzigd | PR2 |
-| N05 | Voorgerecht eindigt na hoofdgerecht | `SLOT_ORDER` voorwaardelijke waarschuwing; geen stil wijzigen serveermomenten | PR1 |
+| N05 | Voorgerecht na hoofdgerecht **óf dessert vóór hoofdgerecht** | `SLOT_ORDER` (warning); geen stil wijzigen serveermomenten | PR1 |
 | N06 | Prep 16:50, duurt 30 min; kookstart 17:15 | `PREP_AFTER_START` blocker vanwege eindtijd 17:20 | PR1 |
 | N07 | Datumwijziging in Live met afgevinkte taken | Afvinkstatus blijft behouden, geen stil dataverlies | PR4 |
 | N08 | Automatische datummodus passeert middernacht tijdens een lopende sessie | Actieve sessiedatum blijft verankerd, geen automatisch doorrollen | PR4 |

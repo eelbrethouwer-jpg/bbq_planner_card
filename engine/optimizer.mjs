@@ -52,7 +52,7 @@ function limitsOf(input) {
       !Number.isInteger(maxAlternatives)||maxAlternatives<0||maxAlternatives>3)return null;
   return {maxCandidates,maxAlternatives};
 }
-function daysAllowed(slot) {
+function allowedDelayMin(slot) {
   const n=slot?.laterAllowedMaxMin??0;
   // A minute-accurate, explicit approval only. No guessed flexibility.
   return Number.isInteger(n)&&n>=0&&n<=1440?n:null;
@@ -69,74 +69,69 @@ function knownFit(kamado,dishId){
   return Array.isArray(kamado?.verifiedDishIds)&&kamado.verifiedDishIds.includes(dishId);
 }
 function candidateOptions(input){
-  const slots=new Map(input.serveSlots.map(s=>[s.id,s]));
-  const resources=[...input.kamados].sort((a,b)=>compareId(a.id,b.id));
-  const options=[];
+  const slots=[...input.serveSlots].sort((a,b)=>compareId(a.id,b.id));
+  const slotById=new Map(slots.map(s=>[s.id,s]));
   const dishes=[...input.dishes].sort((a,b)=>compareId(a.id,b.id));
+  const resources=[...input.kamados].sort((a,b)=>compareId(a.id,b.id));
+  const moves=[],delays=[];
+  // Separate per-dish resource moves from per-slot delays. Shared serve slots
+  // are atomic: no candidate may silently split a main course into two times.
   for(const d of dishes){
-    if(isLocked(d))continue;
-    if(d.startConstraint?.kind==='fixed')continue;
-    if(!slots.has(d.slotId))continue;
-    const slot=slots.get(d.slotId);
-    if(!finite(slot.at))continue;
-    const flexibility=daysAllowed(slot);
-    if(flexibility===null)return {options:[],invalidFlexibility:true};
-    const destinations=resources.filter(k=>k.id!==d.currentKamadoId);
-    for(const k of destinations){
-      options.push({dishId:d.id,kamadoId:k.id,delayMin:0});
-    }
-    for(const minutes of delayValues(flexibility)){
-      const newAt=slot.at+minutes*MIN;
-      // Preserve course ordering: do not silently move a single dish across another course.
-      const main=slots.get('main'),dessert=slots.get('dessert');
-      if(d.slotId==='starter'&&finite(main?.at)&&newAt>main.at)continue;
-      if(d.slotId==='main'&&finite(dessert?.at)&&newAt>dessert.at)continue;
-      if(d.slotId==='dessert'&&finite(main?.at)&&newAt<main.at)continue;
-      options.push({dishId:d.id,kamadoId:d.currentKamadoId,delayMin:minutes});
-      for(const k of destinations)options.push({dishId:d.id,kamadoId:k.id,delayMin:minutes});
+    if(isLocked(d)||!slotById.has(d.slotId)||!finite(slotById.get(d.slotId).at))continue;
+    for(const k of resources){
+      if(k.id!==d.currentKamadoId)moves.push({type:'kamado',dishId:d.id,kamadoId:k.id});
     }
   }
-  return {options,invalidFlexibility:false};
-}
-function candidateInput(input,options){
-  const slotMap=new Map(input.serveSlots.map(s=>[s.id,s]));
-  const usedIds=new Set(slotMap.keys());
-  const created=[];
-  const dishes=input.dishes.map(d=>{
-    const action=options.find(o=>o.dishId===d.id);
-    if(!action)return d; // Share immutable originals, never write to them.
-    const out={...d,currentKamadoId:action.kamadoId};
-    if(action.delayMin){
-      const slot=slotMap.get(d.slotId);
-      let name='__v6_opt__'+encodeURIComponent(d.id);
-      let suffix=1;
-      while(usedIds.has(name))name='__v6_opt__'+encodeURIComponent(d.id)+'_'+(suffix++);
-      usedIds.add(name);
-      out.slotId=name;
-      created.push({...slot,id:name,at:slot.at+action.delayMin*MIN,
-        laterAllowedMaxMin:0,fixed:true});
+  for(const slot of slots){
+    const flexibility=allowedDelayMin(slot);
+    if(flexibility===null)return {options:[],moves:[],delays:[],invalidFlexibility:true};
+    if(!flexibility||!finite(slot.at))continue;
+    const members=dishes.filter(d=>d.slotId===slot.id);
+    if(!members.length||members.some(isLocked))continue;
+    for(const minutes of delayValues(flexibility)){
+      const newAt=slot.at+minutes*MIN;
+      const main=slotById.get('main'),dessert=slotById.get('dessert');
+      if(slot.id==='starter'&&finite(main?.at)&&newAt>main.at)continue;
+      if(slot.id==='main'&&finite(dessert?.at)&&newAt>dessert.at)continue;
+      if(slot.id==='dessert'&&finite(main?.at)&&newAt<main.at)continue;
+      delays.push({type:'serve_delay',slotId:slot.id,minutes});
     }
-    return out;
-  });
-  return {...input,serveSlots:[...input.serveSlots,...created],dishes};
+  }
+  return {options:[...moves,...delays],moves,delays,invalidFlexibility:false};
 }
-function changesOf(input,options){
+function candidateInput(input,actions){
+  const moves=new Map(actions.filter(a=>a.type==='kamado').map(a=>[a.dishId,a]));
+  const delays=new Map(actions.filter(a=>a.type==='serve_delay').map(a=>[a.slotId,a]));
+  return {
+    ...input,
+    serveSlots:input.serveSlots.map(slot=>{
+      const delay=delays.get(slot.id);
+      return delay?{...slot,at:slot.at+delay.minutes*MIN}:slot;
+    }),
+    dishes:input.dishes.map(d=>{
+      const move=moves.get(d.id);
+      return move?{...d,currentKamadoId:move.kamadoId}:d;
+    })
+  };
+}
+function changesOf(input,actions){
   const byId=new Map(input.dishes.map(d=>[d.id,d]));
   const slots=new Map(input.serveSlots.map(s=>[s.id,s]));
   const changes=[];
-  for(const option of options){
-    const original=byId.get(option.dishId);
-    if(option.kamadoId!==original.currentKamadoId){
-      changes.push({type:'kamado',dishId:original.id,
-        from:original.currentKamadoId,to:option.kamadoId});
-    }
-    if(option.delayMin){
-      const slot=slots.get(original.slotId);
-      changes.push({type:'serve_delay',dishId:original.id,
-        from:slot.at,to:slot.at+option.delayMin*MIN,minutes:option.delayMin});
+  for(const action of actions){
+    if(action.type==='kamado'){
+      const dish=byId.get(action.dishId);
+      changes.push({type:'kamado',dishId:dish.id,
+        from:dish.currentKamadoId,to:action.kamadoId});
+    }else{
+      const slot=slots.get(action.slotId);
+      changes.push({type:'serve_delay',slotId:slot.id,
+        dishIds:input.dishes.filter(d=>d.slotId===slot.id).map(d=>d.id).sort(compareId),
+        from:slot.at,to:slot.at+action.minutes*MIN,minutes:action.minutes});
     }
   }
-  changes.sort((a,b)=>compareId(a.dishId,b.dishId)||compareId(a.type,b.type));
+  changes.sort((a,b)=>compareId(a.dishId??a.slotId,b.dishId??b.slotId)||
+    compareId(a.type,b.type));
   return changes;
 }
 function withFitWarnings(result,input,changes){
@@ -161,6 +156,12 @@ function preservedLocked(baseline,candidate,input){
     for(const field of ['kamadoId','slotId','start','cookEnd','end','serveAt','fixed'])
       if(old[field]!==next[field])return false;
   }
+  // A move may change the first ignition time on a kamado even if the
+  // already-cooking dish's own timeline is unchanged. Keep that fire fixed.
+  const lockedKamados=new Set(input.dishes.filter(isLocked).map(d=>d.currentKamadoId));
+  for(const kamadoId of lockedKamados){
+    if(baseline.fires[kamadoId]!==candidate.fires[kamadoId])return false;
+  }
   return true;
 }
 function makeAlternative(id,checked,changes){
@@ -178,7 +179,7 @@ function makeAlternative(id,checked,changes){
     inputFingerprint:checked.provenance.inputFingerprint,
     rationale:changes.map(c=>c.type==='kamado'
       ? 'Verplaats '+c.dishId+' van '+c.from+' naar '+c.to
-      : 'Serveer '+c.dishId+' '+c.minutes+' minuten later').join('; ')
+      : 'Serveer gang '+c.slotId+' ('+c.dishIds.join(', ')+') '+c.minutes+' minuten later').join('; ')
   };
 }
 
@@ -194,8 +195,7 @@ export function optimize(input){
     const validation=[...baseline.validation,issue];
     const conflicts=[...baseline.conflicts,{code:'INVALID_LIMITS',affectedIds:['limits'],
       severity:'unknown',explanation:'maxCandidates must be 0..512; maxAlternatives must be 0..3'}];
-    return {...baseline,planStatus:baseline.planStatus==='infeasible'?'infeasible':'unknown',
-      searchStatus:'not_run',validation,conflicts,alternatives:[],
+    return {...baseline,searchStatus:'not_run',validation,conflicts,alternatives:[],
       optimization:{testedCandidates:0,totalCandidates:0,maxCandidates:null,reason:'invalid_limits'}};
   }
   const {maxCandidates,maxAlternatives}=limits;
@@ -205,31 +205,34 @@ export function optimize(input){
       provenance:{...baseline.provenance,assumptions:[
         ...baseline.provenance.assumptions,
         'PR2 alternatives are previews only; legacy scheduling and storage remain unchanged',
-        'Search tests up to two waiting dishes, in 15-minute steps (plus exact allowance)',
+        'Search tests one whole-slot delay and/or up to two waiting-dish resource moves, in 15-minute steps (plus exact allowance)',
         'Unverified destination kamado fit is conditional, not proven',
         'Complete means search space exhausted within the documented two-dish strategy, not global optimality'
       ]}});
 
   if(baseline.validation.length||baseline.planStatus==='unknown')
     return result('not_run',[],0,0,'invalid_or_unknown_input');
-  if(baseline.planStatus==='feasible'||maxAlternatives===0)
+  if(maxAlternatives===0)
+    return result('not_run',[],0,0,'alternatives_disabled');
+  if(baseline.planStatus==='feasible')
     return result('complete',[],0,0,'nothing_to_improve');
   const candidates=candidateOptions(input);
   if(candidates.invalidFlexibility){
     const issue={code:'INVALID_FLEXIBILITY',field:'serveSlots.laterAllowedMaxMin'};
-    return {...baseline,planStatus:baseline.planStatus==='infeasible'?'infeasible':'unknown',
-      searchStatus:'not_run',validation:[...baseline.validation,issue],
+    return {...baseline,searchStatus:'not_run',validation:[...baseline.validation,issue],
       conflicts:[...baseline.conflicts,{code:'INVALID_FLEXIBILITY',affectedIds:['serveSlots'],
         severity:'unknown',explanation:'Explicit allowed delay must be 0..1440 integer minutes'}],
       alternatives:[],optimization:{testedCandidates:0,totalCandidates:0,
         maxCandidates,maxAlternatives,reason:'invalid_flexibility'}};
   }
-  const opts=candidates.options;
-  // Count combinations without enumerating all of them; never allocate a factorial search tree.
+  const {options:opts,moves,delays}=candidates;
+  // Only legal pairs: two resource moves on different dishes, or
+  // one whole-slot delay plus one resource move. Never two slot delays.
   const perDish=new Map();
-  for(const option of opts)perDish.set(option.dishId,(perDish.get(option.dishId)||0)+1);
+  for(const move of moves)perDish.set(move.dishId,(perDish.get(move.dishId)||0)+1);
   const sameDishPairs=[...perDish.values()].reduce((sum,n)=>sum+n*(n-1)/2,0);
-  const total=opts.length+opts.length*(opts.length-1)/2-sameDishPairs;
+  const twoMoves=moves.length*(moves.length-1)/2-sameDishPairs;
+  const total=opts.length+twoMoves+moves.length*delays.length;
   const checked=[];
   let tested=0;
   const baselineScore=score(baseline,[]);
@@ -244,17 +247,23 @@ export function optimize(input){
     const value=score(trial,changes);
     if(compareScores(value,baselineScore)>=0)return;
     checked.push({changes,trial,score:value,
-      signature:changes.map(c=>c.type+':'+c.dishId+':'+c.to+':'+c.minutes).join('|')});
+      signature:changes.map(c=>c.type+':'+(c.dishId??c.slotId)+':'+c.to+':'+c.minutes).join('|')});
   }
   for(const option of opts){
     if(tested>=maxCandidates)break;
     consider([option]);
   }
   if(tested<maxCandidates){
-    outer: for(let i=0;i<opts.length;i++)for(let j=i+1;j<opts.length;j++){
-      if(opts[i].dishId===opts[j].dishId)continue;
-      if(tested>=maxCandidates)break outer;
-      consider([opts[i],opts[j]]);
+    outerMoves:for(let i=0;i<moves.length;i++)for(let j=i+1;j<moves.length;j++){
+      if(moves[i].dishId===moves[j].dishId)continue;
+      if(tested>=maxCandidates)break outerMoves;
+      consider([moves[i],moves[j]]);
+    }
+  }
+  if(tested<maxCandidates){
+    outerMixed:for(const delay of delays)for(const move of moves){
+      if(tested>=maxCandidates)break outerMixed;
+      consider([delay,move]);
     }
   }
   checked.sort((a,b)=>compareScores(a.score,b.score)||compareId(a.signature,b.signature));

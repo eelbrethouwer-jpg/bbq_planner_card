@@ -28,6 +28,12 @@ for(const journal of [
       w.localStorage.setItem(JOURNAL_KEY,journal);
       w.localStorage.setItem(BACKUP,'OLD-BACKUP');
       w.confirm=()=>approve;
+      // jsdom's Blob has no .text(), unlike real browsers.
+      // A test-only Blob replacement captures the exact JSON payload.
+      w.Blob=class {
+        constructor(parts){this.payload=parts.join('');}
+        async text(){return this.payload;}
+      };
       w.URL.createObjectURL=blob=>{captured=blob;return 'blob:emergency';};
       w.URL.revokeObjectURL=()=>{};
       w.HTMLAnchorElement.prototype.click=function(){

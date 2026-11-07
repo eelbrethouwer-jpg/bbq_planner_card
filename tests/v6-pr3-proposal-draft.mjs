@@ -44,7 +44,7 @@ class Storage{
 }
 const make=(s=new Storage())=>{
   const withExclusiveLock=async fn=>fn();
-  return {storage:s,legacyState:state,input,outcome,
+  return {storage:s,legacyState:state,readLiveState:()=>state,input,outcome,
     alternativeId:option.id,expectedStorageJSON:base,subtle,
     withExclusiveLock,now:Date.parse('2026-11-14T16:00:00Z')};
 };

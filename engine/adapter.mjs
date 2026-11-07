@@ -55,15 +55,20 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
     const cook=numeric(d.cook,id+':cook',validation,{positive:true}),restMin=numeric(d.rest,id+':rest',validation);
     const multi=['combo','directindirect'].includes(d.method);
     const transition=multi?numeric(d.transitionMins,id+':transition',validation):0;
-    const phase2=multi?numeric(d.phase2Minutes,id+':phase2',validation):null;
+    let phase2=multi?numeric(d.phase2Minutes,id+':phase2',validation,{positive:true}):null;
+    // Preserve raw phase lengths: invalid fractions must not be silently clamped.
+    if(multi&&phase2!==null&&cook!==null&&phase2>cook){
+      validation.push({code:'INVALID_DURATION',affectedIds:[id+':phase2']});
+      phase2=null;
+    }
     const heat=numeric(d.grill,id+':temp',validation,{max:500,missingCode:'TEMPERATURE_UNKNOWN',invalidCode:'INVALID_TEMPERATURE'});
     const heat2=multi?numeric(d.phase2Temp,id+':phase2:temp',validation,{max:500,missingCode:'TEMPERATURE_UNKNOWN',invalidCode:'INVALID_TEMPERATURE'}):null;
     let segments=[];
     const base={heatC:heat,accessory:d.grate||'rvs'};
     if(multi&&cook!==null&&transition!==null&&phase2!==null){
-      // Mirrors phaseSegments(): phase 2 is at least 1 min, capped at active cook.
-      const p2=Math.min(Math.max(1,phase2),Math.max(1,cook));
-      const p1=Math.max(0,cook-p2);
+      // Preserve valid phase2 exactly; legacy clamping is intentionally not reproduced.
+      const p2=phase2;
+      const p1=cook-p2;
       if(p1>0)segments.push({id:id+':phase1',durationMin:p1,heatC:base.heatC,
         method:d.method==='combo'?'indirect':'direct',accessory:base.accessory});
       if(transition>0)segments.push({id:id+':changeover',durationMin:transition,
@@ -82,7 +87,7 @@ export function fromLegacyState(plainStateJSON,{houseZone,now}={}){
     for(const [pi,p] of (Array.isArray(d.prepTasks)?d.prepTasks:[]).entries()){
       if(!p||typeof p!=='object')continue;
       const pid=String(p.id||'prep-'+pi),taskId=id+':prep:'+pid;
-      if(prepIds.has(pid))validation.push({code:'DUPLICATE_ID',affectedIds:[taskId]});
+      if(prepIds.has(pid)){validation.push({code:'DUPLICATE_ID',affectedIds:[taskId]});continue;}
       prepIds.add(pid);
       const days=numeric(p.daysBefore,taskId+':daysBefore',validation,{max:366,integer:true});
       if(days===null)continue;

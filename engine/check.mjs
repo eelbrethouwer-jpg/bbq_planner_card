@@ -49,6 +49,9 @@ export function plan(input){
   const starter=slots.get('starter'),main=slots.get('main');
   if(starter&&main&&isNum(starter.at)&&isNum(main.at)&&starter.at>main.at)
     conflict('SLOT_ORDER',['starter','main'],'warning','Starter is scheduled after the main course');
+  const dessert=slots.get('dessert');
+  if(dessert&&main&&isNum(dessert.at)&&isNum(main.at)&&dessert.at<main.at)
+    conflict('SLOT_ORDER',['dessert','main'],'warning','Dessert is scheduled before the main course');
   for(const d of input.dishes){
     if(seenDishes.has(d.id)){
       conflict('DUPLICATE_ID',[d.id],'unknown','Duplicate dish ID; only the first is scheduled');
@@ -116,8 +119,6 @@ export function plan(input){
         }else if(p.localDate===startDay){
           conflict('PREP_TIME_UNVERIFIED',[d.id,p.id],'warning','Same-day preparation time unknown');
         }
-        if(isNum(input.availableAt)&&(p.localDate<serveDate))
-          conflict('AVAILABILITY_UNVERIFIED',[d.id,p.id],'warning','Earlier-day preparation availability unverified');
       }
       proposedTasks.push({id:p.id,type:'prep',at:p.timeKnown?p.at:null,
         localDate:p.localDate,timeKnown:p.timeKnown,dishId:d.id,kamadoId:k.id});

@@ -90,9 +90,9 @@ let passes=0;
   const s=new Storage(state),locks=new SharedLocks(),a=makeTab(s,locks);
   await assert.rejects(a.adapter.onApply({input,outcome})(
     option,{expectedFingerprint:'invalid',requiresRollback:true}),/STALE_FINGERPRINT/);
-  await assert.rejects(a.adapter.onApply({input,outcome})(
+  assert.throws(()=>a.adapter.onApply({input,outcome})(
     option,{expectedFingerprint:fingerprint,requiresRollback:false}),/RECOVERY_GUARD_REQUIRED/);
-  await assert.rejects(a.adapter.onApply({input,outcome})(
+  assert.throws(()=>a.adapter.onApply({input,outcome})(
     copy(option),{expectedFingerprint:fingerprint,requiresRollback:true}),/STALE_SELECTION/);
   assert.equal(s.getItem(PLAN_KEY),before);
   assert.equal(s.getItem(JOURNAL_KEY),null);

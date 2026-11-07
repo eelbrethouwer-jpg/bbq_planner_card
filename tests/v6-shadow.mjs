@@ -42,12 +42,14 @@ function legacy(s,now=FIXED_NOW) {
  assert.deepEqual(errors,[],'legacy browser errors');
  const b=dom.window.__bridge;
  assert.ok(b&&typeof b.calculate==='function','missing read-only legacy bridge');
+ assert.equal(typeof b.getState,'function','missing legacy getState bridge');
  const calculated=b.calculate();
+ // Capture state before closing jsdom; avoid crossing realms with a live mutable object.
+ const legacyState=JSON.parse(JSON.stringify(b.getState()));
  dom.window.close();
- return calculated;
+ return {...calculated,legacyState};
 }
-function compare(id,s){
- const now=FIXED_NOW;
+function compare(id,s,now=FIXED_NOW){
  const old=legacy(s,now),{input,validation}=fromLegacyState(s,{houseZone:zone,now});
  assert.deepEqual(validation,[],id+' adapter validation');
  const shadow=plan(input);
@@ -58,6 +60,7 @@ function compare(id,s){
  }
  for(const k of ['large','small'])assert.equal(shadow.fires[k],old.fires[k],id+' fire '+k);
  console.log('PASS parity '+id+' legacy/shadow for start, cookEnd, end, fire');
+ return {legacyState:old.legacyState,input};
 }
 compare('S01',sample([item('a')]));
 compare('S02',sample([item('a',{cook:90}),item('b',{kamado:'small',cook:30,rest:0})]));
@@ -67,7 +70,23 @@ compare('S14',sample([item('a',{cook:600,rest:60})]));
 compare('STRING-TEMPERATURES',sample([
  item('a',{cook:90,rest:15,grill:'120'}),
  item('b',{kamado:'small',cook:30,rest:0,grill:'250'})]));
-compare('AUTO-DATE',sample([item('a')],{date:'2026-11-10',dateMode:'auto'}));
+const auto2026=compare('AUTO-DATE-2026-11-14',
+ sample([item('a')],{date:'2026-11-10',dateMode:'auto'}),
+ Date.parse('2026-11-14T11:00:00Z'));
+assert.equal(auto2026.legacyState.date,'2026-11-14','legacy must follow frozen date 2026-11-14');
+assert.equal(auto2026.input.localDate,'2026-11-14','adapter must follow frozen date 2026-11-14');
+const auto2027=compare('AUTO-DATE-2027-03-28',
+ sample([item('a')],{date:'2026-11-10',dateMode:'auto'}),
+ Date.parse('2027-03-28T10:00:00Z'));
+assert.equal(auto2027.legacyState.date,'2027-03-28','legacy must follow frozen date 2027-03-28');
+assert.equal(auto2027.input.localDate,'2027-03-28','adapter must follow frozen date 2027-03-28');
+// One additional independent parity case ensures the requested eight cases:
+// explicit manual dates must NOT follow the injected auto-date clock.
+const manual=compare('MANUAL-DATE-PRESERVED',
+ sample([item('a')],{date:'2026-11-10',dateMode:'manual'}),
+ Date.parse('2027-03-28T10:00:00Z'));
+assert.equal(manual.legacyState.date,'2026-11-10');
+assert.equal(manual.input.localDate,'2026-11-10');
 const intentional={
  S03:{s:sample([item('a'),item('b',{grill:250,method:'direct',grate:'cast'})]),
    code:'INCOMPATIBLE_SETUP',status:'infeasible',
@@ -110,4 +129,4 @@ for(const [id,fixture] of Object.entries(intentional)){
  assert.ok(fixture.reason.length>30);
  console.log('PASS intentional difference '+id+': '+fixture.code+' / '+fixture.reason);
 }
-console.log('PASS v6-shadow 6 parity and 6 explicit intentional differences');
+console.log('PASS v6-shadow 8 parity and 6 explicit intentional differences');

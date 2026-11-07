@@ -27,7 +27,6 @@ function build(dishes,more={},config={}){
   for(const k of input.kamados){
     if(config.capacity?.[k.id]!==undefined)k.capacity={unit:'dishes',value:config.capacity[k.id]};
     if(config.fit?.[k.id])k.verifiedDishIds=config.fit[k.id];
-    if(config.preheat?.[k.id]!==undefined)k.preheatMin=config.preheat[k.id];
   }
   return input;
 }
@@ -55,7 +54,7 @@ function assertSource(input,optimizerOutput){
 }
 test('O01-REASSIGN',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},fit:{small:['b']},maxCandidates:10});
+    {},{fit:{small:['b']},maxCandidates:10});
   const baseline=plan(input);
   assert.equal(baseline.planStatus,'infeasible');
   assert.ok(codes(baseline).includes('INCOMPATIBLE_SETUP'));
@@ -73,7 +72,8 @@ test('O01-REASSIGN',()=>{
 test('N04-LOCKED-COOKING-AND-PINNED',()=>{
   const input=build([
     makeDish('pinned',{mode:'manual',fixedStart:'17:15',cook:60,rest:15}),
-    makeDish('active',{kamado:'small',phase:'cooking',startedAt:at('17:15')}),
+    makeDish('active',{kamado:'small',phase:'cooking',startedAt:at('16:45'),
+      cook:90,rest:15,grill:250,method:'direct',grate:'cast'}),
     makeDish('waiting',{grill:250,method:'direct',grate:'cast'})
   ],{}, {laterAllowedMaxMin:60,maxCandidates:100});
   const original=JSON.stringify(input),baseline=plan(input);
@@ -81,14 +81,16 @@ test('N04-LOCKED-COOKING-AND-PINNED',()=>{
   const out=optimize(frozen(input));
   assert.equal(JSON.stringify(input),original);
   assertSource(input,out);
-  assert.ok(out.alternatives.length>0,'waiting dish can be proposed for later serving');
+  assert.ok(out.alternatives.length>0,'only the waiting dish may be proposed');
   for(const alt of out.alternatives){
-    assert.ok(alt.changes.every(c=>c.dishId==='waiting'),'N04 must preserve pinned & cooking dishes');
+    assert.ok(alt.changes.every(c=>c.type==='kamado'&&c.dishId==='waiting'),
+      'N04: neither locked dish nor their shared serve-slot can move');
     for(const id of ['pinned','active']){
-      const a=byId(baseline,id),b=byId(alt.suggestedPlan,id);
-      assert.deepEqual(b,a,'N04: locked planned dish must remain byte-identical');
+      assert.deepEqual(byId(alt.suggestedPlan,id),byId(baseline,id),
+        'N04: exact locked timeline retained');
     }
-    assert.equal(input.dishes.find(d=>d.id==='active').immutableActuals.startedAt,at('17:15'));
+    assert.equal(alt.suggestedPlan.fires.small,baseline.fires.small);
+    assert.equal(alt.suggestedPlan.fires.large,baseline.fires.large);
   }
 });
 test('O03-IMMUTABLE-ACTUALS',()=>{
@@ -104,22 +106,26 @@ test('O03-IMMUTABLE-ACTUALS',()=>{
     'numeric and ISO actual timestamps must both prevent alternatives');
 });
 test('O04-EXPLICIT-SERVE-FLEXIBILITY',()=>{
-  const dishes=[makeDish('a'),makeDish('b')];
-  const input=build(dishes,{}, {laterAllowedMaxMin:60,capacity:{large:1},maxCandidates:30});
-  input.kamados=input.kamados.filter(k=>k.id==='large');
-  const out=optimize(frozen(input));
-  assert.equal(out.planStatus,'infeasible');
-  assert.ok(codes(out).includes('RESOURCE_CAPACITY'));
+  const input=build([makeDish('a'),makeDish('b')],{},
+    {laterAllowedMaxMin:60,capacity:{large:1},maxCandidates:100});
+  const baseline=plan(input),out=optimize(frozen(input));
+  assert.equal(baseline.planStatus,'infeasible');
+  assert.ok(codes(baseline).includes('RESOURCE_CAPACITY'));
+  assert.equal(out.planStatus,'infeasible','baseline stays unchanged');
   assert.equal(out.searchStatus,'complete');
-  assert.ok(out.alternatives.length>0);
-  assert.ok(out.alternatives.some(a=>a.planStatus==='feasible' &&
-    a.changes.some(c=>c.type==='serve_delay'&&c.minutes===60)));
-  assert.equal(input.serveSlots[0].at,at('18:30'),'original serve slot unchanged');
-  assert.ok(out.alternatives.every(a=>a.changes.every(c=>c.type==='serve_delay')));
+  assert.ok(out.alternatives.length>0,'kamado move may fix capacity');
+  for(const alt of out.alternatives){
+    const a=byId(alt.suggestedPlan,'a'),b=byId(alt.suggestedPlan,'b');
+    assert.equal(a.serveAt,b.serveAt,'main course cannot split by dish');
+    for(const c of alt.changes.filter(c=>c.type==='serve_delay')){
+      assert.equal(c.slotId,'main');assert.deepEqual(c.dishIds,['a','b']);
+    }
+  }
+  assert.equal(input.serveSlots[0].at,at('18:30'));
 });
 test('O05-BUDGET-EXHAUSTED',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},fit:{small:['a','b']},maxCandidates:1});
+    {},{fit:{small:['a','b']},maxCandidates:1});
   const out=optimize(input);
   assert.equal(out.searchStatus,'budget_exhausted');
   assert.equal(out.optimization.testedCandidates,1);
@@ -129,7 +135,7 @@ test('O05-BUDGET-EXHAUSTED',()=>{
 });
 test('O06-MAX-ALTERNATIVES',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},fit:{small:['a','b']},maxCandidates:10,maxAlternatives:1});
+    {},{fit:{small:['a','b']},maxCandidates:10,maxAlternatives:1});
   const out=optimize(input);
   assert.equal(out.alternatives.length,1);
   assert.equal(out.alternatives[0].id,'alternative-1');
@@ -137,15 +143,17 @@ test('O06-MAX-ALTERNATIVES',()=>{
 test('O07-INVALID-LIMITS',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})]);
   input.limits.maxCandidates=513;
-  const out=optimize(input);
+  const before=plan(input),out=optimize(input);
   assert.equal(out.searchStatus,'not_run');
-  assert.equal(out.planStatus,'unknown'===plan(input).planStatus?'unknown':'infeasible');
+  assert.equal(out.planStatus,before.planStatus,'INVALID_LIMITS cannot change baseline plan status');
   assert.ok(out.validation.some(v=>v.code==='INVALID_LIMITS'));
+  assert.ok(out.conflicts.some(c=>c.code==='INVALID_LIMITS'&&c.severity==='unknown'));
+  assert.equal(out.optimization.reason,'invalid_limits');
   assert.equal(out.optimization.testedCandidates,0);
 });
 test('O08-PURITY-NO-IO',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},maxCandidates:3});
+    {},{maxCandidates:3});
   frozen(input);
   const dateNow=Date.now;
   const descriptors={};
@@ -167,12 +175,13 @@ test('O08-PURITY-NO-IO',()=>{
 });
 test('O09-DETERMINISM-AND-FINGERPRINT',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},laterAllowedMaxMin:30,maxCandidates:24});
+    {},{laterAllowedMaxMin:30,maxCandidates:3});
   const a=optimize(input),b=optimize(input);
   assert.deepEqual(a,b);
   assert.deepEqual(a.alternatives.map(x=>x.inputFingerprint),
     b.alternatives.map(x=>x.inputFingerprint));
   assert.equal(a.searchStatus,'budget_exhausted');
+  assert.equal(a.optimization.testedCandidates,3);
 });
 test('O10-NO-ALTERNATIVES-WHEN-FEASIBLE',()=>{
   const input=build([makeDish('a')],{},{laterAllowedMaxMin:60,maxCandidates:200});
@@ -192,7 +201,7 @@ test('O11-VALIDATION-UNKNOWN-NO-SEARCH',()=>{
 });
 test('O12-UNVERIFIED-KAMADO-FIT',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},maxCandidates:10});
+    {},{maxCandidates:10});
   const out=optimize(input);
   assert.equal(out.planStatus,'infeasible');
   assert.ok(out.alternatives.length>0);
@@ -203,7 +212,6 @@ test('O12-UNVERIFIED-KAMADO-FIT',()=>{
 test('O13-EXACT-DELAY-BOUND',()=>{
   const input=build([makeDish('a'),makeDish('b')],{},
     {capacity:{large:1},laterAllowedMaxMin:17,maxCandidates:100});
-  input.kamados=input.kamados.filter(k=>k.id==='large');
   const out=optimize(input);
   assert.ok(out.optimization.testedCandidates>0);
   assert.ok(out.alternatives.every(a=>a.changes.every(c=>c.minutes<=17)));
@@ -212,16 +220,17 @@ test('O13-EXACT-DELAY-BOUND',()=>{
 test('O14-NO-SILENT-SHARED-SLOT-CHANGES',()=>{
   const input=build([makeDish('pinned',{mode:'manual',fixedStart:'17:15'}),
     makeDish('free',{grill:250,method:'direct',grate:'cast'})],{},
-  {laterAllowedMaxMin:60,maxCandidates:100});
-  input.kamados=input.kamados.filter(k=>k.id==='large');
+    {laterAllowedMaxMin:60,maxCandidates:100});
   const before=JSON.stringify(input),baseline=plan(input);
   const out=optimize(frozen(input));
   assert.equal(JSON.stringify(input),before);
-  assert.ok(out.alternatives.length>0);
-  for(const candidate of out.alternatives){
-    assert.equal(byId(candidate.suggestedPlan,'pinned').start,byId(baseline,'pinned').start);
-    assert.equal(byId(candidate.suggestedPlan,'pinned').serveAt,at('18:30'));
-    assert.equal(input.serveSlots[0].at,at('18:30'));
+  assert.equal(out.searchStatus,'complete');
+  assert.ok(out.alternatives.length>0,'free dish may move kamados');
+  assert.ok(out.alternatives.every(a=>!a.changes.some(c=>c.type==='serve_delay')),
+    'pinned dish prevents delaying entire shared main slot');
+  for(const alt of out.alternatives){
+    assert.deepEqual(byId(alt.suggestedPlan,'pinned'),byId(baseline,'pinned'));
+    assert.equal(byId(alt.suggestedPlan,'free').serveAt,at('18:30'));
   }
 });
 test('O15-MAX-3-NOT-4',()=>{
@@ -254,14 +263,13 @@ test('O18-NO-COURSE-CROSSING',()=>{
     {v46MultiServe:true,v46Starter:'18:15'},
     {laterAllowedMaxMin:60,maxCandidates:80});
   input.serveSlots.find(s=>s.id==='starter').laterAllowedMaxMin=60;
-  input.kamados=input.kamados.filter(k=>k.id==='large');
   const out=optimize(input);
   assert.ok(out.optimization.testedCandidates>0);
   assert.ok(moves(out).every(c=>c.type!=='serve_delay'||c.to<=at('18:30')));
 });
 test('O19-BASELINE-INPUT-IMMUTABLE',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},laterAllowedMaxMin:30});
+    {},{laterAllowedMaxMin:30});
   const before=JSON.stringify(input),out=optimize(frozen(input));
   assert.equal(JSON.stringify(input),before);
   assert.equal(out.provenance.inputFingerprint,plan(input).provenance.inputFingerprint);
@@ -269,7 +277,7 @@ test('O19-BASELINE-INPUT-IMMUTABLE',()=>{
 });
 test('O20-EXPLICIT-NO-ALTERNATIVE-APPLY',()=>{
   const input=build([makeDish('a'),makeDish('b',{grill:250,method:'direct',grate:'cast'})],
-    {},{preheat:{small:25},fit:{small:['b']}});
+    {},{fit:{small:['b']}});
   const before=JSON.stringify(input),out=optimize(input);
   assert.equal(JSON.stringify(input),before);
   assert.equal(input.dishes[1].currentKamadoId,'large');

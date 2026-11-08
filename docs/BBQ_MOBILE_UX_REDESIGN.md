@@ -1,5 +1,5 @@
 # BBQ Planner — mobiele UX-herinrichting (ontwerp en impactanalyse)
-**Status:** ontwerp / concept, geen geïmplementeerde UI-wijziging.  
+**Status:** ontwerp + implementatie (Claude, 8 november 2026) in draft PR #36 als releasekandidaat v5.2.0. Niet gemerged of gepubliceerd.  
 **Datum:** 8 november 2026  
 **Baseline voor deze analyse:** `main` `d962e4e8ae5d93e117ca1737fb357acfbd9bbe24`, officiële GitHub Release `v5.1.1`; `v6/preview.html` is de apart toegankelijke read-only v6.0.0-beta.1. Controleer actuele HEAD en CI opnieuw vóór codewerk.  
 **Gebruikersbron:** zes iPhone-PWA-screenshots (8 november 2026); de afbeeldingen zelf zijn niet in de repository opgenomen. Tracking: issue #35.
@@ -19,7 +19,7 @@ Belangrijk: `dist/BBQ_bereidingsplanner_MEATER_v4.html` is ondanks de naam het p
 
 ## 2. Geobserveerde problemen / nog te reproduceren
 
-1. **P0 — statusbar overlap.** Screenshots tonen iOS-tijd en batterij over de appheader (Vandaag/Live), en boven een terugknop (Meer). In `dist/bbq-v5.css` gebruikt de gewone v5 `.shell` een vaste verticale padding van 15 px, terwijl `dist/bbq-v501.css` een extra legacy-regel voor top-padding heeft. **Hypothese, niet bewezen:** ontbrekende of inconsistente `safe-area-inset-top` bij standalone iOS PWA. Verifieer met iPhone screenshot, CSS computed styles en viewport-data; voorkom dubbele padding.
+1. **P0 — statusbar overlap. Oorzaak in code bevestigd.** `apple-mobile-web-app-status-bar-style` is `black-translucent`, dus de app tekent onder de statusbalk. `body.v5-ready .shell{padding:15px …}` in `dist/bbq-v5.css` overschreef de oudere safe-area-regels (zelfde specificiteit, later geladen). Met Chrome-emulatie van een iPhone-safe-area van 59 px stond de kop op 17 px (overlap); de sticky Live-balk plakte op 0 px en de focusmodus had 10 px marge. Opgelost met tokens `--v5-safe-top/--v5-safe-bottom` en een statusbalk-scrim. Fysieke bevestiging op iPhone blijft open.
 2. **P1 — Live te lang.** Nu-doen-knop goed, maar grote kamadotegels, checklist, receptfasen, vier secundaire acties en detailgroepen kosten te veel verticale ruimte.
 3. **P1 — Meer is een lange verzameling.** PWA-installatie, boodschappen, voorraad, HA, historie en export/print zijn even prominent en de onderkant is moeizaam te vinden.
 4. **P2 — receptenoverzicht.** Grote brontegels, een lege bibliotheek en imports nemen de eerste viewport in zonder directe toegang tot een receptzoekactie.
@@ -87,3 +87,39 @@ Test `tests/v5-smoke.mjs`, `v501-smoke.mjs`, `v510-smoke.mjs`, `mobile-bounds.mj
 - De gebruiker mag geen data verliezen door een update; voor PWA en Home Assistant gelden verschillende opslagcontexten.
 - Extra functies of versienummer niet vooraf vastleggen: kies een versiebump op basis van daadwerkelijke diff en releasecontract.
 - Claude kan als onafhankelijke reviewer een volledige check uitvoeren zodra **een code-PR en actuele HEAD** beschikbaar zijn. Deze ontwerpnotitie is geen voltooid herontwerp of testbewijs.
+
+
+## 7. Fase A — onafhankelijke ontwerpcontrole (Claude, 8 november 2026)
+
+Uitgangspunt: `main` `d962e4e`, PR #36 HEAD `99605ec`. Code gelezen: `dist/bbq-v5.js`, alle v5-CSS, `v47Init()` en de Meer-/Receptenmarkup in de productie-HTML, de bestaande tests en `validate.yml`.
+
+| Ernst | Bevinding | Besluit |
+|---|---|---|
+| HOOG | P0 statusbalk: oorzaak is één CSS-regel, niet de PWA-cache (zie §2.1). | Opgelost bij de bron, niet met een extra override-laag. |
+| HOOG | CI-stap `git diff --exit-code origin/main -- dist index.html sw.js` (route B) maakt elke UX-wijziging onmogelijk. | Vervangen door een controle dat v5-publicatiebestanden nooit naar `v6/`, `v6preview` of `engine/` verwijzen. Dit versoepelt een bestaande bewaking en vraagt reviewer- en gebruikersakkoord. |
+| HOOG | Een merge van deze PR publiceert `dist/` direct op GitHub Pages. | Versie 5.2.0 consistent doorgevoerd (cache-busting); merge = publicatie, dus apart akkoord. |
+| MIDDEL | Focus-kookmodus (`#v45-cook-screen`) had geen safe-area en lag onder de onderbalk (z-index 400 < 450). | Safe-area + z-index 480. |
+| MIDDEL | Tests leggen DOM-contracten vast (`nav`-aantal = 2, `.v5-hero` vóór `.v5-kamados` als directe kinderen, ≤ 5 vervolgtaken). | Contracten behouden; alleen ≤ 5 → ≤ 3 bewust aangepast. Geen extra `<nav>` in Meer. |
+| LAAG | Ontwerp stelde "sectienavigatie" voor in Meer. | Snelkeuzeknoppen in een `role=group`, geen tweede navigatie. |
+| LAAG | Repo stapelt per versie een CSS-bestand. | Safe-area bij de bron gerepareerd; nieuwe schermstijlen in één `bbq-v520.css`. Opschonen van de CSS-lagen is apart onderhoud. |
+
+Eenvoudiger alternatief overwogen: alle legacy-schermen herschrijven in v5. Afgewezen: veel groter regressierisico op recepten, import, reviews en HA-sync. Gekozen: bestaande DOM-knooppunten **verplaatsen** (nooit klonen), zodat event listeners, ID's en opslag gelijk blijven.
+
+## 8. Geïmplementeerd (v5.2.0-kandidaat)
+
+| Scherm | Wijziging | Bestanden |
+|---|---|---|
+| Alle | Safe-area-tokens, statusbalk-scrim, rustige terugknop, focusmodus boven de onderbalk | `bbq-v5.css`, `bbq-v501.css`, `bbq-v510.css`, `bbq-v520.css` |
+| Vandaag | Eén primaire kaart (hervatten óf nieuwe sessie), compacte lijst met nieuwe sessie / recepten / historie; historie opent direct de juiste uitklapper | `bbq-v5.js` `home()`, `openHistory()` |
+| Live | Volgorde statusbalk → NU DOEN (enige oranje knop) → tikbare kamadokaarten → 3 vervolgtaken → details → 2×2 acties | `bbq-v5.js` `live()`, `liveDish()` |
+| Recepten | Compacte brontabs; import/export/sync achter één uitklapper; importfeedback blijft zichtbaar | `bbq-v5.js` `organizeRecipes()`, `bbq-v520.css` |
+| Meer | Groepen Koken, Koppelingen, Gegevens, App en info + snelkeuze; MEATER-uitleg met knop naar grafiek/focus | `bbq-v5.js` `organizeMore()` |
+
+Niet gewijzigd: v4-engine, `calc()`, taak-ID's, `toggleDone()`/`setPhase()`, opslagsleutels en -schema's, recepten/reviews/historie, HA/MEATER, `v6/**`, `engine/**`.
+
+## 9. Open risico's en beperkingen
+- Geen fysieke iPhone-, iPad-, Home Assistant- of MEATER-test uitgevoerd; safe-area alleen geëmuleerd.
+- jsdom-suites (`smoke`, `v5-smoke`, `v501-smoke`, `v510-smoke`, v6-jsdom) konden lokaal niet draaien (geen netwerk voor jsdom); CI moet ze bevestigen.
+- WebKit lokaal niet beschikbaar; alleen CI draait WebKit.
+- Receptenbibliotheek heeft nog geen eigen zoekveld; zoeken gebeurt in *Kies gerechten* en BBQ Junkie.
+- De iOS-PWA heeft een eigen opslag, los van Safari; de update vervangt niets, maar test bestaande gegevens na update op het toestel.

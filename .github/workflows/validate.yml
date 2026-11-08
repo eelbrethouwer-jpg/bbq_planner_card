@@ -43,6 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Data upgrade must load v5.1.1 source from its exact release commit.
+          fetch-depth: 0
       - name: Install DOM test dependency
         run: npm install --no-save jsdom@26
       - name: Exercise planning, recipes, reviews and accordions
@@ -52,6 +55,7 @@ jobs:
           node tests/v501-smoke.mjs
           node tests/v510-smoke.mjs
           node tests/v520-nav-smoke.mjs
+          node tests/v520-data-upgrade.mjs
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs
           node tests/v6-pr3.mjs

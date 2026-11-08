@@ -40,8 +40,10 @@ try{
  d.querySelector('[data-v5-filter="own"]').click();assert.ok([...d.querySelectorAll('.v5-origin')].every(e=>e.textContent==='Eigen'));
  d.querySelector('[data-v5-filter="example"]').click();assert.ok(d.querySelectorAll('[data-v5-recipe]').length>=6);
  assert.equal(JSON.stringify(bridge().getRecipes()),before,'origin filtering is read-only');
- press('setup');press('planning');navigation('home');assert.equal(d.getElementById('v5-back').textContent,'← Vandaag');
- d.getElementById('v5-back').click();press('prep');press('live');navigation('live');
+ press('setup');press('planning');navigation('home');
+ // v5.2 review M1: the back label names the real destination (the setup step), not Vandaag.
+ assert.equal(d.getElementById('v5-back').textContent,'← Plan de BBQ-dag');
+ d.getElementById('v5-back').click();assert.equal(root().dataset.screen,'setup','back returns to the setup step');press('prep');press('live');navigation('live');
  const live=root().querySelector('.v5-content');
  assert.ok([...live.children].indexOf(live.querySelector('.v5-hero'))<[...live.children].indexOf(live.querySelector('.v5-kamados')));
  press('cooking');navigation('live');
@@ -53,8 +55,9 @@ try{
  d.getElementById('v5-back').click();navigation('live');
  const task=d.querySelector('.v5-hero [data-v5-act^="done:"]').dataset.v5Act.slice(5);
  assert.ok(![...d.querySelectorAll('.v5-next-tasks [data-v5-check]')].some(e=>e.dataset.v5Check===task),'hero excluded from following tasks');
- assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length<=5);
- if(d.querySelector('[data-v5-act="show-tasks"]')){press('show-tasks');assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length>5);press('show-tasks')}
+ // v5.2: Live shows at most three following tasks; the rest stays one tap away.
+ assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length<=3);
+ if(d.querySelector('[data-v5-act="show-tasks"]')){press('show-tasks');assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length>3);press('show-tasks')}
  const details=[...root().querySelectorAll('details')];
  assert.ok(details.every(e=>e.dataset.v5Key));assert.equal(new Set(details.map(e=>e.dataset.v5Key)).size,details.length);
  const dish=details.find(e=>e.dataset.v5Dish);dish.open=true;const stage=dish.querySelector('details');stage.open=true;

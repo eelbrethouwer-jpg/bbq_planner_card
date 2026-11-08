@@ -43,6 +43,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Data upgrade must load v5.1.1 source from its exact release commit.
+          fetch-depth: 0
       - name: Install DOM test dependency
         run: npm install --no-save jsdom@26
       - name: Exercise planning, recipes, reviews and accordions
@@ -51,6 +54,8 @@ jobs:
           node tests/v5-smoke.mjs
           node tests/v501-smoke.mjs
           node tests/v510-smoke.mjs
+          node tests/v520-nav-smoke.mjs
+          node tests/v520-data-upgrade.mjs
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs
           node tests/v6-pr3.mjs
@@ -78,15 +83,30 @@ jobs:
           node tests/v6-pr3-browser.mjs
           node tests/v6-pr3-lock-browser.mjs
           node tests/v6-pr3-real-v5-browser.mjs
+          node tests/v520-mobile-ux.mjs
 
   version-consistency:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Bewaak bestaande v5-publicatiebestanden tegen main
-        run: |
-          git fetch --no-tags --depth=1 origin main
-          git diff --exit-code origin/main -- dist index.html sw.js
+        with:
+          # Volledige historie: de bewaking vergelijkt met de vaste PR-base (of de vorige push),
+          # niet met een verschuivende origin/main.
+          fetch-depth: 0
+      - name: Bewaak v5-publicatie (beschermde paden, allowlist, laders, opslagcontract)
+        # Base: PR → vaste PR-base-SHA; push naar main (ook de merge) → vorige main-SHA;
+        # overige branches/schedule → merge-base met origin/main. Zonder base: fail-closed.
+        # Contract: .github/publication-guard.json. Faalt bij wijzigingen in engine/** of v6/**,
+        # niet-toegestane productiebestanden, productiewijziging zonder nieuwe appversie,
+        # verwijzingen/laders naar v6 of engine (ook dynamisch of gecodeerd) en gewijzigde
+        # opslagsleutels, berichttypen of opslag-/schemaregels.
+        env:
+          GUARD_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before) || '' }}
+        run: node tests/v5-publication-guard.mjs
+      - name: Bewijs dat de publicatiebewaking verboden mutaties detecteert
+        env:
+          GUARD_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before) || '' }}
+        run: node tests/v5-publication-guard-negative.mjs
       - name: Controleer dynamisch versiecontract en mutatie-regressies
         run: |
           node tests/version-consistency.mjs

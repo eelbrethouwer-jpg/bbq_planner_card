@@ -2,6 +2,13 @@
 
 > Actueel gepubliceerd: [v5.1.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1) (7 november 2026). Oude termen “releasekandidaat” in historische versies beschrijven de status op het moment van schrijven, niet de huidige uitgave.
 
+## v5.2.0 — Rustige mobiele kookassistent (releasekandidaat, PR #36)
+- iPhone-statusbalk: oorzaak (vaste 15 px bovenmarge) technisch verholpen; safe area op alle schermen, Live-statusbalk en focusmodus. **Geautomatiseerd getest met gesimuleerde safe area (Chromium/WebKit); nog niet bevestigd op een fysieke iPhone.**
+- Vandaag met één hoofdactie; Live als compacte kookcockpit (NU DOEN, kamadostatus, drie vervolgstappen); Recepten compacter; Meer in vier groepen. Geautomatiseerd getest (DOM + browser); niet fysiek bevestigd.
+- Terugknop noemt altijd de werkelijke bestemming (o.a. Meer → MEATER → ← Meer). Geautomatiseerd getest.
+- CI-publicatiebewaking tegen de vaste PR-base: beschermt `engine/**`, `v6/**`, de v5/v6-scheiding en de opslagcontracten, met mutatietests.
+- Geen wijziging aan engine, berekeningen, opslag, recepten, reviews, HA/MEATER of de v6-preview. Fysieke iPhone-, HA- en MEATER-acceptatie nog open. Zie `RELEASE_v5.2.0.md` voor de status per onderdeel.
+
 ## Onuitgebracht — proces
 - Centraal proces voor ChatGPT (bouwen), Claude (onafhankelijke review) en gebruiker (expliciet releaseakkoord).
 - GitHub PR-template, actuele overdracht, statusdocumenten, agent-instructies en versieconsistentietest in CI.

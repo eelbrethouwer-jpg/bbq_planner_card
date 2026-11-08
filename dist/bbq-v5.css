@@ -1,6 +1,8 @@
 /* v5.0.0 – mobile-first session experience; the v4 engine remains intact */
 body.v5-ready .intro,body.v5-ready .shell>main,body.v5-ready #v47-nav{display:none!important}
-body.v5-ready .shell{max-width:1020px;padding:15px 14px calc(90px + env(safe-area-inset-bottom,0px))}
+:root{--v5-safe-top:env(safe-area-inset-top,0px);--v5-safe-bottom:env(safe-area-inset-bottom,0px)}
+/* v5.2: the iOS PWA uses a translucent status bar, so the shell always clears the top safe area. */
+body.v5-ready .shell{max-width:1020px;padding:calc(12px + var(--v5-safe-top)) 14px calc(90px + var(--v5-safe-bottom))}
 body.v5-ready{background:#0c1318;color:#f5f1e8}
 #v5-root{--v5accent:#f2a561;--v5line:#35505a;--v5muted:#b6c6c8;min-height:calc(100dvh - 120px);font-family:inherit}
 #v5-root *{box-sizing:border-box}
@@ -69,7 +71,7 @@ body.v5-ready{background:#0c1318;color:#f5f1e8}
 .v5-nav{position:fixed;bottom:0;left:0;width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));z-index:450;background:#101e24ef;backdrop-filter:blur(16px);border-top:1px solid #37545b;padding:8px max(9px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
 .v5-nav button{background:transparent;border:0;color:#afc0c2;min-height:48px;padding:4px;display:grid;place-items:center;font-size:11px;gap:3px}
 .v5-nav button[aria-current=page]{color:#f2a561;font-weight:850}.v5-nav .v5-ico{font-size:20px;line-height:1}
-.v5-back-legacy{position:fixed;z-index:800;top:calc(8px + env(safe-area-inset-top,0px));right:10px;box-shadow:0 8px 26px #0009}
+.v5-back-legacy{position:fixed;z-index:800;top:calc(8px + var(--v5-safe-top));right:10px;box-shadow:0 8px 26px #0009}
 
 body.v5-legacy .shell>main{display:block!important}
 body.v5-legacy .intro,body.v5-legacy #v47-nav{display:none!important}

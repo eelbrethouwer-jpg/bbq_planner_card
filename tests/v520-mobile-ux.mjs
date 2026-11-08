@@ -153,8 +153,10 @@ try{
     const dialog=await page.locator('#v45-cook-screen').evaluate(el=>({open:el.classList.contains('open'),pad:parseFloat(getComputedStyle(el).paddingTop)}));
     ok(dialog.open&&dialog.pad>=SAFE_TOP,name+': focus mode opens below the status bar '+JSON.stringify(dialog));
     await page.locator('#v45-close').click();
+    ok(await page.locator('#v5-back').textContent()==='← Live',name+': back label from Live MEATER says Live');
     await page.locator('#v5-back').click();
     ok(await nav.locator('[aria-current="page"]').getAttribute('data-v5-act')==='live',name+': back returns to Live');
+    ok(await page.locator('#v5-root').getAttribute('data-screen')==='live'&&!await page.locator('#v5-back').isVisible(),name+': Live screen shown, back button hidden');
 
     // Vandaag with an active session: resume is the primary action.
     await nav.locator('[data-v5-act="home"]').click();
@@ -190,6 +192,48 @@ try{
     ok(await page.locator('#v47-more nav').count()===0,name+': no extra navigation element');
     await page.locator('#v47-more .v520-chip').nth(2).click();
     await shot('meer');
+
+    // M1: terugknop = werkelijke bestemming. Vandaag → Meer → MEATER → ← Meer → ← Vandaag.
+    const current=()=>nav.locator('[aria-current="page"]').getAttribute('data-v5-act');
+    const backText=()=>page.locator('#v5-back').textContent();
+    const openMeaterFromMore=async()=>{
+      await page.locator('#v520-meater-fold').evaluate(el=>{el.open=true});
+      await page.locator('#v520-open-cooking').click();
+    };
+    ok(await backText()==='← Vandaag',name+': Meer opened from Vandaag says ← Vandaag');
+    await openMeaterFromMore();
+    ok(await backText()==='← Meer',name+': MEATER opened from Meer says ← Meer');
+    ok(await current()==='more',name+': Meer stays active in bottom navigation on MEATER');
+    ok(await page.locator('#live-panel').isVisible()&&await page.locator('#v47-fullscreen').isVisible(),name+': MEATER panel and focus reachable from Meer');
+    await page.locator('#v47-fullscreen').click();
+    ok(await page.locator('#v45-cook-screen').evaluate(el=>el.classList.contains('open')),name+': focus mode opens from Meer route');
+    await page.locator('#v45-close').click();
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v47-more').isVisible()&&await current()==='more',name+': ← Meer returns to Meer');
+    {const r=await page.locator('#v520-open-cooking').evaluate(el=>{const b=el.getBoundingClientRect();return {top:b.top,bottom:b.bottom,vh:innerHeight,y:scrollY}});
+     ok(r.y>0&&r.top>=0&&r.bottom<=r.vh,name+': Meer scroll position restored (MEATER button back in view) '+JSON.stringify(r));}
+    ok(await backText()==='← Vandaag',name+': back on Meer now points to Vandaag');
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v5-root').getAttribute('data-screen')==='home'&&await current()==='home'&&!await page.locator('#v5-back').isVisible(),name+': ← Vandaag returns to Vandaag');
+
+    // Live → Meer → MEATER → ← Meer → ← Live → Live.
+    await nav.locator('[data-v5-act="live"]').click();
+    await nav.locator('[data-v5-act="more"]').click();
+    ok(await backText()==='← Live',name+': Meer opened from Live says ← Live');
+    await openMeaterFromMore();
+    ok(await backText()==='← Meer'&&await current()==='more',name+': Live → Meer → MEATER says ← Meer');
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v47-more').isVisible()&&await backText()==='← Live',name+': back to Meer, then points to Live');
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v5-root').getAttribute('data-screen')==='live'&&await current()==='live',name+': ← Live returns to Live');
+
+    // Bottom navigation from MEATER (via Meer) leaves the legacy route cleanly.
+    await nav.locator('[data-v5-act="more"]').click();
+    await openMeaterFromMore();
+    await nav.locator('[data-v5-act="recipes"]').click();
+    ok(await current()==='recipes'&&await backText()==='← Live',name+': bottom nav from MEATER clears the Meer return step');
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v5-root').getAttribute('data-screen')==='live',name+': back after nav switch returns to the real origin');
 
     // History shortcut from Vandaag opens the history fold.
     await nav.locator('[data-v5-act="home"]').click();

@@ -10,7 +10,7 @@ window.initBBQV5=function(b){
   const taskTime=t=>Number.isFinite(t)&&new Date(t).toDateString()!==new Date().toDateString()?day(t)+' '+clock(t):clock(t);
   const labelKam=k=>k==='large'?'Grote kamado':k==='small'?'Kleine kamado':'Algemeen';
   const categoryIcon={rund:'🥩',varken:'🥓',gevogelte:'🍗',vis:'🐟',lam:'🍖',groenten:'🥦',vegetarisch:'🥬',dessert:'🍰',overig:'🍽️'};
-  let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',showAllTasks=false,recipeFilter='all';
+  let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',legacyReturn='',legacyReturnScroll=0,showAllTasks=false,recipeFilter='all';
   try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==='object'&&saved.version===1){meta={active:saved.active===true,stage:['select','setup','prep','live','finished'].includes(saved.stage)?saved.stage:'select',created:String(saved.created||'')}}}catch(e){}
   const state=()=>b.getState();
   const dishes=()=>state().dishes||[];
@@ -42,7 +42,7 @@ window.initBBQV5=function(b){
       if(hasPlan)secondary=row('📋','Bestaande planning openen',summary,'resume');
     }
     return heading(active?'Welkom terug':'Welkom bij jouw BBQ',active?'Jouw BBQ-sessie':'Wat gaan we bereiden?','')+primary+
-      '<div class="v5-list" role="list">'+secondary+row('📖','Recepten','Eigen bibliotheek, import en BBQ Junkie','recipes')+row('📈','Historie en reviews','Eerdere bereidingen en leerpunten','history')+'</div>';
+      '<div class="v5-list">'+secondary+row('📖','Recepten','Eigen bibliotheek, import en BBQ Junkie','recipes')+row('📈','Historie en reviews','Eerdere bereidingen en leerpunten','history')+'</div>';
   }
   function allRecipes(){
     return Object.entries(b.getRecipes()).filter(([name,r])=>r&&typeof r==='object'&&r.name).sort((a,z)=>a[0].localeCompare(z[0],'nl')).map(([key,r])=>({...r,_key:key}));
@@ -171,7 +171,7 @@ window.initBBQV5=function(b){
       '</details>';
   }
   function renderNav(){
-    const current=document.body.classList.contains('v5-legacy')?(legacyTab==='recipes'?'recipes':legacyTab==='cooking'?'live':legacyTab==='planning'?(legacyFrom==='live'?'live':'home'):'more'):screen;
+    const current=document.body.classList.contains('v5-legacy')?(legacyTab==='recipes'?'recipes':legacyTab==='cooking'?(legacyReturn==='more'?'more':'live'):legacyTab==='planning'?(legacyFrom==='live'?'live':'home'):'more'):screen;
     $('v5-nav').innerHTML=[['home','⌂','Vandaag'],['recipes','▤','Recepten'],['live','🔥','Live'],['more','•••','Meer']].map(([act,ic,label])=>
       '<button type="button" data-v5-act="'+act+'"'+(current===act?' aria-current="page"':'')+'><span class="v5-ico" aria-hidden="true">'+ic+'</span><span>'+label+'</span></button>').join('');
   }
@@ -186,13 +186,21 @@ window.initBBQV5=function(b){
     renderNav();
     if(window.scrollY!==scroll)window.scrollTo({top:scroll,left:0,behavior:'instant'});
   }
-  function legacy(tab,recipeTab){
-    legacyFrom=screen;legacyTab=tab;
+  // Terugknop toont altijd de werkelijke bestemming. legacyReturn (alleen in geheugen) onthoudt een
+  // tussenstap binnen de oudere schermen, bv. Meer → MEATER → terug naar Meer.
+  const BACK_LABEL={home:'← Vandaag',live:'← Live',select:'← Kies gerechten',setup:'← Plan de BBQ-dag',prep:'← Voorbereiden'};
+  function legacy(tab,recipeTab,returnTo){
+    if(returnTo)legacyReturnScroll=window.scrollY;
+    legacyFrom=screen;legacyTab=tab;legacyReturn=returnTo||'';
     if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
-    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyFrom==='live'||tab==='cooking'?'← Live':'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyReturn==='more'?'← Meer':BACK_LABEL[legacyFrom]||'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+  }
+  function goBack(){
+    if(legacyReturn){const to=legacyReturn,y=legacyReturnScroll;legacy(to);try{window.scrollTo({top:y,left:0,behavior:'instant'})}catch(e){}return}
+    exitLegacy();
   }
   function exitLegacy(){
-    document.body.classList.remove('v5-legacy');$('v5-back').style.display='none';b.syncLegacy();screen=legacyFrom;legacyTab='';render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+    legacyReturn='';document.body.classList.remove('v5-legacy');$('v5-back').style.display='none';b.syncLegacy();screen=legacyFrom;legacyTab='';render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
   }
   function start(){
     const s=state();
@@ -246,7 +254,7 @@ window.initBBQV5=function(b){
     const meater=document.createElement('div');meater.className='v520-info';
     meater.innerHTML='<p>Live MEATER-metingen werken alleen in de Home Assistant-dashboardkaart. De grafiek en focusmodus open je ook vanuit Live.</p>';
     const open=document.createElement('button');open.type='button';open.className='v5-btn subtle';open.id='v520-open-cooking';
-    open.textContent='📈 MEATER-grafiek en focusmodus openen';open.addEventListener('click',()=>legacy('cooking'));meater.append(open);
+    open.textContent='📈 MEATER-grafiek en focusmodus openen';open.addEventListener('click',()=>legacy('cooking',null,'more'));meater.append(open);
     const groups=[
       ['koken','🍖 Koken','Boodschappen, voorraad en eerdere bereidingen',[owner('v45-shopping')||owner('v45-tools'),owner('v46-pantry-list'),owner('v46-history')]],
       ['koppelingen','🔗 Koppelingen','Home Assistant en MEATER',[owner('v46-notify'),fold('🌡️ MEATER en live metingen',meater,'v520-meater-fold')]],
@@ -276,7 +284,7 @@ window.initBBQV5=function(b){
   const root=document.createElement('div');root.id='v5-root';
   const main=document.querySelector('.shell > main');
   if(!main)return;main.parentElement.insertBefore(root,main);
-  const back=document.createElement('button');back.id='v5-back';back.type='button';back.className='v5-btn primary v5-back-legacy';back.textContent='← Vandaag';back.addEventListener('click',exitLegacy);main.parentElement.insertBefore(back,main);
+  const back=document.createElement('button');back.id='v5-back';back.type='button';back.className='v5-btn primary v5-back-legacy';back.textContent='← Vandaag';back.addEventListener('click',goBack);main.parentElement.insertBefore(back,main);
   const nav=document.createElement('nav');nav.id='v5-nav';nav.className='v5-nav';nav.setAttribute('aria-label','BBQ-navigatie');root.after(nav);
   document.body.classList.add('v5-ready');
   try{organizeRecipes();organizeMore();}catch(e){/* Never block the planner because a legacy panel is missing. */}

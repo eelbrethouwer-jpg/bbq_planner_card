@@ -40,8 +40,10 @@ try{
  d.querySelector('[data-v5-filter="own"]').click();assert.ok([...d.querySelectorAll('.v5-origin')].every(e=>e.textContent==='Eigen'));
  d.querySelector('[data-v5-filter="example"]').click();assert.ok(d.querySelectorAll('[data-v5-recipe]').length>=6);
  assert.equal(JSON.stringify(bridge().getRecipes()),before,'origin filtering is read-only');
- press('setup');press('planning');navigation('home');assert.equal(d.getElementById('v5-back').textContent,'← Vandaag');
- d.getElementById('v5-back').click();press('prep');press('live');navigation('live');
+ press('setup');press('planning');navigation('home');
+ // v5.2 review M1: the back label names the real destination (the setup step), not Vandaag.
+ assert.equal(d.getElementById('v5-back').textContent,'← Plan de BBQ-dag');
+ d.getElementById('v5-back').click();assert.equal(root().dataset.screen,'setup','back returns to the setup step');press('prep');press('live');navigation('live');
  const live=root().querySelector('.v5-content');
  assert.ok([...live.children].indexOf(live.querySelector('.v5-hero'))<[...live.children].indexOf(live.querySelector('.v5-kamados')));
  press('cooking');navigation('live');

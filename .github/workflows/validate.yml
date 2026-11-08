@@ -51,6 +51,7 @@ jobs:
           node tests/v5-smoke.mjs
           node tests/v501-smoke.mjs
           node tests/v510-smoke.mjs
+          node tests/v520-nav-smoke.mjs
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs
           node tests/v6-pr3.mjs

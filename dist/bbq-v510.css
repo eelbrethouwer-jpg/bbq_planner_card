@@ -21,7 +21,7 @@
 #v5-root .v5-origin-filters button{min-width:60px;padding:7px 10px}
 #v5-root .v5-origin-filters [aria-pressed=true]{border-color:#6dd3ad;background:#25453f;color:#b9f1d7}
 .v5-origin{align-self:flex-start;font-size:10px;color:#bddad3;background:#263d3c;border-radius:4px;padding:1px 5px;line-height:1.4}
-#v5-root .v5-live-bar{position:sticky;top:0;z-index:20;background:#10232af5;padding:9px 10px;border:1px solid #3d5b61;border-radius:10px;margin-bottom:8px;font-size:12px}
+#v5-root .v5-live-bar{position:sticky;top:var(--v5-safe-top);z-index:20;background:#10232af5;padding:9px 10px;border:1px solid #3d5b61;border-radius:10px;margin-bottom:8px;font-size:12px}
 #v5-root .v5-live-bar .v5-between{gap:8px;flex-wrap:wrap}
 #v5-root .v5-live-bar progress{display:block;appearance:none;width:100%;height:3px;margin-top:6px;border:0;border-radius:4px;background:#34484f;accent-color:#6dd3ad}
 #v5-root .v5-live-bar progress::-webkit-progress-bar{background:#34484f}

@@ -3,7 +3,7 @@
 const CACHE='bbq-regisseur-v5.1.1';
 const ROOT=self.registration.scope;
 const PATH=new URL(ROOT).pathname;
-const PAGES=['','index.html','dist/BBQ_bereidingsplanner_MEATER_v4.html','dist/bbq-v5.js','dist/bbq-v5.css','dist/bbq-v501.js','dist/bbq-v501.css','dist/bbq-v502.css','dist/bbq-v510.css'];
+const PAGES=['','index.html','dist/BBQ_bereidingsplanner_MEATER_v4.html','dist/bbq-v5.js','dist/bbq-v5.css','dist/bbq-v501.js','dist/bbq-v501.css','dist/bbq-v502.css','dist/bbq-v510.css','dist/bbq-v520.css'];
 const ASSETS=['manifest.webmanifest','assets/app-icon.svg','assets/apple-touch-icon.png','assets/icon-512.png'];
 const SHELL=[...PAGES,...ASSETS].map(x=>new URL(x,ROOT).href);
 self.addEventListener('install',event=>{

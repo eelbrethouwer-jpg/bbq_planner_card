@@ -1,0 +1,11 @@
+/* BBQ Planner v5.2 — mobile UX: safe areas, calm hierarchy, compact screens.
+   Loaded after bbq-v510.css. Screen-scoped selectors only; no global overflow hiding. */
+:root{--v5-bg:#0c1318;--v5-surface:#14242b;--v5-surface-2:#192d34;--v5-border:#33505a;--v5-accent:#f2a561;
+  --v5-text:#f5f1e8;--v5-muted:#b4c4c6;--v5-ok:#6dd3ad;--v5-gap:10px;--v5-radius:14px}
+
+/* 1. iOS status bar: keep scrolled content from showing behind the clock/battery. */
+body.v5-ready::before{content:"";position:fixed;top:0;left:0;right:0;height:var(--v5-safe-top);
+  background:var(--v5-bg);z-index:470;pointer-events:none}
+/* Existing focus cooking mode (MEATER/coach dialog) also clears both safe areas and sits above the tab bar. */
+body.v5-ready #v45-cook-screen{z-index:480;padding:calc(10px + var(--v5-safe-top)) max(10px,env(safe-area-inset-right,0px))
+  calc(10px + var(--v5-safe-bottom)) max(10px,env(safe-area-inset-left,0px))}

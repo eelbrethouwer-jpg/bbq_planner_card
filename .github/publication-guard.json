@@ -1,0 +1,60 @@
+{
+  "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
+  "release": "5.2.0",
+  "protectedPaths": [
+    "engine/",
+    "v6/"
+  ],
+  "allowProtectedChanges": [],
+  "productionPaths": [
+    "dist/",
+    "index.html",
+    "sw.js",
+    "manifest.webmanifest",
+    "hacs.json",
+    "assets/"
+  ],
+  "allowedProductionChanges": [
+    "dist/BBQ_bereidingsplanner_MEATER_v4.html",
+    "dist/bbq-v5.js",
+    "dist/bbq-v5.css",
+    "dist/bbq-v501.css",
+    "dist/bbq-v510.css",
+    "dist/bbq-v520.css",
+    "dist/bbq_planner_card.js",
+    "index.html",
+    "sw.js"
+  ],
+  "moduleFiles": [
+    "dist/bbq_planner_card.js"
+  ],
+  "dataContractIdentifiers": [
+    "bbq-child-height-v1",
+    "bbq-child-ready-v1",
+    "bbq-ha-sensors-v1",
+    "bbq-library-error-v1",
+    "bbq-library-request-v1",
+    "bbq-library-snapshot-v1",
+    "bbq-library-write-v1",
+    "bbq-notify-request-v1",
+    "bbq-notify-result-v1",
+    "bbq-planner-v4",
+    "bbq-receptenbibliotheek-v1",
+    "bbq-reviews-error-v1",
+    "bbq-reviews-request-v1",
+    "bbq-reviews-snapshot-v1",
+    "bbq-reviews-write-v1",
+    "bbq-v47-expanded-v1",
+    "bbq-v47-tab",
+    "bbq-v5-previous-plan-v1",
+    "bbq-v5-session-v1",
+    "bbq-v501-recipe-tab-v1",
+    "bbq_planner_cookbook_v1",
+    "bbq_planner_reviews_v1",
+    "kamado-bereidingsplanner-v1",
+    "kamado-recipe-book-v1",
+    "kamado-recipe-deletions-v1",
+    "kamado-reviews-v1"
+  ],
+  "allowDataContractChange": false
+}

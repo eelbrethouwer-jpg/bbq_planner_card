@@ -84,15 +84,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Bewaak scheiding v5-publicatie en v6-preview
-        # v5.2 wijzigt bewust dist/ (mobiele UX). De route-B-bewaking blijft: de v5-publicatie
-        # mag de v6-preview, optimizer of engine nooit laden of ernaar linken.
-        run: |
-          git fetch --no-tags --depth=1 origin main
-          git diff --stat origin/main -- dist index.html sw.js
-          if grep -nE "v6/|v6preview|engine/|__bbqV6" dist/*.html dist/*.js dist/*.css index.html sw.js; then
-            echo '::error::v5-publicatiebestanden verwijzen naar v6/engine'; exit 1
-          fi
+        with:
+          # Volledige historie: de bewaking vergelijkt met de vaste PR-base (of de vorige push),
+          # niet met een verschuivende origin/main.
+          fetch-depth: 0
+      - name: Bewaak v5-publicatie (beschermde paden, allowlist, laders, opslagcontract)
+        # Base: PR → vaste PR-base-SHA; push naar main (ook de merge) → vorige main-SHA;
+        # overige branches/schedule → merge-base met origin/main. Zonder base: fail-closed.
+        # Contract: .github/publication-guard.json. Faalt bij wijzigingen in engine/** of v6/**,
+        # niet-toegestane productiebestanden, productiewijziging zonder nieuwe appversie,
+        # verwijzingen/laders naar v6 of engine (ook dynamisch of gecodeerd) en gewijzigde
+        # opslagsleutels, berichttypen of opslag-/schemaregels.
+        env:
+          GUARD_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before) || '' }}
+        run: node tests/v5-publication-guard.mjs
+      - name: Bewijs dat de publicatiebewaking verboden mutaties detecteert
+        env:
+          GUARD_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before) || '' }}
+        run: node tests/v5-publication-guard-negative.mjs
       - name: Controleer dynamisch versiecontract en mutatie-regressies
         run: |
           node tests/version-consistency.mjs

@@ -64,6 +64,8 @@ body.v5-ready #v45-cook-screen{z-index:480;padding:calc(10px + var(--v5-safe-top
 #v5-root .v5-check strong{font-size:13px;line-height:1.3}
 #v5-root .v5-check small{font-size:12px;margin-top:2px}
 #v5-root [data-v5-dish]>summary{padding:2px 0}
+/* Inside dish details actions are emphasised, but only NU DOEN is the orange primary action. */
+#v5-root .v5-btn.v5-emph{border-color:var(--v5-ok);color:#c9f5e3;background:#1b3a37}
 #v5-root .v5-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
 #v5-root .v5-action-grid .v5-btn{width:100%;font-size:13px}
 /* Keep two kamado cards side by side on phones; stack only when there is truly no room. */
@@ -84,7 +86,7 @@ body.v5-legacy #v48-catalog .v48-heading .v47-kicker{display:none}
 /* 6. Meer: snelkeuze + vier groepen. Geen extra <nav>: er blijft precies één navigatie. */
 body.v5-legacy .v49-install .v47-kicker{display:none}
 #v47-more .v520-jump{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-#v47-more .v520-chip{min-height:44px;padding:8px 12px;border-radius:999px;border:1px solid #4a646b;background:#192d34;color:var(--v5-text);font:700 13px/1.2 system-ui,-apple-system,sans-serif;cursor:pointer}
+#v47-more .v520-chip{min-height:46px;padding:8px 12px;border-radius:999px;border:1px solid #4a646b;background:#192d34;color:var(--v5-text);font:700 13px/1.2 system-ui,-apple-system,sans-serif;cursor:pointer}
 #v47-more .v520-chip:focus-visible{outline:3px solid var(--v5-ok);outline-offset:2px}
 #v47-more .v520-group{margin:0 0 18px;scroll-margin-top:calc(70px + var(--v5-safe-top))}
 #v47-more .v520-group>h3{font-size:15px;margin:0}

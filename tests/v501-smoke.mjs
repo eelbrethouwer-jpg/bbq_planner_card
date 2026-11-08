@@ -68,7 +68,9 @@ try{
  assert.equal(current(),'junkie','session CTA opens BBQ Junkie');
  assert.ok(!errors.length,'no runtime script errors '+errors.join('\n'));
  const css=read('dist/bbq-v501.css');
- assert.match(css,/safe-area-inset-top/,'iPhone safe area override');
+ assert.match(read('dist/bbq-v5.css'),/--v5-safe-top:env\(safe-area-inset-top,0px\)/,'iPhone safe area token is defined in base CSS');
+ assert.match(css,/body\.v5-ready #v5-back\{position:static;z-index:auto;/,'legacy back no longer overlays scrolled content');
+ assert.match(read('dist/bbq-v510.css'),/\.v5-live-bar\{[^\n]*top:var\(--v5-safe-top\);[^\n]*background:#10232a;/,'sticky Live bar respects safe area and has an opaque background');
  assert.match(css,/\.v5-card>\.v5-grid/,'narrow setup uses one-column layout');
  assert.match(css,/#add-area/,'legacy recipe selector overflow fix');
  assert.match(css,/\.v501-recipe-choice/,'new touch-target styles');

@@ -113,6 +113,8 @@ try{
     await page.evaluate(()=>window.scrollTo({top:600,behavior:'instant'}));
     const barTop=await page.locator('.v5-live-bar').evaluate(el=>el.getBoundingClientRect().top);
     ok(barTop>=SAFE_TOP-1,name+': sticky Live bar clears status bar when scrolled '+barTop);
+    const liveBg=await page.locator('.v5-live-bar').evaluate(el=>getComputedStyle(el).backgroundColor);
+    ok(liveBg==='rgb(16, 35, 42)',name+': sticky Live bar has fully opaque background '+liveBg);
     await shot('live');
 
     // A whole kamado card opens that dish's details.
@@ -239,6 +241,15 @@ try{
     await nav.locator('[data-v5-act="home"]').click();
     await page.locator('#v5-root [data-v5-act="history"]').click();
     ok(await page.locator('#v46-history').evaluate(el=>el.closest('details.v47-fold').open),name+': history shortcut opens history');
+    // The legacy back button is not sticky: it must scroll out instead of covering cards.
+    await page.evaluate(()=>window.scrollTo({top:550,behavior:'instant'}));
+    const backFlow=await page.locator('#v5-back').evaluate(el=>({
+      position:getComputedStyle(el).position,bottom:el.getBoundingClientRect().bottom,scrollY:window.scrollY
+    }));
+    ok(backFlow.position==='static'&&backFlow.scrollY>=500&&backFlow.bottom<SAFE_TOP,
+      name+': legacy back button scrolls out without overlaying content '+JSON.stringify(backFlow));
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v5-root').getAttribute('data-screen')==='home',name+': back remains usable after scroll');
 
     // Storage contract.
     const keys=await page.evaluate(()=>Object.keys(localStorage).sort());

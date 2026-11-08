@@ -9,3 +9,91 @@ body.v5-ready::before{content:"";position:fixed;top:0;left:0;right:0;height:var(
 /* Existing focus cooking mode (MEATER/coach dialog) also clears both safe areas and sits above the tab bar. */
 body.v5-ready #v45-cook-screen{z-index:480;padding:calc(10px + var(--v5-safe-top)) max(10px,env(safe-area-inset-right,0px))
   calc(10px + var(--v5-safe-bottom)) max(10px,env(safe-area-inset-left,0px))}
+
+/* 2. Shared calm hierarchy. */
+#v5-root .v5-content{max-width:760px}
+#v5-root .v5-top{margin:0 0 10px}
+#v5-root .v5-flame{font-size:24px}
+#v5-root .v5-title{font-size:18px}
+#v5-root .v5-sub{font-size:11px}
+#v5-root .v5-eyebrow{margin:0 0 4px;font-size:10px}
+#v5-root .v5-h1{font-size:23px;margin:0 0 10px}
+#v5-root .v5-card{padding:13px;margin-bottom:10px;border-radius:var(--v5-radius)}
+#v5-root .v5-card h2{font-size:18px;margin:0 0 4px}
+#v5-root .v5-sectionhead{font-size:13px;font-weight:800;letter-spacing:.02em;color:#dfe7e6;margin:16px 0 8px}
+#v5-root .v5-btn.v5-wide{width:100%;margin-top:10px}
+#v5-root .v5-btn{font-size:14px}
+
+/* 3. Vandaag: one primary card plus a compact list of secondary routes. */
+#v5-root .v5-home-primary{background:linear-gradient(140deg,#2a3a33,#15292b);border-color:#5f7f6b;padding:15px}
+#v5-root .v5-home-primary .v5-muted{font-size:13px;line-height:1.45;margin:2px 0 0}
+#v5-root .v5-home-progress{display:block;width:100%;height:4px;margin:10px 0 4px;appearance:none;border:0;border-radius:4px;background:#34484f;accent-color:var(--v5-ok)}
+#v5-root .v5-home-progress::-webkit-progress-bar{background:#34484f;border-radius:4px}
+#v5-root .v5-home-progress::-webkit-progress-value{background:var(--v5-ok);border-radius:4px}
+#v5-root .v5-list{display:grid;gap:8px}
+#v5-root .v5-list-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:9px 12px;text-align:left;
+  color:var(--v5-text);background:var(--v5-surface);border:1px solid var(--v5-border);border-radius:12px}
+#v5-root .v5-row-ico{width:28px;text-align:center;font-size:20px;flex:0 0 28px}
+#v5-root .v5-row-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+#v5-root .v5-row-text strong{font-size:14px}
+#v5-root .v5-row-text small{font-size:12px;color:var(--v5-muted);overflow-wrap:anywhere}
+#v5-root .v5-row-chev{font-size:22px;color:var(--v5-accent);flex:0 0 auto}
+
+/* 4. Live cockpit: status → NU DOEN → kamado's → next three tasks → details → actions. */
+#v5-root[data-screen=live] .v5-top{display:none}
+#v5-root .v5-live-bar{font-size:13px;margin-bottom:10px}
+#v5-root .v5-live-title{font-size:16px;margin:0 0 2px}
+#v5-root .v5-live-status{font-size:11px;margin:0 0 10px}
+#v5-root .v5-hero{padding:14px;border-radius:var(--v5-radius)}
+#v5-root .v5-hero h2{font-size:19px;line-height:1.25;margin:6px 0 4px}
+#v5-root .v5-hero p{font-size:12px;margin:0 0 12px}
+#v5-root .v5-hero-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+#v5-root .v5-hero-actions .v5-btn{font-size:14px;padding:10px 12px}
+#v5-root .v5-kamados{gap:8px}
+#v5-root .v5-kamado-card{display:flex;flex-direction:column;gap:2px;padding:10px;border-radius:12px}
+#v5-root .v5-kamado-card>strong{font-size:13px}
+#v5-root .v5-kamado-dish{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#v5-root .v5-kamado-card .v5-probe-plan{margin:4px 0 0}
+#v5-root .v5-kamado-card .v5-number{font-size:22px;margin:2px 0 0}
+#v5-root button.v5-kamado-card{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;background:#14252d}
+#v5-root button.v5-kamado-card:focus-visible{outline:3px solid var(--v5-ok);outline-offset:2px}
+#v5-root .v5-kamado-more{margin-top:4px;font-size:12px;font-weight:750;color:var(--v5-accent)}
+#v5-root .v5-next-tasks{padding:8px}
+#v5-root .v5-next-tasks .v5-check{margin-bottom:6px;min-height:52px;padding:4px 8px}
+#v5-root .v5-next-tasks .v5-check:last-of-type{margin-bottom:0}
+#v5-root .v5-check strong{font-size:13px;line-height:1.3}
+#v5-root .v5-check small{font-size:12px;margin-top:2px}
+#v5-root [data-v5-dish]>summary{padding:2px 0}
+#v5-root .v5-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+#v5-root .v5-action-grid .v5-btn{width:100%;font-size:13px}
+/* Keep two kamado cards side by side on phones; stack only when there is truly no room. */
+@media(max-width:340px){#v5-root .v5-kamados{grid-template-columns:minmax(0,1fr)}#v5-root .v5-hero-actions{grid-template-columns:minmax(0,1fr)}}
+
+/* 5. Recepten (bestaand scherm): compacte brontabs, beheer achter een uitklapper. */
+body.v5-legacy #v47-recipes .v47-page-head{margin:0 0 10px}
+body.v5-legacy #v47-recipes .v501-recipe-tabs{gap:6px;margin:0 0 10px}
+body.v5-legacy #v47-recipes .v501-recipe-choice{min-height:52px;gap:2px;padding:6px 4px;font-size:12.5px;line-height:1.2;border-radius:11px;overflow-wrap:normal;word-break:normal;hyphens:auto}
+body.v5-legacy #v47-recipes .v501-recipe-icon{font-size:17px}
+body.v5-legacy #library-panel>summary{font-size:15px}
+body.v5-legacy #v47-recipes .v501-recipe-intro{font-size:12px;margin:0 0 8px}
+body.v5-legacy #v48-catalog .v48-heading .v47-kicker{display:none}
+#v520-library-tools{margin:12px 0 0;border:1px solid #3a5157;border-radius:12px;background:#132429}
+#v520-library-tools>summary{min-height:48px;padding:12px;cursor:pointer;font-weight:750;font-size:14px}
+#v520-library-tools>:not(summary){margin:0 12px 12px}
+
+/* 6. Meer: snelkeuze + vier groepen. Geen extra <nav>: er blijft precies één navigatie. */
+body.v5-legacy .v49-install .v47-kicker{display:none}
+#v47-more .v520-jump{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+#v47-more .v520-chip{min-height:44px;padding:8px 12px;border-radius:999px;border:1px solid #4a646b;background:#192d34;color:var(--v5-text);font:700 13px/1.2 system-ui,-apple-system,sans-serif;cursor:pointer}
+#v47-more .v520-chip:focus-visible{outline:3px solid var(--v5-ok);outline-offset:2px}
+#v47-more .v520-group{margin:0 0 18px;scroll-margin-top:calc(70px + var(--v5-safe-top))}
+#v47-more .v520-group>h3{font-size:15px;margin:0}
+#v47-more .v520-group-sub{font-size:12px;color:var(--v5-muted);margin:2px 0 6px}
+#v47-more .v520-group .v47-fold{margin:6px 0}
+#v47-more .v520-group .v47-fold>summary{min-height:48px;padding:12px 14px;font-size:14px}
+#v47-more .v520-group .v49-install{margin:0;padding:0;border:0;background:none}
+#v47-more .v520-info p{font-size:13px;line-height:1.5;color:var(--v5-muted);margin:0 0 10px}
+#v47-more .v520-info .v5-btn{min-height:44px}
+
+/* 7. Terugknop is secundair: de onderbalk blijft de hoofdnavigatie. */
+body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:1px solid #4a646b;box-shadow:none;margin:0 0 10px auto;font-weight:750}

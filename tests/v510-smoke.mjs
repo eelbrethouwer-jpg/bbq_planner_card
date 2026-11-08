@@ -53,8 +53,9 @@ try{
  d.getElementById('v5-back').click();navigation('live');
  const task=d.querySelector('.v5-hero [data-v5-act^="done:"]').dataset.v5Act.slice(5);
  assert.ok(![...d.querySelectorAll('.v5-next-tasks [data-v5-check]')].some(e=>e.dataset.v5Check===task),'hero excluded from following tasks');
- assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length<=5);
- if(d.querySelector('[data-v5-act="show-tasks"]')){press('show-tasks');assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length>5);press('show-tasks')}
+ // v5.2: Live shows at most three following tasks; the rest stays one tap away.
+ assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length<=3);
+ if(d.querySelector('[data-v5-act="show-tasks"]')){press('show-tasks');assert.ok(d.querySelectorAll('.v5-next-tasks [data-v5-check]').length>3);press('show-tasks')}
  const details=[...root().querySelectorAll('details')];
  assert.ok(details.every(e=>e.dataset.v5Key));assert.equal(new Set(details.map(e=>e.dataset.v5Key)).size,details.length);
  const dish=details.find(e=>e.dataset.v5Dish);dish.open=true;const stage=dish.querySelector('details');stage.open=true;

@@ -20,13 +20,29 @@ window.initBBQV5=function(b){
   function logo(){return '<div class="v5-top"><div class="v5-brand"><span class="v5-flame">🔥</span><div><div class="v5-title">BBQ Planner</div><div class="v5-sub">Rustig samen koken</div></div></div><span class="v5-chip neutral">'+escape(day(Date.parse(state().date)))+'</span></div>'}
   function progress(n){return '<div class="v5-steps" aria-label="Stap '+n+' van 3">'+[1,2,3].map(i=>'<span class="'+(i<=n?'on':'')+'"></span>').join('')+'</div>'}
   function action(label,act,variant='subtle',disabled=false){return '<button type="button" class="v5-btn '+variant+'" data-v5-act="'+escape(act)+'"'+(disabled?' disabled':'')+'>'+label+'</button>'}
-  const heading=(cap,title,copy)=>'<p class="v5-eyebrow">'+escape(cap)+'</p><h1 class="v5-h1">'+escape(title)+'</h1><p class="v5-copy">'+escape(copy)+'</p>';
+  const heading=(cap,title,copy)=>'<p class="v5-eyebrow">'+escape(cap)+'</p><h1 class="v5-h1">'+escape(title)+'</h1>'+(copy?'<p class="v5-copy">'+escape(copy)+'</p>':'');
+  function row(icon,label,sub,act){return '<button type="button" class="v5-list-row" data-v5-act="'+escape(act)+'"><span class="v5-row-ico" aria-hidden="true">'+icon+'</span><span class="v5-row-text"><strong>'+escape(label)+'</strong>'+(sub?'<small>'+escape(sub)+'</small>':'')+'</span><span class="v5-row-chev" aria-hidden="true">›</span></button>'}
   function home(){
-    const hasPlan=dishes().length>0,canResume=meta.active||hasPlan,showActive=meta.active&&meta.stage==='live';
-    return heading('Welkom bij jouw BBQ','Wat gaan we bereiden?','Stel je menu samen, doorloop je voorbereidingen en volg tijdens het BBQ’en alleen de handelingen die op dat moment belangrijk zijn.')+
-    '<div class="v5-card v5-accent"><h2>🔥 Nieuwe BBQ-sessie</h2><p class="v5-copy">Begin met je favoriete gerechten. Wij helpen met de planning voor je grote en kleine kamado.</p>'+action('＋ Nieuwe sessie samenstellen','new','primary')+'</div>'+
-    (canResume?'<div class="v5-card"><div class="v5-between"><div><h3>'+(showActive?'▶ Hervat live bereiding':'📋 Bestaande planning')+'</h3><p class="v5-muted">'+dishes().length+' gerechten · '+escape(state().mealTime||'—')+' serveren</p></div>'+action('Openen →','resume','primary')+'</div></div>':'')+
-    '<div class="v5-grid"><div class="v5-card"><h3>📖 Recepten</h3><p class="v5-muted">Je eigen bibliotheek, import en inspiratie.</p>'+action('Bekijk recepten','recipes')+'</div><div class="v5-card"><h3>📈 Mijn BBQ-historie</h3><p class="v5-muted">Reviews, tijden en leerpunten.</p>'+action('Bekijk historie','history')+'</div></div>';
+    // v5.2: one clear primary action. An active session is resumed first; otherwise start a new one.
+    const s=state(),n=dishes().length,hasPlan=n>0,active=meta.active&&hasPlan,isLive=active&&meta.stage==='live';
+    const summary=n+' gerecht'+(n===1?'':'en')+' · serveren '+(s.mealTime||'—')+' · '+day(Date.parse(s.date));
+    let primary,secondary='';
+    if(active){
+      const all=isLive?b.getTasks().filter(t=>!t.id.includes(':prep:')):[],done=s.v46Done||{},finished=all.filter(t=>done[t.id]).length;
+      const stageLabel={select:'Gerechten kiezen',setup:'Planning',prep:'Voorbereiden',live:'Live koken'}[meta.stage]||'Planning';
+      primary='<section class="v5-card v5-home-primary" aria-labelledby="v5-home-title"><p class="v5-eyebrow">Actieve sessie · '+escape(stageLabel)+'</p>'+
+        '<h2 id="v5-home-title">'+(isLive?'▶ Hervat live bereiding':'▶ Ga verder met je planning')+'</h2><p class="v5-muted">'+escape(summary)+'</p>'+
+        (isLive&&all.length?'<progress class="v5-home-progress" max="'+all.length+'" value="'+finished+'" aria-label="'+finished+' van '+all.length+' handelingen afgerond"></progress><p class="v5-muted">'+finished+' van '+all.length+' handelingen afgerond</p>':'')+
+        action(isLive?'Verder met koken →':'Verder →','resume','primary v5-wide')+'</section>';
+      secondary=row('＋','Nieuwe sessie starten','Je huidige planning wordt eerst als reservekopie bewaard','new');
+    }else{
+      primary='<section class="v5-card v5-home-primary" aria-labelledby="v5-home-title"><h2 id="v5-home-title">🔥 Nieuwe BBQ-sessie</h2>'+
+        '<p class="v5-muted">Kies gerechten, stel de serveertijd in en volg stap voor stap wat er moet gebeuren.</p>'+
+        action('＋ Nieuwe sessie samenstellen','new','primary v5-wide')+'</section>';
+      if(hasPlan)secondary=row('📋','Bestaande planning openen',summary,'resume');
+    }
+    return heading(active?'Welkom terug':'Welkom bij jouw BBQ',active?'Jouw BBQ-sessie':'Wat gaan we bereiden?','')+primary+
+      '<div class="v5-list" role="list">'+secondary+row('📖','Recepten','Eigen bibliotheek, import en BBQ Junkie','recipes')+row('📈','Historie en reviews','Eerdere bereidingen en leerpunten','history')+'</div>';
   }
   function allRecipes(){
     return Object.entries(b.getRecipes()).filter(([name,r])=>r&&typeof r==='object'&&r.name).sort((a,z)=>a[0].localeCompare(z[0],'nl')).map(([key,r])=>({...r,_key:key}));
@@ -113,27 +129,30 @@ window.initBBQV5=function(b){
     const done=s.v46Done||{},upcoming=all.filter(t=>!done[t.id]),now=Date.now(),next=upcoming.find(t=>t.time<=now+10*60000)||upcoming[0];
     const finished=all.length-upcoming.length,remaining=Math.max(0,Math.ceil((c.serve-now)/60000));
     const countdown=Number.isFinite(c.serve)&&c.serve>now?'nog '+Math.floor(remaining/60)+' u '+remaining%60+' min':'serveertijd verstreken';
-    const follow=upcoming.filter(t=>t.id!==next?.id),rows=showAllTasks?follow:follow.slice(0,5);
+    const follow=upcoming.filter(t=>t.id!==next?.id),rows=showAllTasks?follow:follow.slice(0,3);
     const taskRow=t=>({id:t.id,title:t.title,time:t.time,when:'Gepland '+taskTime(t.time),detail:''});
     let hero=next?
        '<div class="v5-hero"><div class="v5-between"><span class="v5-nowtag">'+(next.time<=now+10*60000?'🔥 NU DOEN':'⏱️ HIERNA')+'</span><span>'+taskTime(next.time)+'</span></div>'+
        '<h2>'+escape(next.title)+'</h2><p>'+escape(labelKam(next.k))+' · '+(next.time<now-10*60000?'Geplande tijd verstreken; controleer of dit nog nodig is.':'Geplande handeling · tijd is indicatief.')+'</p>'+
-       '<div class="v5-row">'+action('✓ Markeer uitgevoerd','done:'+next.id,'primary')+action('📖 Recept bekijken','recipe-in-live')+'</div></div>':
+       '<div class="v5-hero-actions">'+action('✓ Markeer uitgevoerd','done:'+next.id,'primary')+action('📖 Recept','recipe-in-live')+'</div></div>':
        '<div class="v5-hero"><h2>✅ Alle geplande handelingen afgevinkt</h2><p>Controleer de gaarheid voordat je serveert.</p>'+action('Sessie afronden','finish','primary')+'</div>';
     return '<div class="v5-live-bar"><div class="v5-between"><strong>Serveren '+escape(s.mealTime)+' · '+countdown+'</strong><span>'+finished+'/'+all.length+' afgerond</span></div><progress max="'+Math.max(1,all.length)+'" value="'+finished+'" aria-label="Handelingen afgerond"></progress></div>'+
-    '<h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1><div class="v5-status v5-live-status">Tijden zijn gepland · alleen afgevinkt = uitgevoerd · live MEATER alleen via Home Assistant</div>'+hero+
+    '<h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1><p class="v5-status v5-live-status">Geplande tijden · alleen afgevinkt telt als uitgevoerd · live MEATER alleen via Home Assistant</p>'+hero+
     '<div class="v5-grid v5-kamados">'+['large','small'].map(k=>{
       const ds=dishes().filter(d=>d.kamado===k),d=ds.find(d=>d.phase==='cooking')||ds[0],p=d?b.getProbe(d):null;
-      return '<div class="v5-probe"><strong>'+labelKam(k)+'</strong><div class="v5-muted">'+escape(d?.name||'Geen gerecht')+'</div>'+probe(d,p)+
-       (d?action('Bekijk gerecht','dish:'+d.id):'')+'</div>';
+      const more=ds.length>1?' +'+(ds.length-1):'';
+      // The whole card opens the dish details; an unused kamado is plain information.
+      const inner='<strong>'+labelKam(k)+'</strong><span class="v5-muted v5-kamado-dish">'+escape(d?.name||'Geen gerecht')+escape(more)+'</span>'+probe(d,p);
+      return d?'<button type="button" class="v5-probe v5-kamado-card" data-v5-act="dish:'+escape(d.id)+'" aria-label="'+escape(labelKam(k)+': '+d.name+', bekijk bereidingsdetails')+'">'+inner+'<span class="v5-kamado-more" aria-hidden="true">Details ›</span></button>':
+        '<div class="v5-probe v5-kamado-card">'+inner+'</div>';
     }).join('')+'</div>'+
-    '<div class="v5-sectionhead">⏭️ Volgende handelingen</div><div class="v5-card v5-next-tasks">'+
+    '<h2 class="v5-sectionhead">Volgende handelingen</h2><div class="v5-card v5-next-tasks">'+
       (rows.length?checklist(rows.map(taskRow)):'<p class="v5-muted">Geen volgende geplande taken.</p>')+
-      (follow.length>5?action(showAllTasks?'Toon minder':'Toon alle ('+follow.length+')','show-tasks'):'')+'</div>'+
+      (follow.length>3?action(showAllTasks?'Toon minder':'Toon alle '+follow.length+' handelingen','show-tasks','subtle v5-wide'):'')+'</div>'+
     (all.some(t=>done[t.id])?'<details class="v5-card" data-v5-key="completed"><summary>Afgeronde handelingen ('+finished+')</summary>'+checklist(all.filter(t=>done[t.id]).map(taskRow))+'</details>':'')+
-    '<div class="v5-sectionhead">📖 Receptfasen per gerecht</div>'+dishes().map(d=>liveDish(d)).join('')+
+    '<h2 class="v5-sectionhead">Bereidingsdetails per gerecht</h2>'+dishes().map(d=>liveDish(d)).join('')+
     (c.alerts.length?'<details class="v5-card v5-alerts" data-v5-key="alerts"><summary>⚠️ Planning: '+c.alerts.length+' aandachtspunt(en)</summary>'+c.alerts.slice(0,10).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'')+
-    '<div class="v5-row">'+action('📈 MEATER-grafiek & focusmodus','cooking')+action('✎ Planning aanpassen','planning')+action('Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
+    '<h2 class="v5-sectionhead">Meer acties</h2><div class="v5-action-grid">'+action('📈 MEATER & focus','cooking')+action('✎ Planning aanpassen','planning')+action('🧂 Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
   }
   function liveDish(d){
     const s=state(),p=b.getProbe(d),stages=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
@@ -206,12 +225,61 @@ window.initBBQV5=function(b){
     }
     commit();render();
   }
+  /* v5.2: group the legacy Recipes and More pages. Existing DOM nodes are MOVED, never cloned,
+     so their event listeners, ids and storage behaviour stay exactly as before. Idempotent. */
+  function fold(title,node,id){
+    if(!node)return null;
+    const f=document.createElement('details');f.className='v47-fold';if(id)f.id=id;
+    const sum=document.createElement('summary');sum.textContent=title;f.append(sum,node);return f;
+  }
+  function organizeRecipes(){
+    const panel=$('library-panel');if(!panel||$('v520-library-tools'))return;
+    const tools=document.createElement('details');tools.id='v520-library-tools';tools.className='v520-tools';
+    const sum=document.createElement('summary');sum.textContent='⚙️ Importeren, exporteren en synchroniseren';tools.append(sum);
+    for(const node of [panel.querySelector(':scope>p.hint'),panel.querySelector('.library-toolbar'),$('library-sync-status'),$('review-sync-status')])if(node)tools.append(node);
+    panel.append(tools);
+  }
+  function organizeMore(){
+    const page=$('v47-more'),mount=$('v47-more-mount');if(!page||!mount||$('v520-more-groups'))return;
+    const owner=id=>{const el=$(id);return el?el.closest('details.v47-fold')||null:null};
+    const toolbar=page.querySelector('.toolbar'),footer=page.querySelector('footer.footer'),install=page.querySelector('.v49-install');
+    const meater=document.createElement('div');meater.className='v520-info';
+    meater.innerHTML='<p>Live MEATER-metingen werken alleen in de Home Assistant-dashboardkaart. De grafiek en focusmodus open je ook vanuit Live.</p>';
+    const open=document.createElement('button');open.type='button';open.className='v5-btn subtle';open.id='v520-open-cooking';
+    open.textContent='📈 MEATER-grafiek en focusmodus openen';open.addEventListener('click',()=>legacy('cooking'));meater.append(open);
+    const groups=[
+      ['koken','🍖 Koken','Boodschappen, voorraad en eerdere bereidingen',[owner('v45-shopping')||owner('v45-tools'),owner('v46-pantry-list'),owner('v46-history')]],
+      ['koppelingen','🔗 Koppelingen','Home Assistant en MEATER',[owner('v46-notify'),fold('🌡️ MEATER en live metingen',meater,'v520-meater-fold')]],
+      ['gegevens','💾 Gegevens','Planning bewaren, laden, delen en printen',[fold('💾 Planning bewaren, laden en printen',toolbar,'v520-data-fold')]],
+      ['app','📱 App en info','Installeren, bijwerken en voedselveiligheid',[fold('📱 App installeren en bijwerken',install,'v520-app-fold'),fold('ℹ️ Uitleg en voedselveiligheid',footer,'v520-info-fold')]]
+    ];
+    const wrap=document.createElement('div');wrap.id='v520-more-groups';
+    const jump=document.createElement('div');jump.className='v520-jump';jump.setAttribute('role','group');jump.setAttribute('aria-label','Ga naar onderdeel');
+    for(const [id,title,sub,nodes] of groups){
+      const items=nodes.filter(Boolean);if(!items.length)continue;
+      const sec=document.createElement('section');sec.className='v520-group';sec.id='v520-more-'+id;sec.setAttribute('aria-labelledby','v520-more-h-'+id);
+      const h=document.createElement('h3');h.id='v520-more-h-'+id;h.textContent=title;
+      const p=document.createElement('p');p.className='v520-group-sub';p.textContent=sub;
+      sec.append(h,p,...items);wrap.append(sec);
+      const chip=document.createElement('button');chip.type='button';chip.className='v520-chip';chip.textContent=title;
+      chip.addEventListener('click',()=>sec.scrollIntoView?.({behavior:'smooth',block:'start'}));jump.append(chip);
+    }
+    // Anything not explicitly grouped stays visible at the end instead of disappearing.
+    const rest=[...mount.children];
+    mount.append(jump,wrap,...rest);
+  }
+  function openHistory(){
+    legacy('more');
+    const f=$('v46-history')?.closest('details.v47-fold');
+    if(f){f.open=true;try{f.scrollIntoView({behavior:'instant',block:'start'})}catch(e){}}
+  }
   const root=document.createElement('div');root.id='v5-root';
   const main=document.querySelector('.shell > main');
   if(!main)return;main.parentElement.insertBefore(root,main);
   const back=document.createElement('button');back.id='v5-back';back.type='button';back.className='v5-btn primary v5-back-legacy';back.textContent='← Vandaag';back.addEventListener('click',exitLegacy);main.parentElement.insertBefore(back,main);
   const nav=document.createElement('nav');nav.id='v5-nav';nav.className='v5-nav';nav.setAttribute('aria-label','BBQ-navigatie');root.after(nav);
   document.body.classList.add('v5-ready');
+  try{organizeRecipes();organizeMore();}catch(e){/* Never block the planner because a legacy panel is missing. */}
   root.addEventListener('input',e=>{
     if(e.target?.id==='v5-search'){recipeSearch=e.target.value;const list=$('v5-recipe-list');if(list)list.innerHTML=recipeGrid();}
   });
@@ -261,7 +329,8 @@ window.initBBQV5=function(b){
     if(act==='recipes'){legacy('recipes','library');return}
     if(act==='recipe-generate'){legacy('recipes','generate');return}
     if(act==='recipe-junkie'){legacy('recipes','junkie');return}
-    if(act==='history'||act==='more'){legacy('more');return}
+    if(act==='history'){openHistory();return}
+    if(act==='more'){legacy('more');return}
     if(act==='planning'){legacy('planning');return}
     if(act==='cooking'){legacy('cooking');return}
     if(act==='recipe-in-live'){openDish(heroDish());return}

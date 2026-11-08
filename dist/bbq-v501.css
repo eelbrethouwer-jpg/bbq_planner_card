@@ -16,7 +16,7 @@ body.v5-ready .shell{width:100%;max-width:1020px}
 #v5-root .v5-dishline select{width:auto;min-width:106px;max-width:100%;flex:0 1 132px}
 #v5-root .v5-sticky-actions{max-width:100%}
 /* The legacy back action is inside the scroll column, not fixed across inputs or the iPhone status bar. */
-body.v5-ready #v5-back{position:sticky;top:calc(8px + var(--v5-safe-top));right:auto;left:auto;z-index:390;display:none;width:max-content;max-width:calc(100% - 22px);padding:8px 12px;min-height:37px;border-radius:999px;font-size:13px;margin:5px 0 14px auto;box-shadow:0 4px 12px #0007}
+body.v5-ready #v5-back{position:sticky;top:calc(8px + var(--v5-safe-top,env(safe-area-inset-top,0px)));right:auto;left:auto;z-index:390;display:none;width:max-content;max-width:calc(100% - 22px);padding:8px 12px;min-height:37px;border-radius:999px;font-size:13px;margin:5px 0 14px auto;box-shadow:0 4px 12px #0007}
 body.v5-ready.v5-legacy #v5-back{display:inline-flex!important}
 body.v5-ready.v5-legacy .intro,body.v5-ready.v5-legacy .shell>main{max-width:100%;min-width:0}
 body.v5-ready.v5-legacy .v47-page,body.v5-ready.v5-legacy .v47-fold,body.v5-ready.v5-legacy .v47-fold>*,body.v5-ready.v5-legacy .layout-top,body.v5-ready.v5-legacy .setup,body.v5-ready.v5-legacy .section-header,body.v5-ready.v5-legacy .section-actions{min-width:0;max-width:100%}

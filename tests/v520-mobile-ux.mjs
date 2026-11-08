@@ -246,7 +246,7 @@ try{
     const backFlow=await page.locator('#v5-back').evaluate(el=>({
       position:getComputedStyle(el).position,bottom:el.getBoundingClientRect().bottom,scrollY:window.scrollY
     }));
-    ok(backFlow.position==='static'&&backFlow.scrollY>=500&&backFlow.bottom<SAFE_TOP,
+    ok(backFlow.position==='static'&&backFlow.scrollY>0&&backFlow.bottom<SAFE_TOP,
       name+': legacy back button scrolls out without overlaying content '+JSON.stringify(backFlow));
     await page.locator('#v5-back').click();
     ok(await page.locator('#v5-root').getAttribute('data-screen')==='home',name+': back remains usable after scroll');

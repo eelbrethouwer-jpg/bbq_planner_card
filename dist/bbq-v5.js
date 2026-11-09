@@ -121,8 +121,33 @@ window.initBBQV5=function(b){
   }
   function probe(d,p){
     if(!d)return '<div class="v5-probe-plan">Niet in gebruik</div>';
-    return p?.ok?'<div class="v5-number">'+escape(p.core.toFixed(1))+' °C</div><div class="v5-muted">● LIVE · MEATER</div>':
-      '<div class="v5-probe-plan">Doel BBQ '+escape(d?.grill||'—')+' °C</div><div class="v5-muted">'+escape(p?.note||'Geen gerecht met live MEATER-meting')+'</div>';
+    if(p?.ok){
+      // The timestamp is from HA, never fabricated by the one-second display ticker.
+      const age=Number.isFinite(p.updatedAt)?Math.max(0,Math.floor((Date.now()-p.updatedAt)/1000)):null;
+      const elapsed=age==null?'tijd onbekend':age<60?age+' s geleden':Math.floor(age/60)+' min '+age%60+' s geleden';
+      return '<div class="v5-number">'+escape(p.core.toFixed(1))+' °C</div><div class="v5-muted">'+(age!=null&&age<60?'● LIVE':'● Vertraagd')+' · HA-update '+elapsed+'</div>';
+    }
+    return '<div class="v5-probe-plan">Doel BBQ '+escape(d?.grill||'—')+' °C</div><div class="v5-muted">'+escape(p?.note||'Geen gerecht met live MEATER-meting')+'</div>';
+  }
+  function refreshLiveMeater(){
+    if(screen!=='live'||document.body.classList.contains('v5-legacy')||document.hidden)return;
+    const root=$('v5-root');
+    if(!root||root.dataset.screen!=='live')return;
+    const current=dishes();
+    // Update only sensor elements, not the page: keep open details, scroll and focus.
+    for(const k of ['large','small']){
+      const slot=root.querySelector('[data-v5-live-kamado="'+k+'"]');
+      if(!slot)continue;
+      const ds=current.filter(d=>d.kamado===k),d=ds.find(d=>d.phase==='cooking')||ds[0];
+      const markup=probe(d,d?b.getProbe(d):null);
+      if(slot.innerHTML!==markup)slot.innerHTML=markup;
+    }
+    for(const d of current){
+      const slot=[...root.querySelectorAll('[data-v5-live-dish]')].find(el=>el.dataset.v5LiveDish===String(d.id));
+      if(!slot)continue;
+      const markup=probe(d,b.getProbe(d));
+      if(slot.innerHTML!==markup)slot.innerHTML=markup;
+    }
   }
   function live(){
     const s=state(),c=b.calculate(),all=b.getTasks().filter(t=>!t.id.includes(':prep:'));
@@ -142,7 +167,7 @@ window.initBBQV5=function(b){
       const ds=dishes().filter(d=>d.kamado===k),d=ds.find(d=>d.phase==='cooking')||ds[0],p=d?b.getProbe(d):null;
       const more=ds.length>1?' +'+(ds.length-1):'';
       // The whole card opens the dish details; an unused kamado is plain information.
-      const inner='<strong>'+labelKam(k)+'</strong><span class="v5-muted v5-kamado-dish">'+escape(d?.name||'Geen gerecht')+escape(more)+'</span>'+probe(d,p);
+      const inner='<strong>'+labelKam(k)+'</strong><span class="v5-muted v5-kamado-dish">'+escape(d?.name||'Geen gerecht')+escape(more)+'</span><div data-v5-live-kamado="'+k+'">'+probe(d,p)+'</div>';
       return d?'<button type="button" class="v5-probe v5-kamado-card" data-v5-act="dish:'+escape(d.id)+'" aria-label="'+escape(labelKam(k)+': '+d.name+', bekijk bereidingsdetails')+'">'+inner+'<span class="v5-kamado-more" aria-hidden="true">Details ›</span></button>':
         '<div class="v5-probe v5-kamado-card">'+inner+'</div>';
     }).join('')+'</div>'+
@@ -162,7 +187,7 @@ window.initBBQV5=function(b){
     const checked=s.v46Done||{};
     return '<details class="v5-card" data-v5-dish="'+escape(d.id)+'" data-v5-key="dish:'+escape(d.id)+'" '+(d.phase==='cooking'?'open':'')+'><summary style="cursor:pointer;font-weight:850">'+escape(d.name)+' · '+escape(phaseLabel)+'</summary>'+
       '<p class="v5-muted" style="margin-top:10px">'+escape(labelKam(d.kamado))+' · '+escape(d.grill)+' °C gepland'+(d.core!==''?' · Richtkern '+escape(d.core)+' °C':'')+'</p>'+
-      '<div class="v5-probe">'+probe(d,p)+'</div>'+
+      '<div class="v5-probe" data-v5-live-dish="'+escape(d.id)+'">'+probe(d,p)+'</div>'+
       (phaseNext?'<div class="v5-row" style="margin:12px 0">'+action(nextName[phaseNext],'phase:'+d.id+':'+phaseNext,'subtle v5-emph')+'</div>':'')+
       (stages.length?stages.map((r,i)=>{
         const id=s.date+'|'+d.id+':recipe:'+i;
@@ -355,6 +380,8 @@ window.initBBQV5=function(b){
   }
   root.addEventListener('click',handleClick);nav.addEventListener('click',handleClick);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render()});
+  window.addEventListener('bbq-meater-updated',refreshLiveMeater);
+  window.setInterval(refreshLiveMeater,1000); // display timer only
   window.setInterval(()=>{if(screen==='live'&&!document.body.classList.contains('v5-legacy'))render()},30000);
   render();
 };

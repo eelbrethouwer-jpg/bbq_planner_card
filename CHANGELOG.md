@@ -1,6 +1,13 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.2.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.0) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
+> Actueel gepubliceerd: [v5.2.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.1) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
+
+## v5.2.2 — MEATER direct in Live (releasekandidaat)
+- Nieuwe MEATER-temperatuur direct in Live zodra Home Assistant deze aanlevert; geen volledige hertekening van het scherm.
+- De leeftijd van de laatste echte sensorupdate wordt per seconde getoond; na één minuut `Vertraagd` en na vijf minuten geen actuele meting meer.
+- Home Assistant-MEATER-polling blijft ongewijzigd; de openbare PWA heeft nog steeds geen directe HA-gegevens.
+- Geen wijzigingen aan de kookengine, recepten, reviews, opslag of v6. Fake HA-regressietest toegevoegd; fysieke iPhone- en MEATER-proeven open.
+
 
 ## v5.2.1 — Versie in beeld (releasekandidaat, nog niet gepubliceerd)
 - Onder **Meer → App en info** toont de app de versie van de daadwerkelijk geladen interface, compact en zonder extra knop.

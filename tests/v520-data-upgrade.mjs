@@ -1,4 +1,4 @@
-/* v5.1.1 -> v5.2.1 same-origin browser-storage regression (jsdom).
+/* v5.1.1 -> v5.2.2 same-origin browser-storage regression (jsdom).
    Not a physical iPhone, service-worker update, HA connection or MEATER test.
    Creates only synthetic recipes/reviews/plan data in isolated jsdom origins. */
 import assert from 'node:assert/strict';
@@ -23,7 +23,7 @@ function assemble(read, version) {
   return html;
 }
 const oldHtml = assemble(oldFile, '5.1.1');
-const rcHtml = assemble(newFile, '5.2.1');
+const rcHtml = assemble(newFile, '5.2.2');
 
 function boot(html, seed = {}) {
   const errors = [];
@@ -103,7 +103,7 @@ const mustPreserve = [PLAN_KEY, 'kamado-recipe-book-v1', 'kamado-recipe-deletion
 for (const key of mustPreserve) {
   assert.ok(before[key] != null, key + ' exists before upgrade');
   assert.ok(after[key] != null, key + ' exists after upgrade');
-  assert.deepEqual(JSON.parse(after[key]), JSON.parse(before[key]), key + ' preserved after 5.2.1 bootstrap');
+  assert.deepEqual(JSON.parse(after[key]), JSON.parse(before[key]), key + ' preserved after 5.2.2 bootstrap');
 }
 for (const key of Object.keys(before)) assert.ok(key in after, 'previous key retained: ' + key);
 assert.equal(JSON.parse(after[PLAN_KEY]).dishes.length, 3);
@@ -116,4 +116,4 @@ assert.match(next.window.document.getElementById('v47-recipes').textContent, /Up
 assert.deepEqual(JSON.parse(next.window.localStorage.getItem('kamado-recipe-book-v1')),
   JSON.parse(before['kamado-recipe-book-v1']), 'recipe not lost after navigation');
 next.window.close();
-console.log('PASS v5.1.1 → v5.2.1 same-origin jsdom data upgrade: 3 dishes, date/time, pantry, tasks, local cookbook, deleted recipes, reviews and active session retained');
+console.log('PASS v5.1.1 → v5.2.2 same-origin jsdom data upgrade: 3 dishes, date/time, pantry, tasks, local cookbook, deleted recipes, reviews and active session retained');

@@ -1,6 +1,6 @@
 {
   "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
-  "release": "5.2.1",
+  "release": "5.2.2",
   "protectedPaths": [
     "engine/",
     "v6/"

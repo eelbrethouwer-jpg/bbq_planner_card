@@ -55,6 +55,8 @@ try{
  press('recipes');expectLegacy('v47-recipes','← Vandaag','recipes','Vandaag → Recepten');
  back().click();expectV5('home','home','← Vandaag from Recepten');
  press('history');expectLegacy('v47-more','← Vandaag','more','Vandaag → Historie');
+ assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.2.1','App en info shows loaded app version');
+ assert.equal($('v520-app-version')?.parentElement?.id,'v520-more-app','version located in App en info');
  back().click();expectV5('home','home','← Vandaag from Historie');
 
  // Session flow: the back label names the real step, not Vandaag.

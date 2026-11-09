@@ -268,7 +268,14 @@ window.initBBQV5=function(b){
       const sec=document.createElement('section');sec.className='v520-group';sec.id='v520-more-'+id;sec.setAttribute('aria-labelledby','v520-more-h-'+id);
       const h=document.createElement('h3');h.id='v520-more-h-'+id;h.textContent=title;
       const p=document.createElement('p');p.className='v520-group-sub';p.textContent=sub;
-      sec.append(h,p,...items);wrap.append(sec);
+      sec.append(h,p);
+      if(id==='app'){
+        // The displayed version belongs to this loaded UI, not to HACS or an online release check.
+        const version=document.title.match(/\bv\d+\.\d+\.\d+\b/)?.[0]||'onbekend';
+        const el=document.createElement('p');el.id='v520-app-version';el.className='v520-app-version';
+        el.textContent='Versie van deze app: '+version;sec.append(el);
+      }
+      sec.append(...items);wrap.append(sec);
       const chip=document.createElement('button');chip.type='button';chip.className='v520-chip';chip.textContent=title;
       chip.addEventListener('click',()=>sec.scrollIntoView?.({behavior:'smooth',block:'start'}));jump.append(chip);
     }

@@ -91,6 +91,7 @@ body.v5-legacy .v49-install .v47-kicker{display:none}
 #v47-more .v520-group{margin:0 0 18px;scroll-margin-top:calc(70px + var(--v5-safe-top))}
 #v47-more .v520-group>h3{font-size:15px;margin:0}
 #v47-more .v520-group-sub{font-size:12px;color:var(--v5-muted);margin:2px 0 6px}
+#v47-more .v520-app-version{display:inline-block;margin:2px 0 9px;padding:5px 9px;border:1px solid var(--v5-border);border-radius:8px;color:var(--v5-text);background:#132b31;font:700 12px/1.4 system-ui,-apple-system,sans-serif}
 #v47-more .v520-group .v47-fold{margin:6px 0}
 #v47-more .v520-group .v47-fold>summary{min-height:48px;padding:12px 14px;font-size:14px}
 #v47-more .v520-group .v49-install{margin:0;padding:0;border:0;background:none}

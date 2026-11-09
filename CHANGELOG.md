@@ -1,13 +1,19 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.1.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1) (7 november 2026). Oude termen “releasekandidaat” in historische versies beschrijven de status op het moment van schrijven, niet de huidige uitgave.
+> Actueel gepubliceerd: [v5.2.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.0) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.2.0 — Rustige mobiele kookassistent (releasekandidaat, PR #36)
-- iPhone-statusbalk: oorzaak (vaste 15 px bovenmarge) technisch verholpen; safe area op alle schermen, Live-statusbalk en focusmodus. **Geautomatiseerd getest met gesimuleerde safe area (Chromium/WebKit); nog niet bevestigd op een fysieke iPhone.**
-- Vandaag met één hoofdactie; Live als compacte kookcockpit (NU DOEN, kamadostatus, drie vervolgstappen); Recepten compacter; Meer in vier groepen. Geautomatiseerd getest (DOM + browser); niet fysiek bevestigd.
+## v5.2.1 — Versie in beeld (releasekandidaat, nog niet gepubliceerd)
+- Onder **Meer → App en info** toont de app de versie van de daadwerkelijk geladen interface, compact en zonder extra knop.
+- Versie wordt uit de al gevalideerde HTML-titel bepaald; het label vraagt geen nieuwe opslag of netwerkverbinding.
+- Alleen noodzakelijke versiebump voor PWA-cache, HTML, HA-brug, tests en publicatiebeleid; bestaande recepten, planning, berekeningen en V6 blijven intact.
+- DOM- en Chromium/WebKit-regressies uitgebreid; geen claim van fysieke HACS-/MEATER-test.
+
+## v5.2.0 — Rustige mobiele kookassistent (gepubliceerd 9 november 2026, PR #36)
+- iPhone-statusbalk: oorzaak (vaste 15 px bovenmarge) technisch verholpen; safe area op alle schermen, Live-statusbalk en focusmodus. **Geautomatiseerd getest met gesimuleerde safe area (Chromium/WebKit), later deels door gebruiker op fysieke iPhone-PWA bevestigd.**
+- Vandaag met één hoofdactie; Live als compacte kookcockpit (NU DOEN, kamadostatus, drie vervolgstappen); Recepten compacter; Meer in vier groepen. Geautomatiseerd getest (DOM + browser), daarnaast door gebruiker op iPhone deels fysiek bevestigd.
 - Terugknop noemt altijd de werkelijke bestemming (o.a. Meer → MEATER → ← Meer). Geautomatiseerd getest.
 - CI-publicatiebewaking tegen de vaste PR-base: beschermt `engine/**`, `v6/**`, de v5/v6-scheiding en de opslagcontracten, met mutatietests.
-- Geen wijziging aan engine, berekeningen, opslag, recepten, reviews, HA/MEATER of de v6-preview. Fysieke iPhone-, HA- en MEATER-acceptatie nog open. Zie `RELEASE_v5.2.0.md` voor de status per onderdeel.
+- Geen wijziging aan engine, berekeningen, opslag, recepten, reviews, HA/MEATER of de v6-preview. Deels fysiek bevestigd op iPhone; echte HA-/MEATER- en bestaande PWA-upgradeproeven zijn nog open. Zie `RELEASE_v5.2.0.md` voor de status per onderdeel.
 
 ## Onuitgebracht — proces
 - Centraal proces voor ChatGPT (bouwen), Claude (onafhankelijke review) en gebruiker (expliciet releaseakkoord).

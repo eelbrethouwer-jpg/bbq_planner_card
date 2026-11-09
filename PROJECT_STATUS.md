@@ -2,13 +2,13 @@
 
 Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor ChatGPT en Claude. Historische feiten hieronder zijn gedateerd; controleer vóór iedere nieuwe opdracht de actuele GitHub-repository, releases, PR's, CI en broncode. Geen enkele kopie wordt automatisch bijgewerkt.
 
-## Geverifieerde uitgangspositie (7 november 2026)
+## Geverifieerde uitgangspositie (9 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- Op die datum was de nieuwste gecontroleerde GitHub Release [v5.1.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.1.1). Release-tag/codecommit: `8afb5a89c7d2af975f6cddcbb97598682906e543`.
-- De gecontroleerde main-SHA was `2eede6c5a9c693ac9ea0a838ee81e66af3698a74`. Die bevat naast de appcode de latere eenmalige releaseworkflow.
-- Automatische controles voor deze main-commit waren geslaagd: [HACS + JavaScript/PWA + DOM + mobiele Chromium/WebKit](https://github.com/eelbrethouwer-jpg/bbq_planner_card/actions/runs/42359067347), SHA `2eede6c5a9c693ac9ea0a838ee81e66af3698a74`; [GitHub Pages-deployment](https://github.com/eelbrethouwer-jpg/bbq_planner_card/actions/runs/42359066971), dezelfde SHA; [releaseworkflow](https://github.com/eelbrethouwer-jpg/bbq_planner_card/actions/runs/42359067365), dezelfde SHA.
-- De actuele CI en huidige PR-lijst na deze gedateerde controle zijn **niet herverifieerd** in dit document. Lees hun live status bij iedere nieuwe taak.
-- Geïnstalleerde HACS-/PWA-versie bij de gebruiker: onbekend.
+- Laatste officiële release: [v5.2.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.0), tag exact op codecommit `7c6bd8a542049727a43e6f34b5c09629e909a78b`.
+- Startpunt huidige ontwikkelbranch: main `61f12bb80e56a16103bcee266c85042b50c7623f` (alle CI groen, eenmalige v5.2.0-releaseworkflow reeds uitgevoerd).
+- Werk in uitvoering: **v5.2.1 — Versie in beeld**, uitsluitend UI-versielabel en bijbehorende versie-/cache-/test-/documentatie-updates. Nog niet gereleased.
+- De gebruiker zag eerder HACS v5.1.1; daadwerkelijke installatie van v5.2.0 in Home Assistant is nog niet door hem bevestigd.
+- Praktijkacceptatie van PWA-upgrade met bestaande eigen data en echte Home Assistant/MEATER-metingen blijft open.
 
 ## Functionele basis
 - Planning voor grote en kleine kamado, gezamenlijke serveertijd, voorbereidingen, taken, receptenbibliotheek/import, reviews, boodschappenlijst en historie.

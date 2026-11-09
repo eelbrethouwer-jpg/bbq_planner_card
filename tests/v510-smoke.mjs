@@ -94,7 +94,7 @@ try{
  press('dish:'+dishes[0].id);assert.equal(w.__scrolledDish,dishes[0].id);
  bridge().getProbe=()=>({ok:false,note:'Geen verse live MEATER-meting (maximaal vijf minuten oud)'});render();
  for(const probe of root().querySelectorAll('.v5-probe')){assert.equal(probe.querySelector('.v5-number'),null);assert.match(probe.textContent,/maximaal vijf minuten oud/)}
- bridge().getProbe=()=>({ok:true,core:51.2,ambient:115});render();assert.match(root().querySelector('.v5-probe').textContent,/● LIVE · MEATER/);
+ bridge().getProbe=()=>({ok:true,core:51.2,ambient:115,updatedAt:Date.now()});render();assert.match(root().querySelector('.v5-probe').textContent,/● LIVE · HA-update/);
  const originalKamados=dishes.map(d=>d.kamado);dishes.forEach(d=>d.kamado='large');render();
  const unused=[...root().querySelectorAll('.v5-kamados .v5-probe')].find(el=>el.textContent.includes('Geen gerecht'));
  assert.ok(unused,'unused kamado exists');assert.match(unused.textContent,/Niet in gebruik/);assert.doesNotMatch(unused.textContent,/Doel BBQ/);

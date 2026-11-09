@@ -149,6 +149,30 @@ window.initBBQV5=function(b){
       if(slot.innerHTML!==markup)slot.innerHTML=markup;
     }
   }
+  function refreshLiveSchedule(){
+    if(screen!=='live'||document.body.classList.contains('v5-legacy')||document.hidden)return;
+    const root=$('v5-root');
+    if(!root||root.dataset.screen!=='live')return;
+    const now=Date.now(),c=b.calculate(),s=state();
+    const remaining=Math.max(0,Math.ceil((c.serve-now)/60000));
+    const countdown=Number.isFinite(c.serve)&&c.serve>now
+      ?'nog '+Math.floor(remaining/60)+' u '+remaining%60+' min':'serveertijd verstreken';
+    const bar=root.querySelector('.v5-live-bar strong');
+    const label='Serveren '+String(s.mealTime||'—')+' · '+countdown;
+    if(bar&&bar.textContent!==label)bar.textContent=label;
+    const hero=root.querySelector('.v5-hero[data-v5-hero-task]');
+    if(!hero)return;
+    const task=b.getTasks().find(t=>t.id===hero.dataset.v5HeroTask);
+    if(!task)return;
+    const tag=hero.querySelector('.v5-nowtag');
+    const tagLabel=task.time<=now+10*60000?'🔥 NU DOEN':'⏱️ HIERNA';
+    if(tag&&tag.textContent!==tagLabel)tag.textContent=tagLabel;
+    const detail=hero.querySelector('.v5-hero-detail');
+    const message=labelKam(task.k)+' · '+(task.time<now-10*60000
+      ?'Geplande tijd verstreken; controleer of dit nog nodig is.'
+      :'Geplande handeling · tijd is indicatief.');
+    if(detail&&detail.textContent!==message)detail.textContent=message;
+  }
   function live(){
     const s=state(),c=b.calculate(),all=b.getTasks().filter(t=>!t.id.includes(':prep:'));
     const done=s.v46Done||{},upcoming=all.filter(t=>!done[t.id]),now=Date.now(),next=upcoming.find(t=>t.time<=now+10*60000)||upcoming[0];
@@ -157,8 +181,8 @@ window.initBBQV5=function(b){
     const follow=upcoming.filter(t=>t.id!==next?.id),rows=showAllTasks?follow:follow.slice(0,3);
     const taskRow=t=>({id:t.id,title:t.title,time:t.time,when:'Gepland '+taskTime(t.time),detail:''});
     let hero=next?
-       '<div class="v5-hero"><div class="v5-between"><span class="v5-nowtag">'+(next.time<=now+10*60000?'🔥 NU DOEN':'⏱️ HIERNA')+'</span><span>'+taskTime(next.time)+'</span></div>'+
-       '<h2>'+escape(next.title)+'</h2><p>'+escape(labelKam(next.k))+' · '+(next.time<now-10*60000?'Geplande tijd verstreken; controleer of dit nog nodig is.':'Geplande handeling · tijd is indicatief.')+'</p>'+
+       '<div class="v5-hero" data-v5-hero-task="'+escape(next.id)+'"><div class="v5-between"><span class="v5-nowtag">'+(next.time<=now+10*60000?'🔥 NU DOEN':'⏱️ HIERNA')+'</span><span>'+taskTime(next.time)+'</span></div>'+
+       '<h2>'+escape(next.title)+'</h2><p class="v5-hero-detail">'+escape(labelKam(next.k))+' · '+(next.time<now-10*60000?'Geplande tijd verstreken; controleer of dit nog nodig is.':'Geplande handeling · tijd is indicatief.')+'</p>'+
        '<div class="v5-hero-actions">'+action('✓ Markeer uitgevoerd','done:'+next.id,'primary')+action('📖 Recept','recipe-in-live')+'</div></div>':
        '<div class="v5-hero"><h2>✅ Alle geplande handelingen afgevinkt</h2><p>Controleer de gaarheid voordat je serveert.</p>'+action('Sessie afronden','finish','primary')+'</div>';
     return '<div class="v5-live-bar"><div class="v5-between"><strong>Serveren '+escape(s.mealTime)+' · '+countdown+'</strong><span>'+finished+'/'+all.length+' afgerond</span></div><progress max="'+Math.max(1,all.length)+'" value="'+finished+'" aria-label="Handelingen afgerond"></progress></div>'+
@@ -382,7 +406,7 @@ window.initBBQV5=function(b){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render()});
   window.addEventListener('bbq-meater-updated',refreshLiveMeater);
   window.setInterval(refreshLiveMeater,1000); // display timer only
-  window.setInterval(()=>{if(screen==='live'&&!document.body.classList.contains('v5-legacy'))render()},30000);
+  window.setInterval(refreshLiveSchedule,30000); // only refresh countdown and due-state text, never the Live DOM
   render();
 };
 })();

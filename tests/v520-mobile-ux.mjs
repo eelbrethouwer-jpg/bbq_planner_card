@@ -132,7 +132,9 @@ try{
       await step.evaluate(el=>el.scrollIntoView({behavior:'instant',block:'center'}));
       await page.waitForTimeout(200);
       const y=await page.evaluate(()=>window.scrollY);
-      await page.evaluate(()=>{window.__liveRefresh();document.dispatchEvent(new Event('visibilitychange'));});
+      const stable=await page.evaluate(()=>{const root=document.querySelector('#v5-root .v5-content');window.__liveRefresh();return document.querySelector('#v5-root .v5-content')===root;});
+      ok(stable,name+': 30-second clock does not rebuild Live DOM');
+      await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
       ok(await page.locator('[data-v5-key="'+key+'"]').getAttribute('open')==='',name+': open step survives refresh');
       ok(Math.abs(await page.evaluate(()=>window.scrollY)-y)<=5,name+': scroll survives refresh');
     }

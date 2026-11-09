@@ -34,7 +34,11 @@ jobs:
             echo "::notice::Main moved; older commit will not be released."
             exit 0
           fi
-          gh api "repos/${GH_REPO}/contents/sw.js?ref=${TARGET}" --jq '.content' | base64 -d | grep -Fq 'bbq-regisseur-v5.2.2'
+          # The one-time 5.2.2 workflow should skip later versions after its release was published.
+          if ! gh api "repos/${GH_REPO}/contents/sw.js?ref=${TARGET}" --jq '.content' | base64 -d | grep -Fq 'bbq-regisseur-v5.2.2'; then
+            echo "::notice::Not v5.2.2; skip historical one-time workflow."
+            exit 0
+          fi
           gh api "repos/${GH_REPO}/contents/RELEASE_v5.2.2.md?ref=${TARGET}" --jq '.name' | grep -Fxq 'RELEASE_v5.2.2.md'
           gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}" --jq '.conclusion' | grep -Fxq success
           JOBS="$(gh api --paginate "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" --jq '.jobs[] | [.name,.conclusion] | @tsv')"

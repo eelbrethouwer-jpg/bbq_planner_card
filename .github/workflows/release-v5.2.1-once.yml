@@ -1,0 +1,95 @@
+name: Publish BBQ Planner v5.2.1 (one-time)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-v5.2.1-once.yml
+
+permissions:
+  contents: write
+  checks: read
+  pull-requests: read
+
+jobs:
+  publish:
+    if: github.repository == 'eelbrethouwer-jpg/bbq_planner_card' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish only the reviewed v5.2.1 production commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="v5.2.1"
+          TARGET="7366e533a60a8d68664723b3583a42a3f7bed760"
+
+          test "$(gh api "repos/${GH_REPO}/commits/${TARGET}" --jq '.sha')" = "$TARGET"
+          test "$(gh api "repos/${GH_REPO}/pulls/38" --jq '.merge_commit_sha')" = "$TARGET"
+          gh api "repos/${GH_REPO}/contents/sw.js?ref=${TARGET}" --jq '.content' | base64 -d | grep -Fq "bbq-regisseur-v5.2.1"
+
+          # A release is only created for the exact previously tested production merge.
+          CHECKS="$(gh api "repos/${GH_REPO}/commits/${TARGET}/check-runs?per_page=100")"
+          for job in validate-hacs ui-smoke mobile-browser html-javascript version-consistency; do
+            count="$(jq --arg job "$job" '[.check_runs[] | select(.name == $job and .status == "completed" and .conclusion == "success")] | length' <<< "$CHECKS")"
+            if [[ "$count" -lt 1 ]]; then
+              echo "::error::Required check $job was not successful on $TARGET"
+              exit 1
+            fi
+          done
+
+          # Fail closed if a tag or release already exists at an unexpected target.
+          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            existing="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+            if [[ "$existing" != "$TARGET" ]]; then
+              echo "::error::Existing tag points to $existing, not $TARGET"
+              exit 1
+            fi
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "Release $TAG already exists at correct target; no changes made."
+              exit 0
+            fi
+            echo "::error::Tag already exists without release; refusing to overwrite."
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release exists without matching tag ref; refusing."
+            exit 1
+          fi
+
+          cat > /tmp/bbq-v5.2.1-notes.md <<'NOTES'
+          ## BBQ Planner v5.2.1 — Versie in beeld
+
+          Een kleine verbetering aan de bestaande mobiele BBQ Planner. Onder **Meer → App en info** staat nu zichtbaar **Versie van deze app: v5.2.1**.
+
+          ### Gewijzigd
+          - Het versienummer wordt uit de werkelijk geladen app (de HTML-paginatitel) gehaald en staat direct onder App en info, zonder extra uitklap.
+          - Cache-/assetversies en Home Assistant-kaartverwijzingen zijn consistent bijgewerkt naar v5.2.1, zodat PWA en HACS de update kunnen herkennen.
+          - Gerichte DOM- en Chromium/WebKit-controles toegevoegd voor de weergegeven versie.
+
+          ### Ongewijzigd
+          - De berekeningen, kamadoverdeling, serveertijd en recepten/voorraad/reviews/historie.
+          - Alle opslagsleutels en opslagformaten, de Home Assistant-/MEATER-bridge en de afzonderlijke V6-preview.
+
+          ### Geverifieerd
+          - Exacte productiecode: mergecommit `7366e533a60a8d68664723b3583a42a3f7bed760` (PR #38).
+          - Alle vijf vereiste GitHub Actions-jobs op de gecontroleerde code groen, inclusief mobiele Chromium-/WebKit-tests.
+          - Databehoudtest van bestaande v5.1.1-gebruikersgegevens naar v5.2.1 geslaagd in een gesimuleerde browseromgeving.
+
+          ### Nog te controleren op echte apparaten
+          - Home Assistant/HACS bijwerken en bevestigen dat het versienummer in de kaart zichtbaar is.
+          - Bestaande PWA-installatie en cachevervanging met persoonlijke gegevens.
+          - Echte MEATER Pro/Plus-gegevens (niet gewijzigd in deze versie).
+
+          Bron: https://github.com/eelbrethouwer-jpg/bbq_planner_card/pull/38
+          NOTES
+
+          gh release create "$TAG" --target "$TARGET" --title "BBQ Planner v5.2.1 — Versie in beeld" --notes-file /tmp/bbq-v5.2.1-notes.md --latest
+          actual="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+          if [[ "$actual" != "$TARGET" ]]; then
+            echo "::error::Published release tag points to $actual, expected $TARGET"
+            exit 1
+          fi
+          gh release view "$TAG" --json tagName,name,url,targetCommitish

@@ -44,4 +44,4 @@ assert.match(salmon.recipes[0].recipeIngredients,/Dijonmosterd/);
 assert.match(salmon.recipes[0].recipeIngredients,/roomkaas/);
 assert.match(salmon.recipes[0].recipeCook,/63 °C/);
 assert.match(html,/Warmgerookte zalm op brioche/);
-console.log('OK PWA v5.2.1 static checks');
+console.log('OK PWA v5.2.2 static checks');

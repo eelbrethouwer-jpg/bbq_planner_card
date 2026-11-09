@@ -1,0 +1,77 @@
+name: Publish BBQ Planner v5.2.2 (after CI)
+
+on:
+  workflow_run:
+    workflows: ["HACS-validatie"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'eelbrethouwer-jpg/bbq_planner_card' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish exact green main commit once
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          TAG="v5.2.2"
+          CURRENT="$(gh api "repos/${GH_REPO}/branches/main" --jq '.commit.sha')"
+          if [[ "$CURRENT" != "$TARGET" ]]; then
+            echo "::notice::Main moved; older commit will not be released."
+            exit 0
+          fi
+          gh api "repos/${GH_REPO}/contents/sw.js?ref=${TARGET}" --jq '.content' | base64 -d | grep -Fq 'bbq-regisseur-v5.2.2'
+          gh api "repos/${GH_REPO}/contents/RELEASE_v5.2.2.md?ref=${TARGET}" --jq '.name' | grep -Fxq 'RELEASE_v5.2.2.md'
+          gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}" --jq '.conclusion' | grep -Fxq success
+          JOBS="$(gh api --paginate "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" --jq '.jobs[] | [.name,.conclusion] | @tsv')"
+          for job in validate-hacs html-javascript ui-smoke mobile-browser version-consistency; do
+            if ! grep -Fqx "$job"$'\t'success <<< "$JOBS"; then
+              echo "::error::Required job $job missing or not green"
+              exit 1
+            fi
+          done
+          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            existing="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+            if [[ "$existing" != "$TARGET" ]]; then
+              echo "::error::Release tag points to different SHA"
+              exit 1
+            fi
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "Exact release already exists; no action."
+              exit 0
+            fi
+            echo "::error::Tag exists without release"
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release exists without matching tag"
+            exit 1
+          fi
+          cat > /tmp/notes.md <<'NOTES'
+          ## BBQ Planner v5.2.2 — MEATER direct in Live
+
+          - MEATER-kernwaarden verschijnen direct nadat Home Assistant ze doorstuurt.
+          - Leeftijd van de laatste echte HA-meting wordt per seconde bijgewerkt; geen gefingeerde metingen.
+          - Oude of vertraagde sensordata krijgt een herkenbare status.
+          - Geen wijzigingen aan BBQ-planning, recepten, beoordelingen of opslag.
+          - De officiële MEATER-integratie van Home Assistant pollt normaal iedere 30 seconden. Dit is geen 1-Hz sensorverbinding.
+          - De openbare PWA krijgt geen live Home Assistant-sensorgegevens.
+          - Geautomatiseerde controles gebruiken fictieve data; fysieke iPhone-/HACS-/MEATER-test staat nog open.
+          NOTES
+          gh release create "$TAG" --target "$TARGET" --title "BBQ Planner v5.2.2 — MEATER direct in Live" --notes-file /tmp/notes.md --latest
+          test "$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')" = "$TARGET"
+          gh release view "$TAG" --json tagName,name,url,targetCommitish

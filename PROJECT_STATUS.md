@@ -4,11 +4,11 @@ Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor ChatGPT 
 
 ## Geverifieerde uitgangspositie (9 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- Laatste officiële release: [v5.2.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.0), tag exact op codecommit `7c6bd8a542049727a43e6f34b5c09629e909a78b`.
-- Startpunt huidige ontwikkelbranch: main `61f12bb80e56a16103bcee266c85042b50c7623f` (alle CI groen, eenmalige v5.2.0-releaseworkflow reeds uitgevoerd).
-- Werk in uitvoering: **v5.2.1 — Versie in beeld**, uitsluitend UI-versielabel en bijbehorende versie-/cache-/test-/documentatie-updates. Nog niet gereleased.
-- De gebruiker zag eerder HACS v5.1.1; daadwerkelijke installatie van v5.2.0 in Home Assistant is nog niet door hem bevestigd.
-- Praktijkacceptatie van PWA-upgrade met bestaande eigen data en echte Home Assistant/MEATER-metingen blijft open.
+- Laatste geverifieerde GitHub-release: [v5.2.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.1).
+- Basis voor v5.2.2: `main` `529f4b827b9d4a3d78e07069b42d61097010bc03`.
+- Branch: `feature/v5.2.2-meater-live-second-indicator`, wijzigingen aan Live MEATER-verversing. De gebruiker gaf toestemming voor merge en release **onder voorwaarde van groene checks en daadwerkelijke gereedheid**.
+- Een Home Assistant-bericht vernieuwt alleen de sensorvakken in Live; per seconde verandert alleen de leeftijdsaanduiding. Geen nieuwe sensormetingen per seconde: officiële HA-MEATER-uitlezing blijft circa 30 seconden.
+- De actuele HACS-installatie en echte iPhone/MEATER-functionaliteit zijn niet op hardware getest; in CI zijn de tests simulaties.
 
 ## Functionele basis
 - Planning voor grote en kleine kamado, gezamenlijke serveertijd, voorbereidingen, taken, receptenbibliotheek/import, reviews, boodschappenlijst en historie.

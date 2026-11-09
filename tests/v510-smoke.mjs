@@ -62,7 +62,9 @@ try{
  assert.ok(details.every(e=>e.dataset.v5Key));assert.equal(new Set(details.map(e=>e.dataset.v5Key)).size,details.length);
  const dish=details.find(e=>e.dataset.v5Dish);dish.open=true;const stage=dish.querySelector('details');stage.open=true;
  const key=stage.dataset.v5Key;w.scrollTo(0,640);
+ const beforeTick=root().querySelector('.v5-content');
  intervals.filter(i=>i.delay===30000).forEach(i=>i.fn());
+ assert.equal(root().querySelector('.v5-content'),beforeTick,'30s status refresh preserves DOM');
  assert.ok([...root().querySelectorAll('details')].find(e=>e.dataset.v5Key===key).open);assert.equal(w.scrollY,640);
  d.dispatchEvent(new w.Event('visibilitychange'));assert.equal(w.scrollY,640);
  assert.ok([...root().querySelectorAll('details')].find(e=>e.dataset.v5Key===key).open);
@@ -70,7 +72,7 @@ try{
  const dishes=bridge().getState().dishes;
  // Distinct IDs with identical names catch the old textContent-selection bug.
  dishes[1].name=dishes[0].name;
- const render=()=>intervals.filter(i=>i.delay===30000).forEach(i=>i.fn());
+ const render=()=>d.dispatchEvent(new w.Event('visibilitychange')); // force full rendering only for synthetic test-state changes
  const day=bridge().getState().date;
  const noon=new Date();noon.setHours(12,0,0,0);
  const tomorrow=new Date(noon);tomorrow.setDate(tomorrow.getDate()+1);

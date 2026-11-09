@@ -1,6 +1,14 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.2.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.1) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
+> Actueel gepubliceerd: [v5.2.2](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.2) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
+
+## v5.2.3 — Rustig Live-scherm (releasekandidaat, niet gepubliceerd)
+- De 30-seconden-timer bouwt het volledige Live-scherm niet langer opnieuw op. Alleen serveeraftelling en status van de eerstvolgende handeling verversen gericht.
+- Nieuwe HA-waarden blijven direct verwerkt en meetleeftijd wordt per seconde bijgewerkt; die updates zijn losgekoppeld van de layout.
+- Gepinde/open receptstappen, scrollpositie, actieve knoppen en lokale data blijven bij klokupdates behouden. Extra browser- en jsdom-tests.
+- Geen versnelling van de MEATER Cloud-integratie: nieuwe echte sensormetingen blijven afhankelijk van haar 30-seconden-polling. Een lokale BLE-route voor Pro/Plus is apart te onderzoeken.
+
+
 
 ## v5.2.2 — MEATER direct in Live (releasekandidaat)
 - Nieuwe MEATER-temperatuur direct in Live zodra Home Assistant deze aanlevert; geen volledige hertekening van het scherm.

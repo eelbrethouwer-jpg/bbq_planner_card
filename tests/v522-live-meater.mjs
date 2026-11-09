@@ -61,6 +61,9 @@ try{
  assert.ok(!kamado.textContent.includes('54.8 °C'),'expired core hidden');
  assert.match(kamado.textContent,/Geen verse live MEATER-meting/,'existing cutoff enforced');
  assert.equal($('#v5-root .v5-content'),root,'stale update does not rebuild');
+ assert.equal(w.__intervals[30000]?.length,1,'one 30-second schedule-only timer');
+ w.__intervals[30000][0]();
+ assert.equal($('#v5-root .v5-content'),root,'30-second schedule update preserves Live DOM');
  assert.equal(w.localStorage.getItem('kamado-bereidingsplanner-v1'),saved,'no telemetry writes to storage');
  assert.deepEqual(errors,[],'no runtime errors');
  console.log('PASS v5.2.2 MEATER Live: instant HA update, age ticks, stale cutoff, no persisted changes');

@@ -1,14 +1,15 @@
 # PROJECT_STATUS — BBQ Planner
 
-Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor ChatGPT en Claude. Historische feiten hieronder zijn gedateerd; controleer vóór iedere nieuwe opdracht de actuele GitHub-repository, releases, PR's, CI en broncode. Geen enkele kopie wordt automatisch bijgewerkt.
+Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor ChatGPT en Claude. Historische feiten hieronder zijn gedateerd; controleer vóór iedere nieuwe opdracht de actuele GitHub-repository, releases, PR's, CI en broncode.
 
-## Geverifieerde uitgangspositie (9 november 2026)
+## Ontwikkelstatus (9 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- Laatste geverifieerde GitHub-release: [v5.2.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.1).
-- Basis voor v5.2.2: `main` `529f4b827b9d4a3d78e07069b42d61097010bc03`.
-- Branch: `feature/v5.2.2-meater-live-second-indicator`, wijzigingen aan Live MEATER-verversing. De gebruiker gaf toestemming voor merge en release **onder voorwaarde van groene checks en daadwerkelijke gereedheid**.
-- Een Home Assistant-bericht vernieuwt alleen de sensorvakken in Live; per seconde verandert alleen de leeftijdsaanduiding. Geen nieuwe sensormetingen per seconde: officiële HA-MEATER-uitlezing blijft circa 30 seconden.
-- De actuele HACS-installatie en echte iPhone/MEATER-functionaliteit zijn niet op hardware getest; in CI zijn de tests simulaties.
+- Laatste geverifieerde gepubliceerde GitHub-release: [v5.2.2](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.2), mergecommit `3a46b602113dfd581dc622a9316c4c328eddc513`.
+- Nieuwe RC: **v5.2.3 — Rustig Live-scherm**. Featurebranch `fix/v5.2.3-live-no-30sec-redraw` vanaf gepubliceerde v5.2.2.
+- 30-seconden-schermrender is vervangen door tekstupdates voor serveertijd, taakstatus en tijdstatus; 1-seconde-sensorleeftijd en directe HA MEATER-updates blijven behouden.
+- Officiële Home Assistant-MEATER-integratie leest ongeveer iedere 30 seconden uit de cloud. De planner kan deze werkelijke meetfrequentie niet veranderen. Voor Pro én Plus vereist echte lokale BLE-ondersteuning afzonderlijk onderzoek.
+- Geen echte iPhone/Home Assistant/MEATER hardwaretest in de CI. Geen wijzigingen aan `engine/**`, `v6/**`, opgeslagen data, recepten, reviews of HA-accountkoppeling.
+- Merge/publicatie uitsluitend na GitHub-validatie van exacte RC HEAD, volgende push-CI en expliciete autorisatie.
 
 ## Functionele basis
 - Planning voor grote en kleine kamado, gezamenlijke serveertijd, voorbereidingen, taken, receptenbibliotheek/import, reviews, boodschappenlijst en historie.

@@ -132,7 +132,9 @@ try{
       await step.evaluate(el=>el.scrollIntoView({behavior:'instant',block:'center'}));
       await page.waitForTimeout(200);
       const y=await page.evaluate(()=>window.scrollY);
-      await page.evaluate(()=>{window.__liveRefresh();document.dispatchEvent(new Event('visibilitychange'));});
+      const stable=await page.evaluate(()=>{const root=document.querySelector('#v5-root .v5-content');window.__liveRefresh();return document.querySelector('#v5-root .v5-content')===root;});
+      ok(stable,name+': 30-second clock does not rebuild Live DOM');
+      await page.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
       ok(await page.locator('[data-v5-key="'+key+'"]').getAttribute('open')==='',name+': open step survives refresh');
       ok(Math.abs(await page.evaluate(()=>window.scrollY)-y)<=5,name+': scroll survives refresh');
     }
@@ -186,8 +188,8 @@ try{
     await layout('more');
     const groups=await page.locator('#v47-more .v520-group').evaluateAll(els=>els.map(el=>el.id));
     ok(JSON.stringify(groups)===JSON.stringify(['v520-more-koken','v520-more-koppelingen','v520-more-gegevens','v520-more-app']),name+': four ordered groups '+groups);
-    ok(await page.locator('#v520-more-app #v520-app-version').textContent()==='Versie van deze app: v5.2.2',name+': visible app version in Meer → App en info');
-    ok((await page.title()).includes('v5.2.2'),name+': app version matches loaded HTML title');
+    ok(await page.locator('#v520-more-app #v520-app-version').textContent()==='Versie van deze app: v5.2.3',name+': visible app version in Meer → App en info');
+    ok((await page.title()).includes('v5.2.3'),name+': app version matches loaded HTML title');
     const expected={koken:['v45-shopping','v46-pantry-list','v46-history'],koppelingen:['v46-notify','v520-open-cooking'],
       gegevens:['json-export','json-import','print','export','reset','share-public'],app:['v49-install','v49-update','v49-share','v49-install-steps']};
     for(const [group,ids] of Object.entries(expected))for(const id of ids)

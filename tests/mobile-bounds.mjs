@@ -109,7 +109,9 @@ try{
    const key=await step.getAttribute('data-v5-key');
    await step.evaluate(el=>el.scrollIntoView({behavior:'instant'}));
    const scroll=await app.locator('body').evaluate(()=>window.scrollY);
-   await app.locator('body').evaluate(()=>{window.__v510Interval();document.dispatchEvent(new Event('visibilitychange'))});
+   const stable=await app.locator('body').evaluate(()=>{const root=document.querySelector('#v5-root .v5-content');window.__v510Interval();return root===document.querySelector('#v5-root .v5-content')});
+   assert.ok(stable,name+': 30-second clock never reconstructs Live DOM');
+   await app.locator('body').evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
    assert.equal(await app.locator('[data-v5-key="'+key+'"]').getAttribute('open'),'');
    assert.ok(Math.abs(await app.locator('body').evaluate(()=>window.scrollY)-scroll)<=5,name+': scroll retained after refresh');
    await app.locator('body').evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await capture('live');

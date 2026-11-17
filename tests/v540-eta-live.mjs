@@ -207,12 +207,13 @@ const clock=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-
     await new Promise(r=>setTimeout(r,20));
     const hist=calls.filter(c=>c.type==='history/history_during_period');
     assert.equal(hist.length,1,'one history call per load');
-    const q=hist[0];
+    const plain=v=>JSON.parse(JSON.stringify(v)); // jsdom objects come from another realm
+    const q=plain(hist[0]);
     assert.deepEqual(q.entity_ids,[P+'interne_temperatuur',P+'omgevingstemperatuur'],'only existing probe sensors (the Plus is not in hass.states)');
     assert.equal(q.minimal_response,true);assert.equal(q.no_attributes,true);
     assert.equal(q.significant_changes_only,false);assert.equal(q.include_start_time_state,false);
     assert.ok(Math.abs(Date.now()-3*3600000-Date.parse(q.start_time))<60000,'last 3 hours');
-    const msg=sent.find(x=>x.m.__bbq==='bbq-ha-history-v1');
+    const found=sent.find(x=>x.m.__bbq==='bbq-ha-history-v1'),msg=found&&{m:plain(found.m),o:found.o};
     assert.ok(msg,'history sent to the planner');
     assert.equal(msg.o,w.location.origin,'same-origin target only');
     assert.deepEqual(msg.m.probes.pro.internal,[[1794844500250,9.5],[1794844560000,10.4]],'seconds → ms, non-numeric states dropped');

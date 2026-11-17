@@ -1,6 +1,6 @@
 # BBQ Planner v5.4.0 — Eigen schattingsmodule
 
-**Status: releasekandidaat (draft-PR), niet gepubliceerd.** Basis: `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1` (main na PR #43; code v5.3.0).
+**Status: niet afzonderlijk gepubliceerd; opgenomen in release v5.5.0.** Basis: `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1` (main na PR #43; code v5.3.0).
 
 ## Wat is gewijzigd?
 - **Eén schatting voor de hele app.** Een nieuwe, pure schattingsmodule (`dist/bbq-eta.js`, ook als ES-module `engine/eta.mjs`) rekent per gerecht uit wanneer de kern het doel haalt. De Live-kaart, het slimme advies (`smartPlan`), de oude MEATER-pagina (`v46Prediction`) en de meldingen gebruiken allemaal deze module.

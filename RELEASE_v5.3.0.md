@@ -1,6 +1,6 @@
 # BBQ Planner v5.3.0 — Live-gerechtkaart
 
-**Status: releasekandidaat (draft-PR), niet gepubliceerd.** Basis: `357252b78c9136d35d0868e4ad6b3ad4f8de7e06` (main na PR #42; code v5.2.3).
+**Status: niet afzonderlijk gepubliceerd; opgenomen in release v5.5.0.** Basis: `357252b78c9136d35d0868e4ad6b3ad4f8de7e06` (main na PR #42; code v5.2.3).
 
 ## Wat is gewijzigd?
 - **Eén kaart per gerecht op Live**, in plaats van één tegel per kamado. Ook twee gerechten op één kamado krijgen elk een eigen kaart met hun eigen thermometer.

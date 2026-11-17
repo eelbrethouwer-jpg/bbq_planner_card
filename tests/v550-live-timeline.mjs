@@ -177,6 +177,9 @@ try{
     const s=await open(browser);
     await s.set('plus',idle('8.0','15'));
     await startSession(s,['Ribeye 500 g','Kippenpoten']);
+    // v5.7: Kippenpoten now lands on the small kamado by itself (fewest conflicts). This scenario keeps both dishes on the large
+    // kamado, as before: the user chooses "Groot" by hand (a manual choice is never changed by the app).
+    {const kip=(await s.dishes())[1].id;await s.f.locator('select[data-v5-kamado="'+kip+'"]').selectOption('large');await s.page.waitForTimeout(80);}
     let [rib,chk]=await s.dishes();
     ok(rib.meater==='pro'&&rib.meaterAuto===true,engineName+': in the HA card the default Pro is still linked, marked automatic');
     // Kippenpoten: the user chooses "Geen thermometer" explicitly.

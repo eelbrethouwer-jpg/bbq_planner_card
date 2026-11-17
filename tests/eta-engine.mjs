@@ -31,7 +31,7 @@ const RIBEYE = {Ta: 120, c0: 9.5, target: 54, k: kFor(120, 9.5, 45.5, 40)}; // 9
 const KIP = {Ta: 180, c0: 5, target: 75, k: kFor(180, 5, 75, 55)};          // kippenpoot, 55 min recipe time
 
 caseOf('module: version, defaults and frozen API', () => {
-  assert.equal(ETA_VERSION, '5.4.0');
+  assert.equal(ETA_VERSION, '5.5.0');
   assert.equal(ETA_DEFAULTS.windowMin, 12);
   assert.equal(ETA_DEFAULTS.minSpanMin, 5);
   assert.equal(ETA_DEFAULTS.minPoints, 4);
@@ -371,6 +371,36 @@ caseOf('informatief: tweetraps-opwarming (eerst buitenkant, dan kern) — bekend
     assert.ok(early >= -0.05 * m, name + ' never more than 5% too early');
     console.log(`  tweetraps ${name}: grootste afwijking ${worst.toFixed(1)} min van ${m} min (${(100 * worst / m).toFixed(0)}%), te laat`);
   }
+});
+
+// v5.5 (review PR #44, finding 2): heldUntil = the source confirms the last value is still current (HA last_reported, or a
+// sensor that is still available while HA writes only on a change). Only freshness changes; no point is invented.
+caseOf('heldUntil: onveranderde waarde blijft vers, tijden blijven aan de laatste meting verankerd', () => {
+  const pts = strip(newton({...RIBEYE, until: 40}));
+  const last = pts[pts.length - 1].t, now = last + 20 * MIN;
+  const base = {points: pts, target: 54, phaseTargets: [47], rest: 8, startedAt: T0, cookMinutes: 55, transitionMinutes: 15};
+  const without = estimate({...base, now});
+  assert.equal(without.state, 'expired'); assert.equal(without.source, 'start', 'zonder heldUntil: na 15 min vervalt de curve');
+  const held = estimate({...base, now, heldUntil: now});
+  assert.equal(held.source, 'curve'); assert.equal(held.stale, false); assert.equal(held.ageMin, 0);
+  assert.equal(held.unchangedMin, 20, 'aantal minuten zonder verandering');
+  const fresh = estimate({...base, now: last + 2000});
+  assert.equal(held.cookEnd, fresh.cookEnd, 'zelfde eindtijd: verankerd aan de laatste meting, niet aan heldUntil');
+  assert.equal(held.points, pts.length, 'geen verzonnen meetpunt');
+  // last_reported 6 min old → stale; 16 min → expired.
+  assert.equal(estimate({...base, now, heldUntil: now - 6 * MIN}).stale, true);
+  assert.equal(estimate({...base, now, heldUntil: now - 16 * MIN}).state, 'expired');
+  // Invalid or future heldUntil is ignored.
+  assert.equal(estimate({...base, now, heldUntil: now + 10 * MIN}).state, 'expired');
+  assert.equal(estimate({...base, now, heldUntil: 'x'}).state, 'expired');
+  assert.equal(estimate({...base, now, heldUntil: last - MIN}).state, 'expired', 'ouder dan de laatste meting telt niet');
+});
+caseOf('heldUntil: puur (invoer onveranderd, zelfde antwoord)', () => {
+  const pts = strip(newton({...RIBEYE, until: 30}));
+  const input = {points: pts, target: 54, now: pts[pts.length - 1].t + 9 * MIN, heldUntil: pts[pts.length - 1].t + 9 * MIN};
+  const copy = JSON.stringify(input);
+  const a = estimate(input), b = estimate(input);
+  assert.equal(JSON.stringify(input), copy); assert.deepEqual(a, b);
 });
 
 const failed = results.filter(r => r.status === 'FAIL');

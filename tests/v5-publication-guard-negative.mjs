@@ -48,7 +48,12 @@ const cases = [
   ['5d opslag via indirecte sleutel', 'STORAGE_CONTRACT', () => edit('dist/bbq-v501.js', s => s + "\n;const K2=['bbq','x'].join('-');try{window.localStorage.setItem(K2,'1')}catch(e){}\n")],
   ['5e HA-berichttype hernoemd', 'STORAGE_CONTRACT', () => edit('dist/bbq_planner_card.js', s => s.replaceAll('bbq-notify-result-v1', 'bbq-notify-result-v2'))],
   ['5f nieuw, niet-gedeclareerd berichttype', 'STORAGE_CONTRACT', () => edit('dist/bbq_planner_card.js', s => s.replace("{__bbq:'bbq-ha-history-v1'", "{__bbq:'bbq-ha-undeclared-v1'"))],
-  ['5g gedeclareerd nieuw berichttype verwijderd uit de policy', 'STORAGE_CONTRACT', () => edit('.github/publication-guard.json', s => s.replace('"newDataContractIdentifiers": [\n    "bbq-ha-history-v1"\n  ]', '"newDataContractIdentifiers": []'))],
+  // v5.5 (review PR #44, finding 3): the list of new message types is empty again. Equivalent check: a new type that is only
+  // half declared (in newDataContractIdentifiers, not in dataContractIdentifiers) is still rejected.
+  ['5g nieuw berichttype half gedeclareerd in de policy', 'STORAGE_CONTRACT', () => {
+    edit('dist/bbq_planner_card.js', s => s.replace("{__bbq:'bbq-notify-result-v1'", "{__bbq:'bbq-ha-halfdeclared-v1',x:0},{__bbq:'bbq-notify-result-v1'"));
+    edit('.github/publication-guard.json', s => s.replace('"newDataContractIdentifiers": []', '"newDataContractIdentifiers": ["bbq-ha-halfdeclared-v1"]'));
+  }],
   ['5h nieuw bestand in engine/ naast het toegestane eta.mjs', 'PROTECTED_PATH', () => fs.writeFileSync(path.join(wt, 'engine/eta-extra.mjs'), 'export const y=2;\n')],
   ['6 niet-toegestaan productiebestand (manifest)', 'UNDECLARED_PRODUCTION_CHANGE', () => edit('manifest.webmanifest', s => s.replace('"lang": "nl"', '"lang": "en"'))],
   ['6b nieuw productiebestand', 'UNDECLARED_PRODUCTION_CHANGE', () => fs.writeFileSync(path.join(wt, 'dist/extra.js'), 'window.x=1;\n')],

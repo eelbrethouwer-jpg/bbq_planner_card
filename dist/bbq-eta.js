@@ -1,4 +1,4 @@
-/* BBQ Planner v5.4.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen.
+/* BBQ Planner v5.5.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen.
    Puur: geen DOM, geen klok, geen opslag, geen netwerk. `now` is altijd een parameter.
    Klassiek script (window.BBQEta), zodat de planner geen module-lader nodig heeft; dezelfde functies
    zijn via de ES-module-ingang in Node testbaar (zie tests/eta-engine.mjs). */
@@ -175,8 +175,11 @@ function carryoverAdvice(target,rest,weightKg,allow){
   return {pullAt:target-early,degrees:early,
     text:'Doorgaren: haal het van het rooster bij ongeveer '+(target-early)+' °C; tijdens het rusten stijgt de kern nog '+early+' °C. Je doel blijft '+target+' °C.'};
 }
-/* estimate({points,target,phaseTargets,now,rest,startedAt,cookMinutes,transitionMinutes,plannedEnd,meater,history,weightKg,carryover})
+/* estimate({points,target,phaseTargets,now,rest,startedAt,cookMinutes,transitionMinutes,plannedEnd,meater,history,weightKg,carryover,heldUntil})
    points:     echte metingen [{t,core,ambient}] (ms, °C)
+   heldUntil:  v5.5, optioneel: tot dit tijdstip bevestigt de bron dat de laatste waarde nog geldt (HA last_reported,
+               of: de sensor is nog beschikbaar en HA schrijft alleen bij een gewijzigde waarde). Alleen voor de versheid
+               (ageMin, stale, expired); er wordt geen meetpunt verzonnen en tijden blijven aan de laatste meting verankerd.
    target:     einddoel kern (°C) of null
    meater:     {eta,at} alleen als de MEATER-ETA al gevalideerd is (incl. de 2 °C-doelcheck), anders null
    history:    {medianMinutes} uit eigen reviews, of null
@@ -191,15 +194,17 @@ function estimate(input){
   const pts=cleanPoints(o.points,now);
   const startedAt=finiteTime(o.startedAt);
   const out={ok:false,source:'none',state:'none',cookEnd:null,ready:null,margin:null,reason:'',
-    asOf:null,ageMin:null,stale:false,core:null,rise:null,ambient:null,model:null,confidence:null,
+    asOf:null,ageMin:null,unchangedMin:null,stale:false,core:null,rise:null,ambient:null,model:null,confidence:null,
     phase:null,stall:null,meater:null,progress:null,points:pts.length,
     advice:carryoverAdvice(target,rest,Number(o.weightKg),o.carryover)};
   let c=null;
   if(pts.length){
     const last=pts[pts.length-1];
-    out.asOf=last.t;out.ageMin=Math.max(0,Math.floor((now-last.t)/MIN));out.core=last.core;
-    out.stale=now-last.t>cfg.freshMin*MIN;
-    if(now-last.t>cfg.staleMaxMin*MIN){out.state='expired';out.reason='Laatste meting is ouder dan '+cfg.staleMaxMin+' minuten';}
+    const held=finiteTime(o.heldUntil),ref=held!==null&&held>last.t&&held<=now+MIN?Math.min(held,now):last.t;
+    out.asOf=last.t;out.ageMin=Math.max(0,Math.floor((now-ref)/MIN));out.core=last.core;
+    out.stale=now-ref>cfg.freshMin*MIN;
+    out.unchangedMin=Math.max(0,Math.floor((ref-last.t)/MIN));
+    if(now-ref>cfg.staleMaxMin*MIN){out.state='expired';out.reason='Laatste meting is ouder dan '+cfg.staleMaxMin+' minuten';}
     else{
       c=curve(pts,target,phaseTargets,cfg);
       out.state=c.state;out.reason=c.reason;out.rise=c.rise;out.ambient=c.ambient;out.model=c.model;
@@ -228,6 +233,6 @@ function estimate(input){
   }
   return out;
 }
-const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.4.0'});
+const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.5.0'});
 root.BBQEta=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

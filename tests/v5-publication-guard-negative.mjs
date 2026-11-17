@@ -54,6 +54,8 @@ const cases = [
     edit('dist/bbq_planner_card.js', s => s.replace("{__bbq:'bbq-notify-result-v1'", "{__bbq:'bbq-ha-halfdeclared-v1',x:0},{__bbq:'bbq-notify-result-v1'"));
     edit('.github/publication-guard.json', s => s.replace('"newDataContractIdentifiers": []', '"newDataContractIdentifiers": ["bbq-ha-halfdeclared-v1"]'));
   }],
+  // v5.5: a declared storage line may be added only literally; any edit of it is a new, undeclared storage line.
+  ['5i gedeclareerde opslagregel gewijzigd', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', replaceOnce('?.view;savedView=', '?.view;window.__x=v;savedView='))],
   ['5h nieuw bestand in engine/ naast het toegestane eta.mjs', 'PROTECTED_PATH', () => fs.writeFileSync(path.join(wt, 'engine/eta-extra.mjs'), 'export const y=2;\n')],
   ['6 niet-toegestaan productiebestand (manifest)', 'UNDECLARED_PRODUCTION_CHANGE', () => edit('manifest.webmanifest', s => s.replace('"lang": "nl"', '"lang": "en"'))],
   ['6b nieuw productiebestand', 'UNDECLARED_PRODUCTION_CHANGE', () => fs.writeFileSync(path.join(wt, 'dist/extra.js'), 'window.x=1;\n')],

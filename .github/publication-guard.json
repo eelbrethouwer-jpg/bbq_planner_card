@@ -61,5 +61,9 @@
     "kamado-reviews-v1"
   ],
   "allowDataContractChange": false,
-  "newDataContractIdentifiers": []
+  "newDataContractIdentifiers": [],
+  "$commentDeclaredStorageLines": "v5.5: nieuwe opslagregels die letterlijk zo in de code staan (bestand + getrimde regel). Alleen toevoegen; leegmaken bij de volgende PR.",
+  "declaredStorageLines": [
+    "dist/bbq-v5.js: try{const v=JSON.parse(localStorage.getItem(KEY))?.view;savedView=v&&typeof v==='object'&&!Array.isArray(v)?v:null}catch(e){}"
+  ]
 }

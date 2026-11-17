@@ -19,11 +19,39 @@ window.initBBQV5=function(b){
   const probeEdit=new Set(),heroAck=new Set();let adjustOpen=false;
   let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',legacyReturn='',legacyReturnScroll=0,showAllTasks=false,recipeFilter='all';
   try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==='object'&&saved.version===1){meta={active:saved.active===true,stage:['select','setup','prep','live','finished'].includes(saved.stage)?saved.stage:'select',created:String(saved.created||'')}}}catch(e){}
+  /* v5.5: optional field `view` in the existing session metadata (bbq-v5-session-v1): last screen, legacy tab, return target,
+     scroll position and time. The HA app often reloads the card/iframe after switching apps; an active session then reopens
+     where it was (within 12 hours). Old metadata without `view` simply starts on Vandaag. Declared in publication-guard.json. */
+  let savedView=null;
+  try{const v=JSON.parse(localStorage.getItem(KEY))?.view;savedView=v&&typeof v==='object'&&!Array.isArray(v)?v:null}catch(e){}
   const state=()=>b.getState();
   const dishes=()=>state().dishes||[];
   function saveMeta(){try{localStorage.setItem(KEY,JSON.stringify({...meta,version:1}))}catch(e){/* Only session navigation metadata; dishes remain in v4 storage */}}
   function commit(){b.commit();}
-  function goto(next){screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}}
+  function goto(next){screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}saveView();}
+  const VIEW_SCREENS=['home','select','setup','prep','live'],VIEW_TABS=['recipes','more','planning','cooking'];
+  function saveView(){
+    // Only navigation state of an active session; never plan data.
+    if(!meta.active)return;
+    const legacyOn=document.body.classList.contains('v5-legacy');
+    meta.view={screen:legacyOn?legacyFrom:screen,legacyTab:legacyOn?legacyTab:'',legacyReturn:legacyOn?legacyReturn:'',
+      scroll:Math.max(0,Math.round(window.scrollY||0)),at:Date.now()};
+    saveMeta();
+  }
+  let viewTimer=null;
+  function saveViewSoon(){if(viewTimer)return;viewTimer=setTimeout(()=>{viewTimer=null;saveView()},1000)}
+  function restoreView(){
+    const v=savedView;savedView=null;
+    if(!v||!meta.active||meta.stage==='finished'||!dishes().length)return false;
+    const at=Number(v.at);if(!Number.isFinite(at)||at>Date.now()+60000||Date.now()-at>12*3600000)return false;
+    const next=VIEW_SCREENS.includes(v.screen)?v.screen:null;if(!next)return false;
+    screen=next;meta.view=v;render();
+    if(VIEW_TABS.includes(v.legacyTab))legacy(v.legacyTab,null,VIEW_TABS.includes(v.legacyReturn)?v.legacyReturn:undefined);
+    const y=Math.max(0,Number(v.scroll)||0);
+    const scroll=()=>{try{window.scrollTo({top:y,left:0,behavior:'instant'})}catch(e){}};
+    scroll();setTimeout(scroll,0);
+    return true;
+  }
   function logo(){return '<div class="v5-top"><div class="v5-brand"><span class="v5-flame">🔥</span><div><div class="v5-title">BBQ Planner</div><div class="v5-sub">Rustig samen koken</div></div></div><span class="v5-chip neutral">'+escape(day(Date.parse(state().date)))+'</span></div>'}
   function progress(n){return '<div class="v5-steps" aria-label="Stap '+n+' van 3">'+[1,2,3].map(i=>'<span class="'+(i<=n?'on':'')+'"></span>').join('')+'</div>'}
   function action(label,act,variant='subtle',disabled=false){return '<button type="button" class="v5-btn '+variant+'" data-v5-act="'+escape(act)+'"'+(disabled?' disabled':'')+'>'+label+'</button>'}
@@ -578,6 +606,7 @@ window.initBBQV5=function(b){
     legacyFrom=screen;legacyTab=tab;legacyReturn=returnTo||'';
     if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
     b.showLegacy(tab);document.body.classList.add('v5-legacy');syncWakeLock();$('v5-back').textContent=legacyReturn==='more'?'← Meer':BACK_LABEL[legacyFrom]||'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+    saveView();
   }
   function goBack(){
     if(legacyReturn){const to=legacyReturn,y=legacyReturnScroll;legacy(to);try{window.scrollTo({top:y,left:0,behavior:'instant'})}catch(e){}return}
@@ -585,6 +614,7 @@ window.initBBQV5=function(b){
   }
   function exitLegacy(){
     legacyReturn='';document.body.classList.remove('v5-legacy');$('v5-back').style.display='none';b.syncLegacy();screen=legacyFrom;legacyTab='';render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+    saveView();
   }
   function start(){
     const s=state();
@@ -800,8 +830,11 @@ window.initBBQV5=function(b){
   root.addEventListener('click',handleClick);nav.addEventListener('click',handleClick);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render();else syncWakeLock()});
   window.addEventListener('bbq-meater-updated',onSensorUpdate);
+  window.addEventListener('scroll',saveViewSoon,{passive:true});
+  window.addEventListener('pagehide',saveView);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)saveView()});
   window.setInterval(refreshLiveMeater,1000); // display timer only
   window.setInterval(refreshLiveSchedule,30000); // only refresh countdown and due-state text, never the Live DOM
-  render();
+  if(!restoreView())render();
 };
 })();

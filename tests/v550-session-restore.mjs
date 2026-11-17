@@ -41,6 +41,63 @@ function boot(storage={},now=START){
   return {dom,w,d,$,press,tap,dump,screen,navCurrent,dishes,errors,alerts};
 }
 
+// Bug 2: reopen the last screen after a reload.
+{
+  const a=boot();
+  let storage;
+  try{
+    a.press('new');a.tap('Pulled pork op brood');a.press('setup');a.press('prep');a.press('live');
+    assert.equal(a.screen(),'live');
+    const meta=JSON.parse(a.w.localStorage.getItem(SESSION));
+    assert.equal(meta.version,1);assert.equal(meta.active,true);assert.equal(meta.stage,'live');
+    assert.equal(meta.view.screen,'live','optional field view saved on navigation');
+    assert.equal(meta.view.legacyTab,'');assert.equal(meta.view.at,START);
+    storage=a.dump();
+    assert.deepEqual(a.errors,[]);
+  }finally{a.dom.window.close();}
+  const plan=storage[PLAN];
+  // Reload 10 minutes later: Live again.
+  const b=boot(storage,START+10*60000);
+  try{
+    assert.equal(b.screen(),'live','reload reopens Live instead of Vandaag');
+    assert.equal(b.navCurrent(),'live');
+    assert.equal(b.w.localStorage.getItem(PLAN),plan,'restoring a screen never writes the plan');
+    // Open a legacy page (Meer) and reload: Meer again.
+    b.press('more');
+    assert.ok(b.d.body.classList.contains('v5-legacy'));
+    storage=b.dump();
+    assert.equal(JSON.parse(storage[SESSION]).view.legacyTab,'more');
+    assert.deepEqual(b.errors,[]);
+  }finally{b.dom.window.close();}
+  const c=boot(storage,START+20*60000);
+  try{
+    assert.ok(c.d.body.classList.contains('v5-legacy'),'reload reopens the legacy page');
+    assert.equal(c.navCurrent(),'more');
+    assert.equal(c.d.getElementById('v5-back').textContent,'← Live','back button returns to the remembered screen');
+    c.d.getElementById('v5-back').click();
+    assert.equal(c.screen(),'live');
+    storage=c.dump();
+    assert.deepEqual(c.errors,[]);
+  }finally{c.dom.window.close();}
+  // Older than 12 hours → Vandaag.
+  const old=JSON.parse(storage[SESSION]);old.view.at=START;storage[SESSION]=JSON.stringify(old);
+  const e=boot(storage,START+12*3600000+60000);
+  try{assert.equal(e.screen(),'home','view older than 12 hours → Vandaag');assert.deepEqual(e.errors,[]);}finally{e.dom.window.close();}
+  // Old metadata without view (before v5.5) → Vandaag, as before.
+  const legacyMeta={...storage,[SESSION]:JSON.stringify({active:true,stage:'live',created:'2026-11-16T15:00:00.000Z',version:1})};
+  const f=boot(legacyMeta,START+60000);
+  try{assert.equal(f.screen(),'home','old metadata without view starts on Vandaag');assert.deepEqual(f.errors,[]);}finally{f.dom.window.close();}
+  // No active session (finished) → Vandaag, even with a recent view.
+  const finished=JSON.parse(storage[SESSION]);finished.active=false;finished.stage='finished';finished.view.at=START+60000;
+  const g=boot({...storage,[SESSION]:JSON.stringify(finished)},START+2*60000);
+  try{assert.equal(g.screen(),'home','no active session → Vandaag');assert.deepEqual(g.errors,[]);}finally{g.dom.window.close();}
+  // Invalid view → Vandaag, no error.
+  const bad=JSON.parse(storage[SESSION]);bad.view={screen:'<script>',at:'x'};
+  const h=boot({...storage,[SESSION]:JSON.stringify(bad)},START+60000);
+  try{assert.equal(h.screen(),'home');assert.deepEqual(h.errors,[]);}finally{h.dom.window.close();}
+  console.log('PASS v5.5 bug 2: reload reopens Live and Meer within 12 hours; old/invalid/finished/expired views start on Vandaag; plan untouched');
+}
+
 // Bug 1: tap toggles a recipe in step 1.
 {
   const t=boot();

@@ -55,13 +55,24 @@ async function open(browser,{ha=true}={}){
   const frame=()=>ha?page.frames().find(f=>f.url().includes('BBQ_bereidingsplanner')):page.mainFrame();
   await page.waitForFunction(()=>true);
   for(let i=0;i<50&&!(frame()&&await frame().locator('#v5-root').count());i++)await page.waitForTimeout(100);
-  const f=frame();
-  const act=async a=>{await f.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);};
-  const text=sel=>f.locator(sel).first().evaluate(el=>el.innerText.replace(/\s+/g,' ').trim());
-  const set=(probe,values,extra)=>page.evaluate(([p,v,e])=>window.__set(p,v,e),[probe,values,extra||{}]);
-  const store=()=>f.evaluate(k=>localStorage.getItem(k),KEY);
-  const dishes=async()=>JSON.parse(await store()).dishes;
-  return {context,page,f,act,text,set,store,dishes,errors,dialogs};
+  const s={context,page,f:frame(),errors,dialogs};
+  // Helpers always use the current frame (s.f), also after an iframe reload.
+  s.act=async a=>{await s.f.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);};
+  s.text=sel=>s.f.locator(sel).first().evaluate(el=>el.innerText.replace(/\s+/g,' ').trim());
+  s.set=(probe,values,extra)=>page.evaluate(([p,v,e])=>window.__set(p,v,e),[probe,values,extra||{}]);
+  s.store=()=>s.f.evaluate(k=>localStorage.getItem(k),KEY);
+  s.dishes=async()=>JSON.parse(await s.store()).dishes;
+  return s;
+}
+async function reloadFrame(s){
+  // Reload the planner iframe inside the HA host (as the HA app does after switching apps) and wait for the new document.
+  await s.page.evaluate(()=>{window.__frame().contentWindow.location.reload();});
+  for(let i=0;i<100;i++){
+    await s.page.waitForTimeout(100);
+    const f=s.page.frames().find(x=>x.url().includes('BBQ_bereidingsplanner')&&!x.isDetached());
+    try{if(f&&await f.evaluate(()=>!!document.querySelector('#v5-root')&&document.readyState==='complete')){s.f=f;await s.page.waitForTimeout(150);return f;}}catch(e){}
+  }
+  throw new Error('iframe not reloaded');
 }
 async function startSession(s,names){
   await s.act('new');
@@ -88,9 +99,9 @@ try{
     await startSession(s,['Ribeye 500 g']);
     // FIXTURE "old data": a plan saved before v5.5 without probe and without meaterAuto (not a choice of the user).
     await s.f.evaluate(k=>{const p=JSON.parse(localStorage.getItem(k));for(const d of p.dishes){d.meater='none';delete d.meaterAuto}localStorage.setItem(k,JSON.stringify(p));},KEY);
-    await s.f.evaluate(()=>{setTimeout(()=>location.reload(),0)});await s.page.waitForTimeout(1200);
-    const f=s.f=s.page.frames().find(x=>x.url().includes('BBQ_bereidingsplanner'));
-    await s.act('resume');
+    const f=s.f=await reloadFrame(s);
+    // v5.5 (bug 2): an active session reopens on the last screen after the iframe reloads, not on Vandaag.
+    ok(await f.evaluate(()=>document.querySelector('#v5-root').dataset.screen)==='setup',engineName+': reload reopens step 2');
     ok((await s.dishes())[0].meater==='none',engineName+': fixture without probe');
     await goLive(s);
     ok(/Steek grote kamado aan/.test(await s.text('.v5-hero')),engineName+': before the start the hero follows the planning');
@@ -229,6 +240,30 @@ try{
     await goLive(s);
     ok(await s.f.locator('[data-v5-tl] .v5-tl-row').count()===1,engineName+': timeline from the planning');
     ok(!/LIVE/.test(await s.text('#v5-root')),engineName+': nowhere LIVE');
+    ok(s.errors.length===0,engineName+': no page errors '+s.errors.join(' | '));
+    await s.context.close();
+   }
+   // 6. Bug (user, HA panel-view): after switching apps the HA app reloads the iframe → reopen the last screen, scroll included.
+   {
+    const s=await open(browser);
+    await s.set('pro',idle('9.5','14'));
+    await startSession(s,['Ribeye 500 g','Kippenpoten']);await goLive(s);
+    await s.f.evaluate(()=>window.scrollTo({top:600,left:0,behavior:'instant'}));
+    await s.context.clock.runFor(1500);await s.page.waitForTimeout(100); // throttled save of the scroll position
+    const y0=await s.f.evaluate(()=>window.scrollY);
+    ok(y0>300,engineName+': scrolled on Live '+y0);
+    await reloadFrame(s);
+    ok(await s.f.evaluate(()=>document.querySelector('#v5-root').dataset.screen)==='live',engineName+': reload reopens Live');
+    ok(Math.abs(await s.f.evaluate(()=>window.scrollY)-y0)<=4,engineName+': scroll position restored');
+    ok(await s.f.locator('#v5-nav [aria-current="page"]').getAttribute('data-v5-act')==='live',engineName+': nav marks Live');
+    // Legacy page (Meer) is remembered too.
+    await s.f.locator('#v5-nav [data-v5-act="more"]').click();await s.page.waitForTimeout(150);
+    await reloadFrame(s);
+    ok(await s.f.evaluate(()=>document.body.classList.contains('v5-legacy')),engineName+': reload reopens Meer (legacy page)');
+    ok(await s.f.locator('#v5-nav [aria-current="page"]').getAttribute('data-v5-act')==='more',engineName+': nav marks Meer');
+    const meta=JSON.parse(await s.f.evaluate(()=>localStorage.getItem('bbq-v5-session-v1')));
+    ok(meta.version===1&&meta.active===true&&meta.view&&typeof meta.view.at==='number'&&meta.view.legacyTab==='more',engineName+': optional field view in bbq-v5-session-v1');
+    // The 12-hour limit is tested in tests/v550-session-restore.mjs (jsdom, storage fixture): a closing page saves its view again.
     ok(s.errors.length===0,engineName+': no page errors '+s.errors.join(' | '));
     await s.context.close();
    }

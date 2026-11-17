@@ -121,6 +121,8 @@ try{
  assert.deepEqual(Object.keys(saved).sort(),['availableFrom','date','dateMode','dishes','equipment','mealTime','preheatLarge','preheatSmall','smart','v46Done','v46MultiServe','v5Actual'],'v5.0.3 serialized plan schema');
  assert.deepEqual(Object.keys(saved.dishes[0]).sort(),['category','coachStep','cook','core','doneAt','fixedStart','grate','grate2','grill','id','kamado','meater','method','mode','name','notes','phase','phase2Minutes','phase2Temp','photo','prepTasks','recipeCook','recipeIngredients','recipePrep','recipeRest','recipeSlice','recipeSource','recipeSteps','rest','restAt','serveSlot','startedAt','transitionMins','v46BasePeople','v46TimerEndsAt'],'v5.0.3 serialized dish schema');
  assert.equal(typeof saved,'object');assert.ok(Array.isArray(saved.dishes));assert.equal(typeof saved.v46Done,'object');assert.equal(typeof saved.v5Actual,'object');
- assert.deepEqual(Object.keys(JSON.parse(w.localStorage.getItem('bbq-v5-session-v1'))).sort(),['active','created','stage','version']);
+ // v5.5: optional field `view` (last screen of an active session, bug "terug naar het eerste scherm"); the rest is unchanged.
+ assert.deepEqual(Object.keys(JSON.parse(w.localStorage.getItem('bbq-v5-session-v1'))).filter(k=>k!=='view').sort(),['active','created','stage','version']);
+ assert.equal(typeof JSON.parse(w.localStorage.getItem('bbq-v5-session-v1')).view.screen,'string','view saved while navigating');
  assert.deepEqual(errors,[]);console.log('OK v5.1.1: cooking access, dates, unused kamado, single nav, live order, render retention, exact recipe IDs, fresh/stale probes, origin badges, unchanged storage keys');
 }finally{w.close()}

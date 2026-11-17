@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v5.5.1 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v5.6.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.5.1', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.6.0', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'
@@ -76,11 +76,36 @@
     return {version:1,reviews:[...map.values()].sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt)).slice(-250)};
   }
 
+  /* v5.6: phones for notifications. Only names of notify services that start with mobile_app_ (strict pattern), plus a
+     display name from the device registry (hass.devices) when the slug of a device name equals the service suffix.
+     Nothing else from hass is sent to the iframe. */
+  function slug(text){
+    return String(text||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/['\u2018\u2019`]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  }
+  function notifyTargets(hass){
+    const services=hass?.services?.notify;
+    if(!services||typeof services!=='object')return [];
+    const devices=hass.devices&&typeof hass.devices==='object'?Object.values(hass.devices):[];
+    const out=[];
+    for(const name of Object.keys(services).sort()){
+      if(!/^mobile_app_[a-z0-9_]{1,70}$/.test(name))continue;
+      const suffix=name.slice(11);
+      const device=devices.find(x=>x&&typeof x.name==='string'&&slug(x.name)===suffix);
+      const label=device?String(typeof device.name_by_user==='string'&&device.name_by_user.trim()?device.name_by_user:device.name):'';
+      out.push({service:'notify.'+name,name:label.replace(/[\u0000-\u001f]/g,'').trim().slice(0,60)});
+      if(out.length>=10)break;
+    }
+    return out;
+  }
+  // v5.6: the only extra notify data this card ever sends (HA Companion app, iOS): a fixed time-sensitive interruption level.
+  const TIME_SENSITIVE=Object.freeze({push:Object.freeze({'interruption-level':'time-sensitive'})});
+
   class BbqPlannerMeaterCard extends HTMLElement {
     constructor(){
       super();this._hass=null;this._iframe=null;this._lastPayload='';this._onMsg=this._onMsg.bind(this);
       this._cookbookConn=null;this._cookbookUnsub=null;this._reviewsConn=null;this._reviewsUnsub=null;this._syncQueue=Promise.resolve();
-      this._historyWanted=false;this._historyBusy=false;
+      this._historyWanted=false;this._historyBusy=false;this._lastTargets='';
       // v5.5.1: full-screen layout in a Home Assistant panel view (layout only; no data or message changes).
       this._fullscreen=false;this._fitRaf=0;this._fitTimer=0;this._fitBound=false;this._card=null;this._safeProbe=null;
       this._scheduleFit=this._scheduleFit.bind(this);this._onOrientation=this._onOrientation.bind(this);
@@ -95,7 +120,7 @@
         iframe.title='BBQ-bereidingsplanner met MEATER live';iframe.loading='eager';
         iframe.style.cssText='width:100%;min-height:900px;height:1100px;display:block;border:0;background:#0c1318;';
         iframe.src=SOURCE;
-        iframe.addEventListener('load',()=>{this._lastPayload='';this._send();});
+        iframe.addEventListener('load',()=>{this._lastPayload='';this._lastTargets='';this._send();});
         card.appendChild(iframe);this.appendChild(card);this._iframe=iframe;this._card=card;
       }
       this._updateFullscreen();
@@ -204,7 +229,7 @@
       const extra=overflow();
       if(extra>0&&extra<400){apply(base-extra);if(overflow()>=extra)apply(base);}
     }
-    set hass(hass){this._hass=hass;this._send();this._ensureCookbookSubscription();this._ensureReviewsSubscription();if(this._historyWanted)this._loadHistory();}
+    set hass(hass){this._hass=hass;this._send();this._sendTargets();this._ensureCookbookSubscription();this._ensureReviewsSubscription();if(this._historyWanted)this._loadHistory();}
     getCardSize(){return 12;}
     _snapshot(){
       if(!this._hass)return null;
@@ -230,6 +255,16 @@
       const serialized=JSON.stringify(message);
       if(serialized===this._lastPayload)return;
       this._lastPayload=serialized;
+      this._iframe.contentWindow.postMessage(message,location.origin);
+    }
+    /* v5.6: the list of phones (notify.mobile_app_*), only when it changes. An empty list is sent too: the planner then
+       shows "no phone found" instead of nothing. */
+    _sendTargets(){
+      if(!this._hass||!this._iframe?.contentWindow)return;
+      const message={__bbq:'bbq-ha-notify-targets-v1',targets:notifyTargets(this._hass)};
+      const serialized=JSON.stringify(message.targets);
+      if(serialized===this._lastTargets)return;
+      this._lastTargets=serialized;
       this._iframe.contentWindow.postMessage(message,location.origin);
     }
     /* v5.4: once per iframe load, the last 3 hours of core and ambient readings of the known probe sensors,
@@ -355,13 +390,17 @@
       const service=String(payload.service||'').trim();
       const message=String(payload.message||'').slice(0,230);
       const key=String(payload.key||'').slice(0,220);
+      // v5.6: the iframe can only ask for the fixed level name; no data object from the iframe is ever forwarded.
+      const urgent=payload.level==='time-sensitive';
       let ok=false,error='';
       try{
         if(!/^notify\.mobile_app_[a-z0-9_]{1,70}$/.test(service)||!message||!key)throw Error('Ongeldige meldingsinstellingen');
         if(typeof this._hass?.callService!=='function')throw Error('Geen Home Assistant meldingsverbinding');
+        const known=this._hass.services?.notify;
+        if(known&&typeof known==='object'&&!Object.prototype.hasOwnProperty.call(known,service.slice(7)))throw Error('Deze telefoon staat niet (meer) in Home Assistant');
         if(!this._notifyKeys)this._notifyKeys=new Set();
         if(this._notifyKeys.has(key))return;
-        await this._hass.callService('notify',service.slice(7),{title:'BBQ Regisseur',message});
+        await this._hass.callService('notify',service.slice(7),urgent?{title:'BBQ Regisseur',message,data:TIME_SENSITIVE}:{title:'BBQ Regisseur',message});
         this._notifyKeys.add(key);
         if(this._notifyKeys.size>200)this._notifyKeys.clear();
         ok=true;
@@ -370,7 +409,7 @@
     }
     _onMsg(event){
       if(event.origin!==location.origin||event.source!==this._iframe?.contentWindow||!event.data)return;
-      if(event.data.__bbq==='bbq-child-ready-v1'){this._lastPayload='';this._send();this._loadCookbook();this._loadReviews();this._historyWanted=true;this._loadHistory();}
+      if(event.data.__bbq==='bbq-child-ready-v1'){this._lastPayload='';this._lastTargets='';this._send();this._sendTargets();this._loadCookbook();this._loadReviews();this._historyWanted=true;this._loadHistory();}
       if(event.data.__bbq==='bbq-library-request-v1')this._loadCookbook();
       if(event.data.__bbq==='bbq-library-write-v1'&&event.data.library&&typeof event.data.library==='object')this._saveCookbook(event.data.library);
       if(event.data.__bbq==='bbq-reviews-request-v1')this._loadReviews();

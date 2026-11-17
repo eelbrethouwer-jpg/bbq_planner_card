@@ -2,7 +2,8 @@
    v5.3.0: Live shows one card per dish (core → target, ambient, rise, 'op tafel rond' with source, one coach line).
    v5.4.0: the card uses the shared estimate (own curve → MEATER ETA → start + duration → planning), anchored at the last reading.
    v5.5.0: timeline on Live (planned frame + expected blocks, now and serve line), a "Zo meteen" hero from estimate + phase,
-           automatic MEATER recognition in the HA card, and "Pas planning aan op verwachting" only after a before/after confirmation. */
+           automatic MEATER recognition in the HA card, and "Pas planning aan op verwachting" only after a before/after confirmation.
+   v5.6.0: one line "Meldingen op je telefoon" in step 2 and on Live (HA card only), with a test notification. */
 (function(){
 'use strict';
 window.initBBQV5=function(b){
@@ -136,6 +137,7 @@ window.initBBQV5=function(b){
       '<div class="v5-setup-selects"><select class="v5-input" aria-label="Kamado voor '+escape(d.name)+'" data-v5-kamado="'+escape(d.id)+'"><option value="large"'+(d.kamado==='large'?' selected':'')+'>Groot</option><option value="small"'+(d.kamado==='small'?' selected':'')+'>Klein</option></select>'+
       meaterSelect(d)+'</div></div>').join('')+
       '<div class="v5-row" style="margin-top:14px">'+action('⚙ Temperatuur / methode wijzigen','planning')+'</div></div>'+
+    '<div data-v5-notify>'+notifyLine('setup')+'</div>'+
     '<div class="v5-card"><h3>⏱️ Planning in het kort</h3><div class="v5-grid"><div><span class="v5-muted">Grote kamado aan</span><div class="v5-number">'+clock(c.fires.large)+'</div></div><div><span class="v5-muted">Kleine kamado aan</span><div class="v5-number">'+clock(c.fires.small)+'</div></div></div>'+
        (alerts.length?'<details class="v5-alerts" data-v5-key="alerts"><summary>⚠️ '+alerts.length+' aandachtspunt(en) — bekijken</summary>'+alerts.slice(0,12).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'<p class="v5-muted">Geen planningsconflicten gedetecteerd. Controleer de praktische roosterruimte zelf.</p>')+'</div>'+
     '<div class="v5-row">'+action('← Gerechten','select')+action('Naar voorbereiding →','prep','primary')+'</div>';
@@ -310,6 +312,41 @@ window.initBBQV5=function(b){
         if(screen!=='live'||document.hidden||document.body.classList.contains('v5-legacy'))syncWakeLock();
       }).catch(()=>{wakePending=false});
     }catch(e){wakePending=false}
+  }
+  /* ---------- v5.6: notifications on the phone (Home Assistant card only) ---------- */
+  function notifyLine(where){
+    // Nothing on the public website: the card has to send the list of phones first (bbq-ha-notify-targets-v1).
+    const n=b.getNotify?b.getNotify():null;
+    if(!n||!n.available)return '';
+    const head='<span class="v5-notify-label">📱 Meldingen op je telefoon:</span>';
+    let body;
+    if(!n.targets.length){
+      body='<div class="v5-notify-line"><div class="v5-notify-text">'+head+' <span>geen telefoon gevonden</span></div></div>'+
+        '<p class="v5-muted v5-notify-note">Installeer de Home Assistant-app op je telefoon en log in; daarna verschijnt hij hier.</p>';
+    }else{
+      const known=n.targets.some(t=>t.service===n.service);
+      const options=(n.service&&!known?[{service:n.service,name:''}]:[]).concat(n.targets);
+      const device=n.targets.length===1&&known
+        ?'<strong class="v5-notify-device">'+escape(n.label(n.service))+'</strong>'
+        :'<select class="v5-input v5-notify-select" aria-label="Telefoon voor meldingen" data-v5-notify-service>'+
+          (n.service?'':'<option value="" selected>Kies je telefoon</option>')+
+          options.map(t=>'<option value="'+escape(t.service)+'"'+(t.service===n.service?' selected':'')+'>'+escape(n.label(t.service))+(known||t.service!==n.service?'':' (niet gevonden)')+'</option>').join('')+'</select>';
+      const can=!!n.service;
+      const toggle='<button type="button" class="v5-btn subtle v5-notify-toggle'+(n.on?' on':'')+'" role="switch" aria-checked="'+(n.on?'true':'false')+'" aria-label="Meldingen op je telefoon '+(n.on?'aan':'uit')+'" data-v5-act="notify-toggle"'+(can?'':' disabled')+'>'+(n.on?'aan':'uit')+'</button>';
+      body='<div class="v5-notify-line"><div class="v5-notify-text">'+head+' '+device+'</div>'+toggle+'</div>'+
+        (n.auto?'<p class="v5-notify-auto">Automatisch aan: dit is de enige telefoon in Home Assistant. Tik op “aan” om uit te zetten.</p>':'')+
+        '<div class="v5-notify-actions">'+action('Stuur testmelding','notify-test','subtle v5-linkbtn',!can)+
+        (n.status?'<small class="v5-muted" role="status">'+escape(n.status)+'</small>':'')+'</div>'+
+        '<p class="v5-muted v5-notify-note">'+(where==='live'?'Alleen zolang de planner open is in de Home Assistant-app; Live houdt het scherm aan.':
+          'Aansteken, erop leggen, fasedoel, 5 min vóór het doel, doel bereikt, stall, rust klaar en meting weg. Alleen zolang de planner open is in de Home Assistant-app; Live houdt het scherm aan.')+'</p>';
+    }
+    return '<section class="v5-card v5-notify" aria-label="Meldingen op je telefoon">'+body+'</section>';
+  }
+  function refreshNotify(){
+    const root=$('v5-root');if(!root||document.body.classList.contains('v5-legacy'))return;
+    const slot=root.querySelector('[data-v5-notify]');if(!slot)return;
+    const markup=notifyLine(screen==='live'?'live':'setup');
+    if(slot.innerHTML!==markup)slot.innerHTML=markup;
   }
   /* ---------- v5.5: one live model for timeline, hero, task times and the planning proposal ---------- */
   const MIN=60000;
@@ -561,6 +598,7 @@ window.initBBQV5=function(b){
     '<div class="v5-between v5-live-head"><h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1>'+
       '<details class="v5-live-info" data-v5-key="live-info"><summary aria-label="Uitleg over tijden en metingen">ⓘ</summary><p>Geplande tijden zijn indicatief; alleen afgevinkt telt als uitgevoerd. Live MEATER-metingen komen alleen via Home Assistant. Een schatting is een indicatie: controleer altijd kern en gaarheid. In de tijdlijn is het stippelkader de planning en het gekleurde blok de verwachting.</p></details></div>'+
     (tl?'<section class="v5-card v5-tl" data-v5-tl aria-label="Tijdlijn">'+tl+'</section>':'')+heroHtml(model)+
+    '<div data-v5-notify>'+notifyLine('live')+'</div>'+
     '<div class="v5-dishcards">'+dishes().map(dishCard).join('')+'</div>'+
     '<h2 class="v5-sectionhead" id="v5-all-steps">Volgende handelingen</h2><div class="v5-card v5-next-tasks">'+
       (rows.length?checklist(rows.map(taskRow)):'<p class="v5-muted">Geen volgende geplande taken.</p>')+
@@ -733,6 +771,7 @@ window.initBBQV5=function(b){
       if(next!=='none'&&dishes().some(x=>x.id!==d.id&&x.meater===next)){window.alert('Deze thermometer is al gekoppeld aan een ander gerecht. Ontkoppel hem daar eerst.');render();return}
       d.meater=next;d.meaterAuto=false;probeEdit.delete(String(d.id));commit();render();return;
     }
+    if(el.matches('[data-v5-notify-service]')){if(b.setNotify)b.setNotify(!!el.value,el.value);return}
     if(el.matches('[data-v5-kamado]')){const d=dishes().find(d=>d.id===el.dataset.v5Kamado);if(d){d.kamado=el.value==='small'?'small':'large';commit();render()}return}
   });
   function openDish(id){
@@ -799,6 +838,8 @@ window.initBBQV5=function(b){
     if(act.startsWith('card:')){scrollToCard(act.slice(5));return}
     if(act.startsWith('probe-edit:')){probeEdit.add(act.slice(11));refreshLiveMeater();return}
     if(act.startsWith('hero-ack:')){heroAck.add(act.slice(9));refreshLiveSchedule();return}
+    if(act==='notify-toggle'){const n=b.getNotify?b.getNotify():null;if(n&&n.service)b.setNotify(!n.on,n.service);return}
+    if(act==='notify-test'){if(b.testNotify)b.testNotify();return}
     if(act==='adjust-open'){adjustOpen=true;refreshLiveSchedule();return}
     if(act==='adjust-cancel'){adjustOpen=false;refreshLiveSchedule();return}
     if(act.startsWith('adjust-apply:')){
@@ -830,6 +871,7 @@ window.initBBQV5=function(b){
   root.addEventListener('click',handleClick);nav.addEventListener('click',handleClick);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render();else syncWakeLock()});
   window.addEventListener('bbq-meater-updated',onSensorUpdate);
+  window.addEventListener('bbq-notify-updated',refreshNotify);
   window.addEventListener('scroll',saveViewSoon,{passive:true});
   window.addEventListener('pagehide',saveView);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)saveView()});

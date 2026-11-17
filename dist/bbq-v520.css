@@ -181,3 +181,16 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 /* v5.5 step 1: "+1" (extra portion) next to ✕ in "Jouw menu" */
 #v5-root .v5-menu-actions{display:flex;gap:6px;flex:0 0 auto;align-items:center}
 #v5-root .v5-menu-actions .v5-mini-btn{min-width:44px;min-height:44px}
+/* v5.6 "Meldingen op je telefoon" (step 2 and Live, Home Assistant card only) */
+#v5-root .v5-notify{padding-top:12px;padding-bottom:12px}
+#v5-root .v5-notify-line{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;font-size:14px}
+#v5-root .v5-notify-text{display:flex;align-items:center;gap:4px 6px;flex-wrap:wrap;min-width:0}
+#v5-root .v5-notify-label{font-weight:800}
+#v5-root .v5-notify-device{overflow-wrap:anywhere}
+#v5-root .v5-notify-select{min-height:44px;width:100%;max-width:100%}
+#v5-root .v5-notify-toggle{min-width:64px;min-height:44px;padding:4px 12px;font-size:14px;font-weight:800}
+#v5-root .v5-notify-toggle.on{background:#25453f;border-color:#50736b;color:#b9f1d7}
+#v5-root .v5-notify-auto{font-size:12px;color:#ffdaa7;margin:6px 0 0}
+#v5-root .v5-notify-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
+#v5-root .v5-notify-actions small{font-size:12px}
+#v5-root .v5-notify-note{font-size:12px;margin:6px 0 0}

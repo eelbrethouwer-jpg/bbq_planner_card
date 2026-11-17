@@ -62,6 +62,7 @@ jobs:
           node tests/v530-live-card.mjs
           node tests/v540-eta-live.mjs
           node tests/v550-session-restore.mjs
+          node tests/v560-notifications.mjs
           node tests/v520-data-upgrade.mjs
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs

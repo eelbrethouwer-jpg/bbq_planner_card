@@ -1,8 +1,15 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.5.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.5.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
+> Actueel gepubliceerd: [v5.5.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.5.1) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.5.1 — Kaart op volledig scherm in een HA-panel-view (gemerged via PR #47; publicatie via release.yml na goedkeuring, nog niet geverifieerd)
+## v5.6.0 — Meldingen op je telefoon (draft-PR, niet gepubliceerd)
+- De HA-kaart stuurt de telefoons uit `hass.services.notify` (alleen `mobile_app_*`, met de naam uit het apparaatregister als die overeenkomt) naar de planner via het nieuwe berichttype `bbq-ha-notify-targets-v1` (zelfde herkomstcontrole).
+- Eén regel "Meldingen op je telefoon: [apparaat] · aan/uit" in stap 2 en op Live, met "Stuur testmelding". Precies één telefoon en nog geen keuze: standaard aan (AANNAME, zichtbaar, niet opgeslagen tot je kiest). Meer telefoons: zelf kiezen; zonder keuze geen meldingen. Niet op de publieke website.
+- Meldingen (elk hooguit één keer per gerecht, bestaande dedup in `v46AlertSent`): kamado aansteken, gerecht erop, fasedoel, 5 min vóór het doel (vervangt de oude melding bij doel −1 °C, die nu onder hetzelfde moment valt), doel bereikt, stall, rust voorbij en meting weg (3 min `unavailable`). Bestaande timermelding ongewijzigd.
+- De kaart voegt voor tijdkritische meldingen alleen de vaste iOS-data `push.interruption-level: time-sensitive` toe; er wordt geen vrije data uit de iframe doorgestuurd. Een telefoon die niet in `hass.services.notify` staat, wordt geweigerd.
+- Opslag: geen nieuw veld; de keuze staat in de bestaande velden `v46Notify` en `v46NotifyService`.
+
+## v5.5.1 — Kaart op volledig scherm in een HA-panel-view (gepubliceerd 17 november 2026)
 - De Home Assistant-kaart vult in een panel-view (automatisch herkend, of met `fullscreen: true`) het scherm vanaf haar eigen bovenkant tot de onderkant van het scherm, gemeten in plaats van geschat, en meet opnieuw bij draaien en formaatwijziging. Alleen de planner scrolt, niet de HA-pagina; de onderste navigatie van de planner blijft in beeld. Ruimte voor de iOS-thuisbalk (safe area) onderaan de kaart. `fullscreen: false` of geen panel-view: ongewijzigd gedrag. Geen wijziging aan planner, opslag of berichttypen.
 
 ## v5.5.0 — Tijdlijn op Live en "Zo meteen" (gepubliceerd 17 november 2026)

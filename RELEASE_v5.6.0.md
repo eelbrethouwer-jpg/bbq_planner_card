@@ -1,6 +1,8 @@
 # BBQ Planner v5.6.0 — meldingen op je telefoon
 
-**Status: draft-PR, nog niet goedgekeurd en niet gepubliceerd.** De goedkeuringsregel volgt pas na een expliciet releaseakkoord van de eigenaar.
+**Status: gepubliceerd via release.yml na merge van PR #49.** Releaseakkoord van de eigenaar op 17 november 2026 (in de chat met de regisseur: "mergen en publiceren").
+
+Publicatie: goedgekeurd door de eigenaar op 2026-11-17
 
 ## Wat verandert er?
 Kook je met de planner in de Home Assistant-app, dan kan je telefoon je nu waarschuwen. Dat gaat via de Home Assistant Companion-app (`notify.mobile_app_…`).

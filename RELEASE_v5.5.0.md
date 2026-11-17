@@ -1,6 +1,6 @@
 # BBQ Planner v5.5.0 — Tijdlijn op Live en "Zo meteen"
 
-**Status: releasekandidaat (draft-PR), niet gepubliceerd.** Basis: `948249decc1574d93f50c4141f7422d30e5b254d` (main na PR #44; code v5.4.0).
+**Status: Gepubliceerd via release-v5.5.0-once.yml na merge van deze releasework-PR; app-code gelijk aan b2992e9364331aaf5cbc9a3150f18edea6014b37 (PR #45).** Basis: `948249decc1574d93f50c4141f7422d30e5b254d` (main na PR #44; code v5.4.0).
 
 ## Wat is gewijzigd?
 - **Tijdlijn bovenaan Live.** Per kamado één baan van aansteken tot serveren: de planning als stippelkader, de verwachting in kleur (indirect, ombouw, schroeien, rust), een rode nu-lijn en een groene serveerlijn. Tik op een baan om naar de gerechtkaart te gaan. De tijdlijn ververst met de 30-secondentimer, nooit bij een sensorupdate. Daaronder "Alle stappen" naar de ene takenlijst.

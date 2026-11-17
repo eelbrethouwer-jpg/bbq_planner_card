@@ -4,9 +4,10 @@ Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor de regis
 
 ## Ontwikkelstatus (17 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- `main` staat op `948249decc1574d93f50c4141f7422d30e5b254d` (merge PR #44, PR 2 eigen schattingsmodule; code v5.4.0, niet gepubliceerd).
+- `main` staat op `b2992e9364331aaf5cbc9a3150f18edea6014b37` (merge PR #45, PR 3 tijdlijn op Live en "Zo meteen"; code v5.5.0).
+- Release **v5.5.0** (bevat v5.3.0, v5.4.0 en v5.5.0): wordt gepubliceerd via `.github/workflows/release-v5.5.0-once.yml` na merge van de releasework-PR en groene CI; **nog niet geverifieerd**. Gebruikersakkoord voor deze release gegeven op 17 november 2026. v5.3.0 en v5.4.0 zijn niet afzonderlijk gepubliceerd.
 - Laatste gepubliceerde GitHub-release: [v5.2.3 — Rustig Live-scherm](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3), gepubliceerd op 9 november 2026.
-- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken), PR 1 (v5.3.0, Live-gerechtkaart) en PR 2 (v5.4.0, eigen schattingsmodule) zijn gemerged. PR 3 (v5.5.0, tijdlijn op Live en "Zo meteen") staat als draft-PR open voor review.
+- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken), PR 1 (v5.3.0, Live-gerechtkaart), PR 2 (v5.4.0, eigen schattingsmodule) en PR 3 (v5.5.0, tijdlijn op Live en "Zo meteen") zijn gemerged. Volgende geplande stappen: eerst **kaart op volledig scherm in HA-panel-view**, daarna **meldingen**.
 - Keuze van de gebruiker (17 november 2026), **route 1**: koken in de Home Assistant-app op volledig scherm (een dashboard met een panel-view met alleen de planner-kaart). Zijn HA is alleen lokaal via http bereikbaar; de publieke https-website kan daarom niet met HA verbinden (mixed content).
 - De officiële Home Assistant-MEATER-integratie leest ongeveer iedere 30 seconden uit de MEATER Cloud. Zonder kooksessie in de MEATER-app komen alleen kern- en omgevingstemperatuur binnen. Vanuit HA kun je geen doel instellen en geen kooksessie starten.
 - Geen echte iPhone-, Home Assistant- of MEATER-hardwaretest in de CI.
@@ -47,9 +48,9 @@ Doel van de gebruiker: alles in deze app doen, niet in de MEATER-app. Live beant
 | 0 | Werkafspraken bijwerken (alleen documentatie) | geen bump | gemerged (merge-SHA `357252b78c9136d35d0868e4ad6b3ad4f8de7e06`) |
 | 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | gemerged (merge-SHA `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1`) |
 | 2 | Eigen schattingsmodule `engine/eta.mjs` (Newton-opwarming, fasedoel, stall, marge, bronvolgorde) en meetgeschiedenis uit HA bij openen | 5.4.0 | gemerged (merge-SHA `948249decc1574d93f50c4141f7422d30e5b254d`) |
-| 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid; MEATER automatisch herkennen in de HA-kaart; versheid "geen verandering sinds"; bugfixes "gerecht deselecteren in stap 1" en "na wegklikken terug naar het laatste scherm" | 5.5.0 | draft-PR |
-| na 3 | Planner-kaart op volledig scherm in een HA-panel-view: hoogte vult het scherm zonder dubbele scrollbalk, optie `fullscreen: true` in de kaart-YAML, korte installatie-instructie in README (samen met of vóór de meldingen) | n.t.b. | gepland |
-| na 3 | Meldingen: `notify.mobile_app_*` automatisch voorstellen | n.t.b. | gepland |
+| 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid; MEATER automatisch herkennen in de HA-kaart; versheid "geen verandering sinds"; bugfixes "gerecht deselecteren in stap 1" en "na wegklikken terug naar het laatste scherm" | 5.5.0 | gemerged (merge-SHA `b2992e9364331aaf5cbc9a3150f18edea6014b37`); release v5.5.0 wordt gepubliceerd via eenmalige workflow (nog niet geverifieerd) |
+| na 3 | Planner-kaart op volledig scherm in een HA-panel-view: hoogte vult het scherm zonder dubbele scrollbalk, optie `fullscreen: true` in de kaart-YAML, korte installatie-instructie in README (samen met of vóór de meldingen) | n.t.b. | gepland, volgende stap |
+| na 3 | Meldingen: `notify.mobile_app_*` automatisch voorstellen | n.t.b. | gepland, na volledig scherm |
 | — | Home Assistant koppelen op de publieke website (opt-in, HA-login via OAuth, live MEATER en meldingen in de PWA) | n.t.b. | **geparkeerd** — voorwaarde: HA via https bereikbaar (Nabu Casa of eigen domein) |
 | 4 | Optioneel fasedoel `coreAt` in receptstappen en meldingen via `notify.mobile_app_*` | 5.6.0 | gepland |
 | 5 | Planning eenvoudiger: kamadokeuze bij toevoegen, urgente conflicten bovenaan, "Plan opnieuw vanaf nu" | 5.7.0 | gepland |

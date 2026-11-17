@@ -2,7 +2,13 @@
 
 > Actueel gepubliceerd: [v5.2.3](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.3.0 — Live-gerechtkaart (releasekandidaat, niet gepubliceerd)
+## v5.4.0 — Eigen schattingsmodule (releasekandidaat, niet gepubliceerd)
+- Eén schattingsmodule (`dist/bbq-eta.js`, als ES-module `engine/eta.mjs`) voor de Live-kaart, het slimme advies, de MEATER-pagina en de meldingen. Newton-opwarming met robuuste helling, fasedoel bij reverse sear, stall-herkenning, marge uit de spreiding van de metingen en doorgaaradvies.
+- De schatting rekent vanaf de laatste meting en schuift niet meer mee met de klok. Een gerecht dat al op de BBQ ligt, valt niet meer terug op de planning: eigen curve → MEATER-ETA → werkelijke start + receptduur → planning. Een verouderde meting (5–15 min) toont "Laatste schatting HH:MM · verouderd".
+- Voortgangsbalk vanaf de eerste meting van de sessie.
+- De Home Assistant-kaart stuurt bij openen de meetgeschiedenis van de laatste 3 uur mee (nieuw berichttype `bbq-ha-history-v1`, zelfde herkomstcontrole als de sensorupdates). Opslagschema en sleutels ongewijzigd.
+
+## v5.3.0 — Live-gerechtkaart (gemerged via PR #43, niet gepubliceerd)
 - Live toont één kaart per gerecht, ook bij twee gerechten op één kamado: grote kerntemperatuur → Richtkern met voortgangsbalk, omgeving en stijging in °C/min, "Op tafel rond HH:MM" met bron (eigen trend, MEATER-ETA of planning) en marge, de fase met de bestaande faseknop en hooguit één coachregel.
 - Zonder thermometer of zonder verse meting: streepjes en de planning als bron. Nooit een verzonnen waarde; na vijf minuten zonder meting verdwijnt de kern.
 - Thermometer koppelen in stap 2 (Geen / MEATER Pro / MEATER Plus) via het bestaande veld `d.meater`. Bij toevoegen: Pro naar het eerste gerecht op de grote kamado, Plus naar het eerste op de kleine. Eén probe kan niet aan twee gerechten hangen.

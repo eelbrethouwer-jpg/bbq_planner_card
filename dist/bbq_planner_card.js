@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v5.3.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v5.4.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.3.0', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.4.0', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'
@@ -80,6 +80,7 @@
     constructor(){
       super();this._hass=null;this._iframe=null;this._lastPayload='';this._onMsg=this._onMsg.bind(this);
       this._cookbookConn=null;this._cookbookUnsub=null;this._reviewsConn=null;this._reviewsUnsub=null;this._syncQueue=Promise.resolve();
+      this._historyWanted=false;this._historyBusy=false;
     }
     setConfig(cfg){
       this._config=cfg||{};
@@ -98,7 +99,7 @@
     }
     connectedCallback(){window.addEventListener('message',this._onMsg);this._ensureCookbookSubscription();this._ensureReviewsSubscription();}
     disconnectedCallback(){window.removeEventListener('message',this._onMsg);this._stopCookbookSubscription();this._stopReviewsSubscription();}
-    set hass(hass){this._hass=hass;this._send();this._ensureCookbookSubscription();this._ensureReviewsSubscription();}
+    set hass(hass){this._hass=hass;this._send();this._ensureCookbookSubscription();this._ensureReviewsSubscription();if(this._historyWanted)this._loadHistory();}
     getCardSize(){return 12;}
     _snapshot(){
       if(!this._hass)return null;
@@ -120,6 +121,36 @@
       if(serialized===this._lastPayload)return;
       this._lastPayload=serialized;
       this._iframe.contentWindow.postMessage(message,location.origin);
+    }
+    /* v5.4: once per iframe load, the last 3 hours of core and ambient readings of the known probe sensors,
+       via the recorder WebSocket command history/history_during_period (compressed {s, lu} rows, lu in seconds).
+       Verified against home-assistant/core homeassistant/components/history/websocket_api.py.
+       Any failure: silently fall back to live readings only. Nothing is logged (private data). */
+    async _loadHistory(){
+      const connection=this._hass?.connection,states=this._hass?.states;
+      if(this._historyBusy||!connection?.sendMessagePromise||!states||!this._iframe?.contentWindow)return;
+      const ids=[],field={};
+      for(const [name,prefix] of Object.entries(PROBES))for(const key of ['internal','ambient']){
+        const id=prefix+SUFFIXES[key];if(states[id]){ids.push(id);field[id]=[name,key];}
+      }
+      this._historyWanted=false;
+      if(!ids.length)return;
+      this._historyBusy=true;
+      try{
+        const response=await connection.sendMessagePromise({type:'history/history_during_period',
+          start_time:new Date(Date.now()-3*3600000).toISOString(),entity_ids:ids,
+          minimal_response:true,no_attributes:true,significant_changes_only:false,include_start_time_state:false});
+        const probes={pro:{internal:[],ambient:[]},plus:{internal:[],ambient:[]}};
+        for(const id of ids){
+          const rows=Array.isArray(response?.[id])?response[id].slice(-2000):[];
+          for(const row of rows){
+            const t=Math.round(Number(row?.lu)*1000),v=Number(row?.s);
+            if(Number.isFinite(t)&&t>0&&Number.isFinite(v))probes[field[id][0]][field[id][1]].push([t,v]);
+          }
+        }
+        if(this._iframe?.contentWindow)this._iframe.contentWindow.postMessage({__bbq:'bbq-ha-history-v1',probes},location.origin);
+      }catch(e){/* no history: live readings only */}
+      finally{this._historyBusy=false;}
     }
     _sendCookbook(message){
       if(this._iframe?.contentWindow)this._iframe.contentWindow.postMessage(message,location.origin);
@@ -229,7 +260,7 @@
     }
     _onMsg(event){
       if(event.origin!==location.origin||event.source!==this._iframe?.contentWindow||!event.data)return;
-      if(event.data.__bbq==='bbq-child-ready-v1'){this._lastPayload='';this._send();this._loadCookbook();this._loadReviews();}
+      if(event.data.__bbq==='bbq-child-ready-v1'){this._lastPayload='';this._send();this._loadCookbook();this._loadReviews();this._historyWanted=true;this._loadHistory();}
       if(event.data.__bbq==='bbq-library-request-v1')this._loadCookbook();
       if(event.data.__bbq==='bbq-library-write-v1'&&event.data.library&&typeof event.data.library==='object')this._saveCookbook(event.data.library);
       if(event.data.__bbq==='bbq-reviews-request-v1')this._loadReviews();

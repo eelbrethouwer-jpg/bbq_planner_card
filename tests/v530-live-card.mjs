@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 
 let template=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
-for(const file of ['bbq-v5.js','bbq-v501.js']){
+for(const file of ['bbq-eta.js','bbq-v5.js','bbq-v501.js']){ // v5.4: the ETA-module loads before bbq-v5.js
   const re=new RegExp('<script src="\\./'+file.replace('.','\\.')+'\\?v=[^"]+"></script>');
   assert.match(template,re,'loader for '+file);
   template=template.replace(re,()=>'<script>'+fs.readFileSync('dist/'+file,'utf8')+'</script>');
@@ -104,9 +104,11 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
     assert.equal($('#v5-root .v5-content'),cardRoot,'30-second schedule refresh preserves Live DOM');
 
     // 2. Same moment with a MEATER ETA (cook started in the MEATER app, target 54).
-    const etaAt=new w.Date(w.__testNow+8*60000).toISOString();
+    // v5.4 source order: the own curve stays the source; a MEATER ETA more than 10 min off is shown next to it.
+    const etaAt=new w.Date(w.__testNow+30*60000).toISOString();
     w.__v530Reading('pro',{...idle('45.5',121),target:sensor('54'),status:sensor('started'),cooking:sensor('on'),remaining:sensor(etaAt)});
-    assert.match(slot(ribeye.id,'eta').textContent,/MEATER-ETA/,'source shows the MEATER ETA');
+    assert.match(slot(ribeye.id,'eta').textContent,/eigen trend/,'own curve stays the source');
+    assert.match(slot(ribeye.id,'eta').textContent,/MEATER-ETA zegt \d\d:\d\d/,'MEATER ETA shown as second opinion');
     assert.equal($('#v5-root .v5-content'),cardRoot,'still no rebuild');
 
     // 3. No new reading: delayed label, then (after five minutes) no core value at all.
@@ -119,7 +121,9 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
     assert.match(stale,/Geen verse live MEATER-meting/,'existing five-minute cutoff');
     assert.ok(!$('#v5-root').textContent.includes('● LIVE'),'no LIVE label for an expired value');
     assert.doesNotMatch(slot(ribeye.id,'env').textContent,/°C\/min/,'no rise without a fresh reading');
-    assert.match(slot(ribeye.id,'eta').textContent,/planning/,'back to the planning as source');
+    // v5.4 (review PR #43, finding 2): a dish on the grill no longer jumps back to the planning.
+    assert.match(slot(ribeye.id,'eta').textContent,/Laatste schatting \d\d:\d\d[\s\S]*verouderd: meting 6 min oud/,'last estimate, marked stale');
+    assert.doesNotMatch(slot(ribeye.id,'eta').textContent,/planning/,'not the planning');
     assert.equal($('#v5-root .v5-content'),cardRoot,'stale ticks do not rebuild');
     assert.equal(w.localStorage.getItem('kamado-bereidingsplanner-v1'),saved,'sensor readings never write to storage');
 

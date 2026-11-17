@@ -16,6 +16,8 @@
 //  5. STORAGE_CONTRACT          set opslag-/berichtidentificatoren, sleutelconstanten en alle regels met
 //                               localStorage/sessionStorage/indexedDB en de state-schema-regels zijn gelijk
 //                               aan de base en aan de policy.
+//                               Een nieuw berichttype mag alleen als het in de policy staat onder
+//                               newDataContractIdentifiers én dataContractIdentifiers (geen hernoeming).
 // Gebruik: node tests/v5-publication-guard.mjs [--base <ref>] [--root <dir>] [--json]
 // Base: --base, anders $GUARD_BASE (CI: PR-base-SHA of push-before-SHA), anders merge-base met origin/main.
 // Zonder vaststelbare base faalt de controle (fail-closed).
@@ -253,6 +255,10 @@ export function checkPublication({root = process.cwd(), base, policyFile = '.git
   const b = storageFingerprint(baseProd, f => readAt(root, resolvedBase, f));
   if (!policy.allowDataContractChange) {
     const vsBase = diffList(b.identifiers, h.identifiers), vsPolicy = diffList([...policy.dataContractIdentifiers].sort(), h.identifiers);
+    // Alleen toevoegen mag, en alleen als de nieuwe identificator expliciet in newDataContractIdentifiers én
+    // in dataContractIdentifiers staat (zichtbaar in de PR-diff). Hernoemen of verwijderen blijft verboden.
+    const declaredNew = (policy.newDataContractIdentifiers || []).filter(x => policy.dataContractIdentifiers.includes(x));
+    vsBase.added = vsBase.added.filter(x => !declaredNew.includes(x));
     if (vsBase.added.length || vsBase.removed.length) add('STORAGE_CONTRACT', '*', `identificatoren t.o.v. base: +[${vsBase.added}] -[${vsBase.removed}]`);
     if (vsPolicy.added.length || vsPolicy.removed.length) add('STORAGE_CONTRACT', '.github/publication-guard.json', `identificatoren t.o.v. policy: +[${vsPolicy.added}] -[${vsPolicy.removed}]`);
     for (const k of new Set([...Object.keys(b.constants), ...Object.keys(h.constants)])) if (b.constants[k] !== h.constants[k]) add('STORAGE_CONTRACT', k.split(':')[0], `sleutelconstante ${k.split(':')[1]}: ${b.constants[k]} → ${h.constants[k]}`);

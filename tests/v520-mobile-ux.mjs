@@ -89,6 +89,7 @@ try{
     await page.locator('[data-v5-kamado]').nth(2).selectOption('small');
     await page.locator('[data-v5-kamado]').nth(3).selectOption('small');
     await page.locator('#v5-root [data-v5-act="prep"]').click();
+    if(await page.locator('#v5-root [data-v5-act="prep-confirm"]').count())await page.locator('#v5-root [data-v5-act="prep-confirm"]').click();
     await page.locator('#v5-root .v5-row [data-v5-act="live"]').click();
     const planBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('kamado-bereidingsplanner-v1')));
 

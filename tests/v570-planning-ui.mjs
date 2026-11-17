@@ -26,6 +26,7 @@ let checks=0;const ok=(v,msg)=>{assert.ok(v,msg);checks++;};
 
 async function open(browser,time,{width=390}={}){
   const context=await browser.newContext({viewport:{width,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2,timezoneId:'Europe/Amsterdam',locale:'nl-NL',serviceWorkers:'block'});
+  await context.addInitScript(()=>{window.__confirmCalls=0;const o=window.confirm;window.confirm=(...a)=>{window.__confirmCalls++;return o.apply(window,a)}});
   await context.clock.install({time:new Date(time)});
   const page=await context.newPage(),errors=[],dialogs=[];
   const s={context,page,errors,dialogs,answer:'accept'};
@@ -106,13 +107,19 @@ try{
     await s.f.locator('[data-v5-remove="'+extra+'"]').click();await s.page.waitForTimeout(100);
     await s.act('setup');
     ok(/Zet Kippenpoten op de kleine kamado/.test(await s.text('[data-v5-urgent]')),engineName+': urgent conflict blijft staan (gebruikerskeuze)');
-    // "Naar voorbereiding": vraagt bevestiging; annuleren = niets gebeurt.
-    const stored=await s.store();s.dialogs.length=0;s.answer='dismiss';
+    // "Naar voorbereiding": bevestigingspaneel in de pagina (geen window.confirm); annuleren = niets gebeurt.
+    const stored=await s.store();s.dialogs.length=0;
     await s.act('prep');
-    ok(s.dialogs.length===1&&/urgent conflict/.test(s.dialogs[0])&&/Zet Kippenpoten op de kleine kamado/.test(s.dialogs[0]),engineName+': bevestiging met conflict en oplossing: '+s.dialogs[0]);
-    ok(await s.screen()==='setup'&&await s.store()===stored,engineName+': annuleren blijft op stap 2 en wijzigt niets');
-    s.answer='accept';await s.act('prep');
-    ok(await s.screen()==='prep',engineName+': na bevestiging naar voorbereiding');
+    const confirmText=await s.text('[data-v5-prep-confirm]');
+    ok(/Toch doorgaan naar voorbereiding\?/.test(confirmText)&&/1 urgent conflict/.test(confirmText)&&/Zet Kippenpoten op de kleine kamado/.test(confirmText),engineName+': bevestigingspaneel met conflict en oplossing: '+confirmText);
+    ok(await s.screen()==='setup'&&await s.store()===stored,engineName+': het paneel tonen blijft op stap 2 en schrijft niets');
+    ok((await s.overflow())<=1,engineName+': paneel zonder overflow');
+    await s.shot(shots,'08-stap2-bevestiging-naar-voorbereiding-390');
+    await s.act('prep-cancel');
+    ok(await s.count('[data-v5-prep-confirm]')===0&&await s.screen()==='setup'&&await s.store()===stored,engineName+': annuleren: paneel weg, opslag byte-gelijk');
+    await s.act('prep');await s.act('prep-confirm');
+    ok(await s.screen()==='prep',engineName+': na "Toch doorgaan" naar voorbereiding');
+    ok(s.dialogs.length===0&&await s.page.evaluate(()=>window.__confirmCalls)===0,engineName+': op dit pad wordt geen window.confirm of ander dialoog meer gebruikt');
     await s.act('setup');
     // De oplossing toepassen is een tik van de gebruiker; alleen dat ene gerecht verandert.
     await s.f.locator('[data-v5-act^="fix:"]').click();await s.page.waitForTimeout(150);
@@ -120,7 +127,7 @@ try{
     ok(kam3['Kippenpoten']==='small'&&kam3['Ribeye 500 g']==='large',engineName+': na de tik staat Kippenpoten op klein '+JSON.stringify(kam3));
     ok(await s.count('[data-v5-urgent]')===0,engineName+': het paneel verdwijnt');
     s.dialogs.length=0;await s.act('prep');
-    ok(s.dialogs.length===0&&await s.screen()==='prep',engineName+': zonder urgente conflicten geen bevestiging');
+    ok(await s.count('[data-v5-prep-confirm]')===0&&await s.screen()==='prep',engineName+': zonder urgente conflicten geen bevestiging');
     ok(s.errors.length===0,engineName+': geen paginafouten '+s.errors.join(' | '));
     await s.context.close();
    }
@@ -144,9 +151,10 @@ try{
     ok(/Oplossing: Begin om 08:\d\d of serveer om 03:\d\d/.test(urgent),engineName+': directe oplossing "Begin om 08:xx of serveer om 03:xx": '+urgent);
     await s.shot(shots,'02-stap2-pulled-pork-te-vroeg-390');
     ok((await s.overflow())<=1,engineName+': geen horizontale overflow (390)');
-    const stored=await s.store();s.dialogs.length=0;s.answer='dismiss';await s.act('prep');
-    ok(s.dialogs.length===1&&/Begin om 08/.test(s.dialogs[0])&&await s.screen()==='setup'&&await s.store()===stored,engineName+': bevestiging vraagt om akkoord; annuleren wijzigt niets');
-    s.answer='accept';await s.act('prep');
+    const stored=await s.store();await s.act('prep');
+    ok(/Begin om 08/.test(await s.text('[data-v5-prep-confirm]'))&&await s.screen()==='setup'&&await s.store()===stored,engineName+': bevestiging vraagt om akkoord; wijzigt niets');
+    await s.act('prep-cancel');ok(await s.store()===stored,engineName+': annuleren wijzigt niets');
+    await s.act('prep');await s.act('prep-confirm');
     // Avond vooraf voorbij.
     const overdue=await s.text('[data-v5-overdue]');
     ok(/Voorbereiding al voorbij/.test(overdue)&&/Procureur schoonmaken en kruiden/.test(overdue),engineName+': melding voor de voorbije voorbereiding: '+overdue);
@@ -230,6 +238,10 @@ try{
     const inside=await s.page.evaluate(()=>{const p=document.querySelector('[data-v5-urgent]').getBoundingClientRect();return p.left>=0&&p.right<=innerWidth});
     ok(inside,engineName+': '+width+' px: het rode paneel past binnen het scherm');
     if(width===320)await s.shot(shots,'06-stap2-urgent-conflict-320');
+    await s.act('prep');
+    ok((await s.overflow())<=1,engineName+': '+width+' px: bevestigingspaneel zonder overflow');
+    ok(await s.page.evaluate(()=>[...document.querySelectorAll('[data-v5-prep-confirm] button')].every(b=>b.getBoundingClientRect().height>=43.5)),engineName+': '+width+' px: knoppen >= 44 px');
+    if(width===320)await s.shot(shots,'09-stap2-bevestiging-320');
     await s.context.close();
     const t=await open(browser,T_2340,{width});
     await startSession(t,['Ribeye 500 g']);await t.act('prep');await t.act('live');await t.act('late-ask');

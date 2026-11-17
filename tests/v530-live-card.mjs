@@ -39,7 +39,7 @@ function boot({wakeLock=false}={}){
       w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
     }});
   const w=dom.window,d=w.document,$=s=>d.querySelector(s);
-  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();};
+  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
   const addRecipe=name=>{const el=$('[data-v5-recipe="'+name+'"]');assert.ok(el,'recipe '+name);el.click();};
   const card=id=>$('[data-v5-dishcard="'+id+'"]');
   const slot=(id,key)=>card(id)?.querySelector('[data-v5-slot="'+key+'"]');

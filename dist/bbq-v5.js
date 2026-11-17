@@ -32,7 +32,7 @@ window.initBBQV5=function(b){
   const dishes=()=>state().dishes||[];
   function saveMeta(){try{localStorage.setItem(KEY,JSON.stringify({...meta,version:1}))}catch(e){/* Only session navigation metadata; dishes remain in v4 storage */}}
   function commit(){b.commit();}
-  function goto(next){screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}saveView();}
+  function goto(next){prepAsk=false;screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}saveView();}
   const VIEW_SCREENS=['home','select','setup','prep','live'],VIEW_TABS=['recipes','more','planning','cooking'];
   function saveView(){
     // Only navigation state of an active session; never plan data.
@@ -135,7 +135,7 @@ window.initBBQV5=function(b){
   }
   /* v5.7: urgent conflicts (red, top of step 2), "Plan opnieuw vanaf nu" and the overdue "avond vooraf" notice.
      In-memory UI state only (never stored). Nothing here changes the plan without a tap of the user. */
-  let lateAsk=false,lateHide=false;
+  let lateAsk=false,lateHide=false,prepAsk=false;
   function planIssues(){try{return b.getPlanIssues?(b.getPlanIssues().issues||[]):[]}catch(e){return []}}
   function urgentPanel(issues){
     if(!issues.length)return '';
@@ -144,6 +144,15 @@ window.initBBQV5=function(b){
       issues.map(i=>'<div class="v5-issue" data-v5-issue="'+escape(i.id)+'"><strong>'+escape(i.title)+'</strong>'+(i.reasons&&i.reasons.length?'<small>'+escape(i.reasons.join(' · '))+'</small>':'')+
         '<p class="v5-fix"><span>Oplossing:</span> '+escape(i.solution)+'</p>'+
         (i.fix?'<button type="button" class="v5-btn subtle v5-emph" data-v5-act="fix:'+escape(i.fix.dishId)+':'+escape(i.fix.to)+'">'+escape(i.fix.label)+'</button>':'')+'</div>').join('')+'</section>';
+  }
+  function prepConfirmPanel(issues){
+    // In-page confirmation (no window.confirm): shown after a tap on "Naar voorbereiding" while urgent conflicts remain. UI state only.
+    if(!prepAsk||!issues.length)return '';
+    return '<section class="v5-card v5-prep-confirm" role="alertdialog" aria-labelledby="v5-prep-confirm-t" data-v5-prep-confirm>'+
+      '<h3 id="v5-prep-confirm-t">Toch doorgaan naar voorbereiding?</h3>'+
+      '<p>Er '+(issues.length===1?'is nog 1 urgent conflict':'zijn nog '+issues.length+' urgente conflicten')+':</p><ul>'+
+      issues.map(i=>'<li><strong>'+escape(i.title)+'</strong><br><span>Oplossing: '+escape(i.solution)+'</span></li>').join('')+'</ul>'+
+      '<p>Er verandert niets tot je kiest.</p><div class="v5-row">'+action('Toch doorgaan','prep-confirm','subtle v5-emph')+action('Annuleren','prep-cancel','subtle')+'</div></section>';
   }
   function lateModel(){try{return b.getLateStart?b.getLateStart():null}catch(e){return null}}
   function lateBanner(){
@@ -184,7 +193,7 @@ window.initBBQV5=function(b){
   function setup(){
     const s=state(),c=b.calculate();
     const alerts=c.alerts||[];
-    return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+urgentPanel(planIssues())+
+    return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+(function(){const is=planIssues();return urgentPanel(is)+prepConfirmPanel(is)})()+
     '<div class="v5-card v5-serve-card"><h3>🍽️ Serveermoment</h3><div class="v5-grid v5-serve-fields">'+
       '<label class="v5-field">Datum<span class="v5-input-frame"><input class="v5-input" type="date" data-v5-setting="date" value="'+escape(s.date)+'"></span></label>'+
       '<label class="v5-field">Serveren om<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="mealTime" value="'+escape(s.mealTime)+'"></span></label>'+
@@ -922,10 +931,13 @@ window.initBBQV5=function(b){
     if(act==='late-cancel'){lateAsk=false;render();return}
     if(act==='late-hide'){lateHide=true;lateAsk=false;render();return}
     if(act==='late-apply'){applyReplan();return}
-    if(act==='prep'&&screen==='setup'){
-      // v5.7: urgent conflicts ask for a confirmation before going on to the preparation.
-      const urgent=planIssues();
-      if(urgent.length&&!window.confirm('Er '+(urgent.length===1?'is nog 1 urgent conflict':'zijn nog '+urgent.length+' urgente conflicten')+':\n'+urgent.map(i=>'• '+i.title+'\n  Oplossing: '+i.solution).join('\n')+'\n\nToch doorgaan naar voorbereiding?'))return;
+    if(act==='prep-cancel'){prepAsk=false;render();return}
+    if(act==='prep-confirm'){prepAsk=false;if(dishes().length)goto('prep');return}
+    if(act==='prep'&&screen==='setup'&&planIssues().length){
+      // v5.7: urgent conflicts ask for a confirmation in the page before going on to the preparation.
+      prepAsk=true;render();
+      try{root.querySelector('[data-v5-prep-confirm]')?.scrollIntoView?.({block:'start',behavior:'instant'})}catch(e){}
+      return;
     }
     if(act==='home'||act==='select'||act==='setup'||act==='prep'){if(act!=='home'&&act!=='select'&&!dishes().length)return;goto(act);return}
     if(act==='live'){if(!dishes().length){goto('select');return}meta.active=true;goto('live');return}

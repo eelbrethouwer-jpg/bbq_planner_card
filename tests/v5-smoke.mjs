@@ -30,7 +30,7 @@ const dom=new JSDOM(documentHtml,{
 });
 const {window}=dom,doc=window.document,$=id=>doc.getElementById(id);
 const click=el=>{assert.ok(el,'Missing clickable element');el.click()};
-const press=act=>click(doc.querySelector('[data-v5-act="'+act+'"]'));
+const press=act=>{click(doc.querySelector('[data-v5-act="'+act+'"]'));if(act==='prep'){const c=doc.querySelector('[data-v5-act="prep-confirm"]');if(c)click(c);}};
 const store=()=>JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1'));
 const session=()=>JSON.parse(window.localStorage.getItem('bbq-v5-session-v1'));
 const change=(el,value)=>{assert.ok(el,'Missing field');el.value=value;el.dispatchEvent(new window.Event('change',{bubbles:true}))};

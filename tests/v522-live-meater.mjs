@@ -32,7 +32,7 @@ const dom=new JSDOM(html,{url:'https://planner.test.invalid/dist/planner.html',r
 }});
 try{
  const w=dom.window,d=w.document,$=s=>d.querySelector(s);
- const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,act);el.click();};
+ const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
  assert.equal($('#v5-root').dataset.screen,'home');
  press('new');
  const recipe=$('[data-v5-recipe="Pulled pork op brood"]');assert.ok(recipe);recipe.click();

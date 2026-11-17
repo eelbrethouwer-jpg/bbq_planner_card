@@ -4,7 +4,7 @@
 
 ## v5.7.0 — Planning eenvoudiger (draft-PR, niet gepubliceerd)
 - Bij het toevoegen van een gerecht (stap 1 en "+1") kiest de app de kamado met de minste conflicten (bestaande `v45Score`, via `b.chooseKamado`); gelijke score = standaard van het recept. Alleen voor het nieuwe gerecht: bestaande en handmatig gekozen kamado's veranderen nooit.
-- Urgente conflicten in rood bovenaan stap 2 met een directe oplossing ("Zet Kippenpoten op de kleine kamado" met knop, "Begin om 08:00 of serveer om 03:00"). Meldingen van `calc()` hebben nu een extra veld `meta` (alleen toegevoegd; `type` en `message` ongewijzigd). "Naar voorbereiding" vraagt om bevestiging bij urgente conflicten.
+- Urgente conflicten in rood bovenaan stap 2 met een directe oplossing ("Zet Kippenpoten op de kleine kamado" met knop, "Begin om 08:00 of serveer om 03:00"). Meldingen van `calc()` hebben nu een extra veld `meta` (alleen toegevoegd; `type` en `message` ongewijzigd). "Naar voorbereiding" vraagt bij urgente conflicten om bevestiging in een paneel in de pagina (geen window.confirm).
 - "Plan opnieuw vanaf nu" (stap 3 en Live) als er nog niets is gestart en de serveertijd voorbij is of de vereiste start > 15 min te laat is: voor/na, pas na bevestiging; nieuwe serveertijd = nu + benodigde tijd (naar boven op een minuut). Over middernacht verschuift `date` (`dateMode: manual`) en verhuizen `v46Done`/`v5Actual` mee; `availableFrom` wordt nooit later dan nu.
 - Melding bij een voorbereiding "de avond vooraf" die al voorbij is, met alternatief (stap 3).
 - Nieuwe pure planningshulp `BBQPlan` in `dist/bbq-eta.js` (ES-ingang `engine/plan.mjs`); testbaar zonder DOM en klok.

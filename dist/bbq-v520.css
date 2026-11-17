@@ -210,3 +210,7 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 /* Geen scroll-ankering: een regel die later bovenaan verschijnt (bv. "Meldingen op je telefoon") mag een herstelde scrollpositie niet
    verschuiven; zo gedraagt Chromium zich als WebKit (iOS), dat geen scroll-ankering kent. */
 #v5-root .v5-content{overflow-anchor:none}
+#v5-root .v5-prep-confirm{border-color:#c0554a;background:linear-gradient(145deg,#3a1d1d,#2a1717)}
+#v5-root .v5-prep-confirm ul{margin:6px 0;padding-left:18px;display:grid;gap:8px;font-size:13px;overflow-wrap:anywhere}
+#v5-root .v5-prep-confirm p{font-size:13px;margin:6px 0}
+#v5-root .v5-prep-confirm .v5-row .v5-btn{flex:1 1 140px;min-height:44px;white-space:normal}

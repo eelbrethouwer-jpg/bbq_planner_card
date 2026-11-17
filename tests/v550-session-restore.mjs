@@ -32,7 +32,7 @@ function boot(storage={},now=START){
       w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
     }});
   const w=dom.window,d=w.document,$=s=>d.querySelector(s);
-  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]')||$('#v5-nav [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();};
+  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]')||$('#v5-nav [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
   const tap=name=>{const el=$('[data-v5-recipe="'+name+'"]');assert.ok(el,'recipe '+name);el.click();};
   const dump=()=>Object.fromEntries(Object.keys(w.localStorage).map(k=>[k,w.localStorage.getItem(k)]));
   const screen=()=>$('#v5-root').dataset.screen;

@@ -2,7 +2,7 @@
 
 > Actueel gepubliceerd: [v5.5.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.5.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.5.1 — Kaart op volledig scherm in een HA-panel-view (draft-PR, niet gepubliceerd)
+## v5.5.1 — Kaart op volledig scherm in een HA-panel-view (gemerged via PR #47; publicatie via release.yml na goedkeuring, nog niet geverifieerd)
 - De Home Assistant-kaart vult in een panel-view (automatisch herkend, of met `fullscreen: true`) het scherm vanaf haar eigen bovenkant tot de onderkant van het scherm, gemeten in plaats van geschat, en meet opnieuw bij draaien en formaatwijziging. Alleen de planner scrolt, niet de HA-pagina; de onderste navigatie van de planner blijft in beeld. Ruimte voor de iOS-thuisbalk (safe area) onderaan de kaart. `fullscreen: false` of geen panel-view: ongewijzigd gedrag. Geen wijziging aan planner, opslag of berichttypen.
 
 ## v5.5.0 — Tijdlijn op Live en "Zo meteen" (gepubliceerd 17 november 2026)

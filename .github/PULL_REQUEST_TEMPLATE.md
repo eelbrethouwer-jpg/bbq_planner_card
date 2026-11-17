@@ -44,6 +44,7 @@
 - [ ] CI groen op actuele HEAD
 - [ ] Gebruiker heeft expliciet mergeakkoord gegeven
 - [ ] Gebruiker heeft expliciet releaseakkoord gegeven (indien van toepassing)
+- [ ] RELEASE_vX.md bevat de goedkeuringsregel (`Publicatie: goedgekeurd door de eigenaar op JJJJ-MM-DD`); alleen na expliciet akkoord van de gebruiker. **Mergen van deze PR publiceert dan de release** via `release.yml`. Geen akkoord → regel weglaten en dit vakje leeg laten.
 - Beoogde tag en exacte codecommit:
 - Release notes en rollback:
 

@@ -122,3 +122,5 @@ jobs:
         run: |
           node tests/version-consistency.mjs
           node tests/v6-pr3-publish-guard.mjs
+      - name: Test de vaste releaseworkflow (nagebootste gh, fixtures)
+        run: node tests/release-workflow.mjs

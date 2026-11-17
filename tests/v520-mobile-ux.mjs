@@ -95,8 +95,9 @@ try{
     // Live cockpit order and focus.
     await layout('live');
     const order=await page.evaluate(()=>{const c=document.querySelector('#v5-root .v5-content');
-      return ['.v5-live-bar','.v5-hero','.v5-kamados','.v5-next-tasks','[data-v5-dish]','.v5-action-grid'].map(s=>[...c.children].indexOf(c.querySelector(s)));});
-    ok(order.every(i=>i>=0)&&order.every((v,i)=>i===0||v>order[i-1]),name+': Live order status → NU DOEN → kamado → next → details → actions '+order);
+      return ['.v5-live-bar','.v5-hero','.v5-dishcards','.v5-next-tasks','[data-v5-dish]','.v5-action-grid'].map(s=>[...c.children].indexOf(c.querySelector(s)));});
+    ok(order.every(i=>i>=0)&&order.every((v,i)=>i===0||v>order[i-1]),name+': Live order status → NU DOEN → dish cards → next → details → actions '+order);
+    ok(await page.locator('.v5-dishcards [data-v5-dishcard]').count()===4,name+': v5.3 one card per dish, two per kamado');
     ok(await page.locator('#v5-root .v5-btn.primary').count()===1,name+': exactly one primary action on Live');
     if(mobile){
       const done=await page.locator('.v5-hero [data-v5-act^="done:"]').boundingBox();
@@ -117,12 +118,12 @@ try{
     ok(liveBg==='rgb(16, 35, 42)',name+': sticky Live bar has fully opaque background '+liveBg);
     await shot('live');
 
-    // A whole kamado card opens that dish's details.
-    const card=page.locator('.v5-kamados button.v5-kamado-card').first();
+    // v5.3: the Details button on a dish card opens that dish's details.
+    const card=page.locator('.v5-dishcards [data-v5-act^="dish:"]').first();
     const dishId=(await card.getAttribute('data-v5-act')).slice(5);
     await card.click();
     await page.waitForTimeout(700); // openDish uses smooth scrolling; let it settle before measuring
-    ok(await page.locator('[data-v5-dish="'+dishId+'"]').getAttribute('open')==='',name+': kamado card opens dish details');
+    ok(await page.locator('[data-v5-dish="'+dishId+'"]').getAttribute('open')==='',name+': dish card opens dish details');
 
     // Re-render keeps open details and scroll position.
     const step=page.locator('[data-v5-dish="'+dishId+'"] .v5-recipestage details').first();
@@ -188,8 +189,8 @@ try{
     await layout('more');
     const groups=await page.locator('#v47-more .v520-group').evaluateAll(els=>els.map(el=>el.id));
     ok(JSON.stringify(groups)===JSON.stringify(['v520-more-koken','v520-more-koppelingen','v520-more-gegevens','v520-more-app']),name+': four ordered groups '+groups);
-    ok(await page.locator('#v520-more-app #v520-app-version').textContent()==='Versie van deze app: v5.2.3',name+': visible app version in Meer → App en info');
-    ok((await page.title()).includes('v5.2.3'),name+': app version matches loaded HTML title');
+    ok(await page.locator('#v520-more-app #v520-app-version').textContent()==='Versie van deze app: v5.3.0',name+': visible app version in Meer → App en info');
+    ok((await page.title()).includes('v5.3.0'),name+': app version matches loaded HTML title');
     const expected={koken:['v45-shopping','v46-pantry-list','v46-history'],koppelingen:['v46-notify','v520-open-cooking'],
       gegevens:['json-export','json-import','print','export','reset','share-public'],app:['v49-install','v49-update','v49-share','v49-install-steps']};
     for(const [group,ids] of Object.entries(expected))for(const id of ids)

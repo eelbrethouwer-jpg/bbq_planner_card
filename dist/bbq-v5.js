@@ -1,4 +1,5 @@
-/* BBQ Planner v5.0.0 — session-first experience. Keep v4 calculations and storage as source of truth. */
+/* BBQ Planner v5.0.0 — session-first experience. Keep v4 calculations and storage as source of truth.
+   v5.3.0: Live shows one card per dish (core → target, ambient, rise, 'op tafel rond' with source, one coach line). */
 (function(){
 'use strict';
 window.initBBQV5=function(b){
@@ -10,6 +11,7 @@ window.initBBQV5=function(b){
   const taskTime=t=>Number.isFinite(t)&&new Date(t).toDateString()!==new Date().toDateString()?day(t)+' '+clock(t):clock(t);
   const labelKam=k=>k==='large'?'Grote kamado':k==='small'?'Kleine kamado':'Algemeen';
   const categoryIcon={rund:'🥩',varken:'🥓',gevogelte:'🍗',vis:'🐟',lam:'🍖',groenten:'🥦',vegetarisch:'🥬',dessert:'🍰',overig:'🍽️'};
+  let wakeLock=null,wakePending=false,livePlan=new Map();
   let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',legacyReturn='',legacyReturnScroll=0,showAllTasks=false,recipeFilter='all';
   try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==='object'&&saved.version===1){meta={active:saved.active===true,stage:['select','setup','prep','live','finished'].includes(saved.stage)?saved.stage:'select',created:String(saved.created||'')}}}catch(e){}
   const state=()=>b.getState();
@@ -81,8 +83,9 @@ window.initBBQV5=function(b){
       '<label class="v5-field">Beschikbaar vanaf<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="availableFrom" value="'+escape(s.availableFrom)+'"></span></label>'+
       '<label class="v5-field">Aantal personen<span class="v5-input-frame"><input class="v5-input" type="number" min="1" max="50" data-v5-setting="v45People" value="'+escape(s.v45People||4)+'"></span></label>'+
     '</div><p class="v5-muted">Voor een diner met meerdere gangen kun je in de uitgebreide planning aparte serveertijden instellen.</p></div>'+
-    '<div class="v5-card"><h3>🔥 Verdeel de gerechten</h3>'+dishes().map(d=>'<div class="v5-dishline"><div><strong>'+escape(d.name)+'</strong><small>±'+escape(d.cook)+' min · BBQ '+escape(d.grill)+' °C</small></div>'+
-      '<select class="v5-input" aria-label="Kamado voor '+escape(d.name)+'" data-v5-kamado="'+escape(d.id)+'"><option value="large"'+(d.kamado==='large'?' selected':'')+'>Groot</option><option value="small"'+(d.kamado==='small'?' selected':'')+'>Klein</option></select></div>').join('')+
+    '<div class="v5-card"><h3>🔥 Verdeel de gerechten en thermometers</h3>'+dishes().map(d=>'<div class="v5-dishline v5-setup-dish"><div><strong>'+escape(d.name)+'</strong><small>±'+escape(d.cook)+' min · BBQ '+escape(d.grill)+' °C</small></div>'+
+      '<div class="v5-setup-selects"><select class="v5-input" aria-label="Kamado voor '+escape(d.name)+'" data-v5-kamado="'+escape(d.id)+'"><option value="large"'+(d.kamado==='large'?' selected':'')+'>Groot</option><option value="small"'+(d.kamado==='small'?' selected':'')+'>Klein</option></select>'+
+      meaterSelect(d)+'</div></div>').join('')+
       '<div class="v5-row" style="margin-top:14px">'+action('⚙ Temperatuur / methode wijzigen','planning')+'</div></div>'+
     '<div class="v5-card"><h3>⏱️ Planning in het kort</h3><div class="v5-grid"><div><span class="v5-muted">Grote kamado aan</span><div class="v5-number">'+clock(c.fires.large)+'</div></div><div><span class="v5-muted">Kleine kamado aan</span><div class="v5-number">'+clock(c.fires.small)+'</div></div></div>'+
        (alerts.length?'<details class="v5-alerts" data-v5-key="alerts"><summary>⚠️ '+alerts.length+' aandachtspunt(en) — bekijken</summary>'+alerts.slice(0,12).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'<p class="v5-muted">Geen planningsconflicten gedetecteerd. Controleer de praktische roosterruimte zelf.</p>')+'</div>'+
@@ -119,41 +122,128 @@ window.initBBQV5=function(b){
     '<div class="v5-card"><h3>🛒 Nog nodig?</h3><p class="v5-muted">Je automatische boodschappenlijst, voorraad en uitgebreide receptinstructies blijven beschikbaar.</p>'+action('Open boodschappenlijst','more')+'</div>'+
     '<div class="v5-row">'+action('← Planning','setup')+action('🔥 Start live BBQ-sessie','live','primary')+'</div>';
   }
-  function probe(d,p){
-    if(!d)return '<div class="v5-probe-plan">Niet in gebruik</div>';
-    if(p?.ok){
-      // The timestamp is from HA, never fabricated by the one-second display ticker.
-      const age=Number.isFinite(p.updatedAt)?Math.max(0,Math.floor((Date.now()-p.updatedAt)/1000)):null;
-      const elapsed=age==null?'tijd onbekend':age<60?age+' s geleden':Math.floor(age/60)+' min '+age%60+' s geleden';
-      return '<div class="v5-number">'+escape(p.core.toFixed(1))+' °C</div><div class="v5-muted">'+(age!=null&&age<60?'● LIVE':'● Vertraagd')+' · HA-update '+elapsed+'</div>';
+  const PROBE_LABEL={pro:'MEATER Pro',plus:'MEATER Plus'};
+  const hasProbe=d=>d&&(d.meater==='pro'||d.meater==='plus');
+  function meaterSelect(d){
+    // v5.3: the existing d.meater field; one probe can only belong to one dish.
+    const used=k=>dishes().some(x=>x.id!==d.id&&x.meater===k);
+    const value=hasProbe(d)?d.meater:'none';
+    return '<select class="v5-input" aria-label="Thermometer voor '+escape(d.name)+'" data-v5-meater="'+escape(d.id)+'">'+
+      '<option value="none"'+(value==='none'?' selected':'')+'>Geen thermometer</option>'+
+      ['pro','plus'].map(k=>'<option value="'+k+'"'+(value===k?' selected':'')+(used(k)&&value!==k?' disabled':'')+'>'+PROBE_LABEL[k]+(used(k)&&value!==k?' (bezet)':'')+'</option>').join('')+'</select>';
+  }
+  const temp=(v,digits=1)=>Number(v).toLocaleString('nl-NL',{minimumFractionDigits:digits,maximumFractionDigits:digits});
+  const goalOf=d=>{const g=Number(d?.core);return d&&d.core!==''&&d.core!=null&&Number.isFinite(g)&&g>0?g:null};
+  function ageText(p){
+    // The timestamp is from HA, never fabricated by the one-second display ticker.
+    const age=Number.isFinite(p.updatedAt)?Math.max(0,Math.floor((Date.now()-p.updatedAt)/1000)):null;
+    const elapsed=age==null?'tijd onbekend':age<60?age+' s geleden':Math.floor(age/60)+' min '+age%60+' s geleden';
+    return (age!=null&&age<60?'● LIVE':'● Vertraagd')+' · HA-update '+elapsed;
+  }
+  // Slots of one dish card. Only these are patched on a sensor update or the 1-second ticker.
+  function cardSlots(d){
+    const p=hasProbe(d)?b.getProbe(d):null,live=!!p?.ok,goal=goalOf(d),plan=livePlan.get(String(d.id))||{};
+    const goalHtml=goal!=null?'<span class="v5-dc-goal">→ '+escape(temp(goal,0))+' °C</span>':'<span class="v5-dc-goal">geen kerndoel</span>';
+    let core;
+    if(live){
+      const pct=goal!=null?Math.max(0,Math.min(100,Math.round(p.core/goal*100))):0;
+      core='<div class="v5-dc-temp"><span class="v5-dc-core">'+escape(temp(p.core))+' °C</span>'+goalHtml+'</div>'+
+        (goal!=null?'<div class="v5-dc-bar" role="img" aria-label="'+pct+'% van de richtkern"><span style="width:'+pct+'%"></span></div>':'')+
+        '<div class="v5-muted v5-dc-age">'+ageText(p)+'</div>';
+    }else{
+      core='<div class="v5-dc-temp"><span class="v5-dc-core v5-dc-none">— °C</span>'+goalHtml+'</div>'+
+        '<div class="v5-muted v5-dc-age">'+escape(hasProbe(d)?(p?.note||'Geen live meting'):goal!=null?'Geen thermometer · controleer de kern zelf':'Geen thermometer · controleer de gaarheid zelf')+'</div>';
     }
-    return '<div class="v5-probe-plan">Doel BBQ '+escape(d?.grill||'—')+' °C</div><div class="v5-muted">'+escape(p?.note||'Geen gerecht met live MEATER-meting')+'</div>';
+    const started=d.phase==='cooking'&&Number.isFinite(Number(d.startedAt))&&Number(d.startedAt)>0?Math.max(0,Math.round((Date.now()-Number(d.startedAt))/60000)):null;
+    const parts=[];
+    if(live){
+      const trend=b.getTrend(d);
+      parts.push('Omgeving '+(p.ambient==null?'—':escape(temp(p.ambient,0))+' °C'));
+      parts.push(trend?.ok?(trend.slope>=0?'+':'')+escape(temp(trend.slope))+' °C/min':'stijging volgt');
+    }else parts.push('Doel BBQ '+escape(d.grill??'—')+' °C');
+    if(started!=null)parts.push('op BBQ '+started+' min');
+    const env=parts.join(' · ');
+    // One estimate per dish: live trend or MEATER ETA via the existing v46Prediction, else the planning.
+    let when=null,source='planning',sub='',margin=null;
+    const rest=Math.max(0,Number(d.rest)||0);
+    if(d.phase==='done'){when=Number(d.doneAt)||null;source='gereed gemeld'}
+    else if(d.phase==='resting'&&Number(d.restAt)>0){when=Number(d.restAt)+rest*60000;source='rusttijd'}
+    else{
+      const pred=live?b.getPrediction(d):null;
+      if(pred?.ok){
+        when=pred.eta+rest*60000;
+        if(pred.kind==='meater'){source='MEATER-ETA';sub='kern '+escape(temp(goal,0))+' °C rond '+clock(pred.eta)}
+        else if(pred.kind==='reached'){source='kerndoel bereikt';sub='controleer de gaarheid'}
+        else{source='eigen trend';margin=Math.max(2,Math.round((pred.remaining||0)*0.2));sub='kern '+escape(temp(goal,0))+' °C rond '+clock(pred.eta)}
+        if(rest&&pred.kind!=='reached')sub+=' + '+rest+' min rust';
+      }else{
+        when=Number.isFinite(plan.end)?plan.end:null;
+        if(live&&pred&&pred.why)sub='schatting volgt: '+escape(pred.why.charAt(0).toLowerCase()+pred.why.slice(1));
+      }
+    }
+    let delta='';
+    if(when!=null&&source!=='planning'&&Number.isFinite(plan.end)&&d.phase!=='done'){
+      const diff=Math.round((when-plan.end)/60000);
+      delta=Math.abs(diff)<=2?' · op schema':diff<0?' · '+(-diff)+' min vroeg':' · '+diff+' min later';
+    }
+    const label=d.phase==='done'?'Gereed'+(when?' sinds '+clock(when):''):'Op tafel rond '+clock(when);
+    const eta='<div class="v5-dc-when"><strong>'+escape(label)+'</strong>'+escape(delta)+'</div>'+
+      '<div class="v5-muted">'+escape(source)+(margin!=null?' ±'+margin+' min':'')+(sub?' · '+sub:'')+'</div>';
+    const advice=b.getAdvice?b.getAdvice(d):null;
+    const text=advice&&advice.text?String(advice.text).replace(/(\d)\.(\d) °C/g,'$1,$2 °C'):'';
+    const coach=text?'<p class="v5-dc-coach'+(advice.warn?' warn':'')+'">'+escape(text.charAt(0).toUpperCase()+text.slice(1))+'</p>':'';
+    return {core,env,eta,coach};
+  }
+  function dishCard(d){
+    const phaseLabel={waiting:'Nog niet begonnen',cooking:'Op de BBQ',resting:'Rusten',done:'Gereed'}[d.phase]||'Nog niet begonnen';
+    const phaseNext=d.phase==='waiting'?'cooking':d.phase==='cooking'?(Number(d.rest)>0?'resting':'done'):d.phase==='resting'?'done':null;
+    const nextName={cooking:'▶ Op BBQ gelegd',resting:'⏱️ Begin rusten',done:'✓ Gerecht gereed'};
+    const slots=cardSlots(d);
+    return '<section class="v5-card v5-dishcard" data-v5-dishcard="'+escape(d.id)+'" aria-label="'+escape(d.name)+'">'+
+      '<div class="v5-between v5-dc-head"><div class="v5-dc-title"><h3>'+escape(d.name)+'</h3><small class="v5-muted">'+escape(labelKam(d.kamado)+' · '+(hasProbe(d)?PROBE_LABEL[d.meater]:'geen thermometer'))+'</small></div>'+
+      '<span class="v5-chip neutral v5-dc-phase">'+escape(phaseLabel)+'</span></div>'+
+      '<div data-v5-slot="core">'+slots.core+'</div>'+
+      '<p class="v5-dc-line" data-v5-slot="env">'+slots.env+'</p>'+
+      '<div class="v5-dc-eta" data-v5-slot="eta">'+slots.eta+'</div>'+
+      '<div data-v5-slot="coach">'+slots.coach+'</div>'+
+      '<div class="v5-dc-actions">'+(phaseNext?action(nextName[phaseNext],'phase:'+d.id+':'+phaseNext,'subtle v5-emph'):'')+
+      action('Details ›','dish:'+d.id,'subtle')+'</div></section>';
   }
   function refreshLiveMeater(){
     if(screen!=='live'||document.body.classList.contains('v5-legacy')||document.hidden)return;
     const root=$('v5-root');
     if(!root||root.dataset.screen!=='live')return;
-    const current=dishes();
-    // Update only sensor elements, not the page: keep open details, scroll and focus.
-    for(const k of ['large','small']){
-      const slot=root.querySelector('[data-v5-live-kamado="'+k+'"]');
-      if(!slot)continue;
-      const ds=current.filter(d=>d.kamado===k),d=ds.find(d=>d.phase==='cooking')||ds[0];
-      const markup=probe(d,d?b.getProbe(d):null);
-      if(slot.innerHTML!==markup)slot.innerHTML=markup;
+    // Update only sensor slots, not the page: keep open details, scroll and focus.
+    for(const card of root.querySelectorAll('[data-v5-dishcard]')){
+      const d=dishes().find(x=>String(x.id)===card.dataset.v5Dishcard);
+      if(!d)continue;
+      const slots=cardSlots(d);
+      for(const [key,markup] of Object.entries(slots)){
+        const slot=card.querySelector('[data-v5-slot="'+key+'"]');
+        if(slot&&slot.innerHTML!==markup)slot.innerHTML=markup;
+      }
     }
-    for(const d of current){
-      const slot=[...root.querySelectorAll('[data-v5-live-dish]')].find(el=>el.dataset.v5LiveDish===String(d.id));
-      if(!slot)continue;
-      const markup=probe(d,b.getProbe(d));
-      if(slot.innerHTML!==markup)slot.innerHTML=markup;
-    }
+  }
+  function syncWakeLock(){
+    // v5.3: keep the screen on while Live is visible. Unsupported or refused: silently skip.
+    const want=screen==='live'&&!document.hidden&&!document.body.classList.contains('v5-legacy');
+    if(!want){if(wakeLock){const l=wakeLock;wakeLock=null;try{l.release().catch(()=>{})}catch(e){}}return}
+    if(wakeLock||wakePending||!navigator.wakeLock||typeof navigator.wakeLock.request!=='function')return;
+    wakePending=true;
+    try{
+      navigator.wakeLock.request('screen').then(l=>{
+        wakePending=false;wakeLock=l;
+        l.addEventListener?.('release',()=>{if(wakeLock===l)wakeLock=null});
+        if(screen!=='live'||document.hidden||document.body.classList.contains('v5-legacy'))syncWakeLock();
+      }).catch(()=>{wakePending=false});
+    }catch(e){wakePending=false}
   }
   function refreshLiveSchedule(){
     if(screen!=='live'||document.body.classList.contains('v5-legacy')||document.hidden)return;
     const root=$('v5-root');
     if(!root||root.dataset.screen!=='live')return;
     const now=Date.now(),c=b.calculate(),s=state();
+    livePlan=new Map((c.dishes||[]).map(x=>[String(x.id),x]));
     const remaining=Math.max(0,Math.ceil((c.serve-now)/60000));
     const countdown=Number.isFinite(c.serve)&&c.serve>now
       ?'nog '+Math.floor(remaining/60)+' u '+remaining%60+' min':'serveertijd verstreken';
@@ -175,6 +265,7 @@ window.initBBQV5=function(b){
   }
   function live(){
     const s=state(),c=b.calculate(),all=b.getTasks().filter(t=>!t.id.includes(':prep:'));
+    livePlan=new Map((c.dishes||[]).map(x=>[String(x.id),x]));
     const done=s.v46Done||{},upcoming=all.filter(t=>!done[t.id]),now=Date.now(),next=upcoming.find(t=>t.time<=now+10*60000)||upcoming[0];
     const finished=all.length-upcoming.length,remaining=Math.max(0,Math.ceil((c.serve-now)/60000));
     const countdown=Number.isFinite(c.serve)&&c.serve>now?'nog '+Math.floor(remaining/60)+' u '+remaining%60+' min':'serveertijd verstreken';
@@ -186,15 +277,9 @@ window.initBBQV5=function(b){
        '<div class="v5-hero-actions">'+action('✓ Markeer uitgevoerd','done:'+next.id,'primary')+action('📖 Recept','recipe-in-live')+'</div></div>':
        '<div class="v5-hero"><h2>✅ Alle geplande handelingen afgevinkt</h2><p>Controleer de gaarheid voordat je serveert.</p>'+action('Sessie afronden','finish','primary')+'</div>';
     return '<div class="v5-live-bar"><div class="v5-between"><strong>Serveren '+escape(s.mealTime)+' · '+countdown+'</strong><span>'+finished+'/'+all.length+' afgerond</span></div><progress max="'+Math.max(1,all.length)+'" value="'+finished+'" aria-label="Handelingen afgerond"></progress></div>'+
-    '<h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1><p class="v5-status v5-live-status">Geplande tijden · alleen afgevinkt telt als uitgevoerd · live MEATER alleen via Home Assistant</p>'+hero+
-    '<div class="v5-grid v5-kamados">'+['large','small'].map(k=>{
-      const ds=dishes().filter(d=>d.kamado===k),d=ds.find(d=>d.phase==='cooking')||ds[0],p=d?b.getProbe(d):null;
-      const more=ds.length>1?' +'+(ds.length-1):'';
-      // The whole card opens the dish details; an unused kamado is plain information.
-      const inner='<strong>'+labelKam(k)+'</strong><span class="v5-muted v5-kamado-dish">'+escape(d?.name||'Geen gerecht')+escape(more)+'</span><div data-v5-live-kamado="'+k+'">'+probe(d,p)+'</div>';
-      return d?'<button type="button" class="v5-probe v5-kamado-card" data-v5-act="dish:'+escape(d.id)+'" aria-label="'+escape(labelKam(k)+': '+d.name+', bekijk bereidingsdetails')+'">'+inner+'<span class="v5-kamado-more" aria-hidden="true">Details ›</span></button>':
-        '<div class="v5-probe v5-kamado-card">'+inner+'</div>';
-    }).join('')+'</div>'+
+    '<div class="v5-between v5-live-head"><h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1>'+
+      '<details class="v5-live-info" data-v5-key="live-info"><summary aria-label="Uitleg over tijden en metingen">ⓘ</summary><p>Geplande tijden zijn indicatief; alleen afgevinkt telt als uitgevoerd. Live MEATER-metingen komen alleen via Home Assistant. Een schatting is een indicatie: controleer altijd kern en gaarheid.</p></details></div>'+hero+
+    '<div class="v5-dishcards">'+dishes().map(dishCard).join('')+'</div>'+
     '<h2 class="v5-sectionhead">Volgende handelingen</h2><div class="v5-card v5-next-tasks">'+
       (rows.length?checklist(rows.map(taskRow)):'<p class="v5-muted">Geen volgende geplande taken.</p>')+
       (follow.length>3?action(showAllTasks?'Toon minder':'Toon alle '+follow.length+' handelingen','show-tasks','subtle v5-wide'):'')+'</div>'+
@@ -204,15 +289,11 @@ window.initBBQV5=function(b){
     '<h2 class="v5-sectionhead">Meer acties</h2><div class="v5-action-grid">'+action('📈 MEATER & focus','cooking')+action('✎ Planning aanpassen','planning')+action('🧂 Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
   }
   function liveDish(d){
-    const s=state(),p=b.getProbe(d),stages=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
+    const s=state(),stages=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
     const phaseLabel={waiting:'Nog niet begonnen',cooking:'Op de BBQ',resting:'Aan het rusten',done:'Gereed'}[d.phase]||'Nog niet begonnen';
-    const phaseNext=d.phase==='waiting'?'cooking':d.phase==='cooking'?(Number(d.rest)>0?'resting':'done'):d.phase==='resting'?'done':null;
-    const nextName={cooking:'▶ Op BBQ gelegd',resting:'⏱️ Begin rusten',done:'✓ Gerecht gereed'};
     const checked=s.v46Done||{};
     return '<details class="v5-card" data-v5-dish="'+escape(d.id)+'" data-v5-key="dish:'+escape(d.id)+'" '+(d.phase==='cooking'?'open':'')+'><summary style="cursor:pointer;font-weight:850">'+escape(d.name)+' · '+escape(phaseLabel)+'</summary>'+
       '<p class="v5-muted" style="margin-top:10px">'+escape(labelKam(d.kamado))+' · '+escape(d.grill)+' °C gepland'+(d.core!==''?' · Richtkern '+escape(d.core)+' °C':'')+'</p>'+
-      '<div class="v5-probe" data-v5-live-dish="'+escape(d.id)+'">'+probe(d,p)+'</div>'+
-      (phaseNext?'<div class="v5-row" style="margin:12px 0">'+action(nextName[phaseNext],'phase:'+d.id+':'+phaseNext,'subtle v5-emph')+'</div>':'')+
       (stages.length?stages.map((r,i)=>{
         const id=s.date+'|'+d.id+':recipe:'+i;
         return '<div class="v5-recipestage"><details data-v5-key="stage:'+escape(d.id)+':'+i+'"><summary>'+(checked[id]?'✓ ':'○ ')+escape(r.title||'Stap '+(i+1))+' · '+escape(r.trigger||'Op volgorde')+'</summary><p>'+escape(r.detail||'Geen extra uitleg.')+'</p>'+action(checked[id]?'↺ Heropen stap':'✓ Stap uitgevoerd','done:'+id,checked[id]?'subtle':'subtle v5-emph')+'</details></div>';
@@ -232,7 +313,7 @@ window.initBBQV5=function(b){
     root.innerHTML='<div class="v5-content">'+logo()+body+'</div>';
     root.querySelectorAll('input[data-v5-setting]').forEach(el=>{el.setAttribute('autocomplete','off')});
     root.querySelectorAll('details[data-v5-key]').forEach(el=>{if(open.has(el.dataset.v5Key))el.open=open.get(el.dataset.v5Key)});
-    renderNav();
+    renderNav();syncWakeLock();
     if(window.scrollY!==scroll)window.scrollTo({top:scroll,left:0,behavior:'instant'});
   }
   // Terugknop toont altijd de werkelijke bestemming. legacyReturn (alleen in geheugen) onthoudt een
@@ -242,7 +323,7 @@ window.initBBQV5=function(b){
     if(returnTo)legacyReturnScroll=window.scrollY;
     legacyFrom=screen;legacyTab=tab;legacyReturn=returnTo||'';
     if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
-    b.showLegacy(tab);document.body.classList.add('v5-legacy');$('v5-back').textContent=legacyReturn==='more'?'← Meer':BACK_LABEL[legacyFrom]||'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
+    b.showLegacy(tab);document.body.classList.add('v5-legacy');syncWakeLock();$('v5-back').textContent=legacyReturn==='more'?'← Meer':BACK_LABEL[legacyFrom]||'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
   }
   function goBack(){
     if(legacyReturn){const to=legacyReturn,y=legacyReturnScroll;legacy(to);try{window.scrollTo({top:y,left:0,behavior:'instant'})}catch(e){}return}
@@ -357,6 +438,12 @@ window.initBBQV5=function(b){
       else if(field==='v45People'){s.v45People=Math.max(1,Math.min(50,Number(value)||4))}
       commit();render();return;
     }
+    if(el.matches('[data-v5-meater]')){
+      const d=dishes().find(d=>d.id===el.dataset.v5Meater);if(!d)return;
+      const next=['pro','plus'].includes(el.value)?el.value:'none';
+      if(next!=='none'&&dishes().some(x=>x.id!==d.id&&x.meater===next)){window.alert('Deze thermometer is al gekoppeld aan een ander gerecht. Ontkoppel hem daar eerst.');render();return}
+      d.meater=next;commit();render();return;
+    }
     if(el.matches('[data-v5-kamado]')){const d=dishes().find(d=>d.id===el.dataset.v5Kamado);if(d){d.kamado=el.value==='small'?'small':'large';commit();render()}return}
   });
   function openDish(id){
@@ -370,12 +457,19 @@ window.initBBQV5=function(b){
     if(fire)return b.calculate().dishes.filter(d=>d.kamado===fire[1]).sort((a,z)=>a.start-z.start)[0]?.id;
     return task.replace(/:(on|off|serve)$/,'');
   }
+  function defaultProbe(dish){
+    // v5.3 AANNAME: MEATER Pro → first dish on the large kamado, Plus → first dish on the small one.
+    // Only when adding; never changes an existing choice. The probe stays free for one dish only.
+    const k=dish.kamado==='small'?'small':'large',probe=k==='large'?'pro':'plus';
+    if(hasProbe(dish)||dishes().some(x=>x.kamado===k||x.meater===probe))return;
+    dish.meater=probe;
+  }
   function handleClick(e){
     const filter=e.target.closest('[data-v5-filter]');
     if(filter){recipeFilter=filter.dataset.v5Filter;render();return}
 
     const recipe=e.target.closest('[data-v5-recipe]');
-    if(recipe){const r=b.getRecipes()[recipe.dataset.v5Recipe];if(r){state().dishes.push(b.makeDish(r));commit();render()}return}
+    if(recipe){const r=b.getRecipes()[recipe.dataset.v5Recipe];if(r){const dish=b.makeDish(r);defaultProbe(dish);state().dishes.push(dish);commit();render()}return}
     const remove=e.target.closest('[data-v5-remove]');
     if(remove){state().dishes=state().dishes.filter(d=>d.id!==remove.dataset.v5Remove);commit();render();return}
     const el=e.target.closest('[data-v5-act]');if(!el)return;
@@ -403,7 +497,7 @@ window.initBBQV5=function(b){
     if(act.startsWith('done:')){const id=act.slice(5);toggleDone(id,!(state().v46Done||{})[id]);return}
   }
   root.addEventListener('click',handleClick);nav.addEventListener('click',handleClick);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render();else syncWakeLock()});
   window.addEventListener('bbq-meater-updated',refreshLiveMeater);
   window.setInterval(refreshLiveMeater,1000); // display timer only
   window.setInterval(refreshLiveSchedule,30000); // only refresh countdown and due-state text, never the Live DOM

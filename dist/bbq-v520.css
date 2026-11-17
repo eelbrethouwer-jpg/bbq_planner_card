@@ -100,3 +100,43 @@ body.v5-legacy .v49-install .v47-kicker{display:none}
 
 /* 7. Terugknop is secundair: de onderbalk blijft de hoofdnavigatie. */
 body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:1px solid #4a646b;box-shadow:none;margin:0 0 10px auto;font-weight:750}
+
+/* 8. v5.3.0 — Live: één kaart per gerecht, groot leesbaar op een meter afstand. */
+#v5-root .v5-live-head{align-items:center;gap:8px;margin:0 0 6px}
+#v5-root .v5-live-head .v5-live-title{margin:0}
+#v5-root .v5-live-info{position:relative;flex:0 0 auto}
+#v5-root .v5-live-info>summary{list-style:none;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;border-radius:12px;border:1px solid #37505a;background:#19272d;color:#c9d4d9;font-size:18px;cursor:pointer}
+#v5-root .v5-live-info>summary::-webkit-details-marker{display:none}
+#v5-root .v5-live-info[open]>p{position:absolute;right:0;top:50px;z-index:25;width:min(300px,calc(100vw - 40px));margin:0;padding:12px;border:1px solid #3d5b61;border-radius:12px;background:#10232a;font-size:12px;line-height:1.5;color:#dfe7e6}
+#v5-root .v5-dishcards{display:grid;gap:10px;margin:0 0 4px}
+@media (min-width:760px){#v5-root .v5-dishcards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#v5-root .v5-dishcard{margin:0;padding:14px;min-width:0;overflow-wrap:anywhere}
+#v5-root .v5-dc-head{align-items:flex-start;gap:8px}
+#v5-root .v5-dc-title{min-width:0}
+#v5-root .v5-dc-title h3{font-size:17px;margin:0 0 2px}
+#v5-root .v5-dc-title small{display:block;font-size:12px}
+#v5-root .v5-dc-phase{flex:0 0 auto}
+#v5-root .v5-dc-temp{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:10px 0 6px}
+#v5-root .v5-dc-core{font-size:44px;line-height:1;font-weight:850;font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#f5f1e8}
+#v5-root .v5-dc-core.v5-dc-none{color:#7f9499}
+#v5-root .v5-dc-goal{font-size:20px;font-weight:800;color:#efb788;font-variant-numeric:tabular-nums}
+#v5-root .v5-dc-bar{height:8px;border-radius:6px;background:#34484f;overflow:hidden;margin:0 0 6px}
+#v5-root .v5-dc-bar>span{display:block;height:100%;background:#f2a561;border-radius:6px}
+#v5-root .v5-dc-age{font-size:12px}
+#v5-root .v5-dc-line{font-size:15px;font-weight:700;margin:8px 0;color:#dfe7e6;font-variant-numeric:tabular-nums}
+#v5-root .v5-dc-eta{border-top:1px solid #33464d;padding-top:8px;margin:8px 0}
+#v5-root .v5-dc-when{font-size:16px;color:#f5f1e8}
+#v5-root .v5-dc-when strong{font-size:18px}
+#v5-root .v5-dc-eta .v5-muted{font-size:12px;margin-top:2px}
+#v5-root .v5-dc-coach{margin:8px 0 0;padding:8px 10px;border-left:4px solid #6dd3ad;background:#14252d;border-radius:8px;font-size:13px;line-height:1.45}
+#v5-root .v5-dc-coach.warn{border-left-color:#f2a561;color:#ffe3c2}
+#v5-root .v5-dc-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}
+#v5-root .v5-dc-actions .v5-btn{min-height:44px;font-size:14px}
+#v5-root .v5-dc-actions .v5-btn:only-child{grid-column:1/-1}
+/* Stap 2: kamado en thermometer naast elkaar, op smalle schermen onder de naam. */
+#v5-root .v5-setup-dish{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+#v5-root .v5-setup-selects{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:8px;min-width:0}
+#v5-root .v5-setup-dish>*{min-width:0}
+#v5-root .v5-setup-selects select{max-width:100%;width:100%;min-width:0;min-height:44px;overflow:hidden;text-overflow:ellipsis}
+/* WebKit houdt een minimale selectbreedte aan: op smalle schermen (ook de HA-iframe) onder elkaar. */
+@media (max-width:420px){#v5-root .v5-setup-selects{grid-template-columns:minmax(0,1fr)}}

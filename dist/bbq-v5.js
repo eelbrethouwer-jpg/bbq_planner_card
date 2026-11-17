@@ -83,7 +83,7 @@ window.initBBQV5=function(b){
       '<label class="v5-field">Beschikbaar vanaf<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="availableFrom" value="'+escape(s.availableFrom)+'"></span></label>'+
       '<label class="v5-field">Aantal personen<span class="v5-input-frame"><input class="v5-input" type="number" min="1" max="50" data-v5-setting="v45People" value="'+escape(s.v45People||4)+'"></span></label>'+
     '</div><p class="v5-muted">Voor een diner met meerdere gangen kun je in de uitgebreide planning aparte serveertijden instellen.</p></div>'+
-    '<div class="v5-card"><h3>🔥 Kamado en thermometer</h3>'+dishes().map(d=>'<div class="v5-dishline v5-setup-dish"><div><strong>'+escape(d.name)+'</strong><small>±'+escape(d.cook)+' min · BBQ '+escape(d.grill)+' °C</small></div>'+
+    '<div class="v5-card"><h3>🔥 Verdeel de gerechten en thermometers</h3>'+dishes().map(d=>'<div class="v5-dishline v5-setup-dish"><div><strong>'+escape(d.name)+'</strong><small>±'+escape(d.cook)+' min · BBQ '+escape(d.grill)+' °C</small></div>'+
       '<div class="v5-setup-selects"><select class="v5-input" aria-label="Kamado voor '+escape(d.name)+'" data-v5-kamado="'+escape(d.id)+'"><option value="large"'+(d.kamado==='large'?' selected':'')+'>Groot</option><option value="small"'+(d.kamado==='small'?' selected':'')+'>Klein</option></select>'+
       meaterSelect(d)+'</div></div>').join('')+
       '<div class="v5-row" style="margin-top:14px">'+action('⚙ Temperatuur / methode wijzigen','planning')+'</div></div>'+
@@ -130,7 +130,7 @@ window.initBBQV5=function(b){
     const value=hasProbe(d)?d.meater:'none';
     return '<select class="v5-input" aria-label="Thermometer voor '+escape(d.name)+'" data-v5-meater="'+escape(d.id)+'">'+
       '<option value="none"'+(value==='none'?' selected':'')+'>Geen thermometer</option>'+
-      ['pro','plus'].map(k=>'<option value="'+k+'"'+(value===k?' selected':'')+(used(k)&&value!==k?' disabled':'')+'>'+PROBE_LABEL[k]+(used(k)&&value!==k?' (in gebruik)':'')+'</option>').join('')+'</select>';
+      ['pro','plus'].map(k=>'<option value="'+k+'"'+(value===k?' selected':'')+(used(k)&&value!==k?' disabled':'')+'>'+PROBE_LABEL[k]+(used(k)&&value!==k?' (bezet)':'')+'</option>').join('')+'</select>';
   }
   const temp=(v,digits=1)=>Number(v).toLocaleString('nl-NL',{minimumFractionDigits:digits,maximumFractionDigits:digits});
   const goalOf=d=>{const g=Number(d?.core);return d&&d.core!==''&&d.core!=null&&Number.isFinite(g)&&g>0?g:null};

@@ -136,4 +136,7 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 /* Stap 2: kamado en thermometer naast elkaar, op smalle schermen onder de naam. */
 #v5-root .v5-setup-dish{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
 #v5-root .v5-setup-selects{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:8px;min-width:0}
-#v5-root .v5-setup-selects select{max-width:100%;width:100%;min-width:0;min-height:44px}
+#v5-root .v5-setup-dish>*{min-width:0}
+#v5-root .v5-setup-selects select{max-width:100%;width:100%;min-width:0;min-height:44px;overflow:hidden;text-overflow:ellipsis}
+/* WebKit houdt een minimale selectbreedte aan: op smalle schermen (ook de HA-iframe) onder elkaar. */
+@media (max-width:420px){#v5-root .v5-setup-selects{grid-template-columns:minmax(0,1fr)}}

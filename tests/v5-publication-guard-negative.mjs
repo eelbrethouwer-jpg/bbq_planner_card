@@ -52,7 +52,8 @@ const cases = [
   // half declared (in newDataContractIdentifiers, not in dataContractIdentifiers) is still rejected.
   ['5g nieuw berichttype half gedeclareerd in de policy', 'STORAGE_CONTRACT', () => {
     edit('dist/bbq_planner_card.js', s => s.replace("{__bbq:'bbq-notify-result-v1'", "{__bbq:'bbq-ha-halfdeclared-v1',x:0},{__bbq:'bbq-notify-result-v1'"));
-    edit('.github/publication-guard.json', s => s.replace('"newDataContractIdentifiers": []', '"newDataContractIdentifiers": ["bbq-ha-halfdeclared-v1"]'));
+    // v5.6: robust for an empty or a non-empty list (v5.6.0 declares bbq-ha-notify-targets-v1 there).
+    edit('.github/publication-guard.json', s => { const j = JSON.parse(s); j.newDataContractIdentifiers = [...(j.newDataContractIdentifiers || []), 'bbq-ha-halfdeclared-v1']; return JSON.stringify(j, null, 2) + '\n'; });
   }],
   // v5.5: a declared storage line may be added only literally; any edit of it is a new, undeclared storage line.
   ['5i gedeclareerde opslagregel gewijzigd', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', replaceOnce('?.view;savedView=', '?.view;window.__x=v;savedView='))],

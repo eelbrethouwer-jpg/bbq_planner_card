@@ -1,6 +1,6 @@
 {
   "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
-  "release": "5.5.1",
+  "release": "5.6.0",
   "protectedPaths": [
     "engine/",
     "v6/"
@@ -36,6 +36,7 @@
     "bbq-child-ready-v1",
     "bbq-ha-sensors-v1",
     "bbq-ha-history-v1",
+    "bbq-ha-notify-targets-v1",
     "bbq-library-error-v1",
     "bbq-library-request-v1",
     "bbq-library-snapshot-v1",
@@ -61,7 +62,9 @@
     "kamado-reviews-v1"
   ],
   "allowDataContractChange": false,
-  "newDataContractIdentifiers": [],
+  "newDataContractIdentifiers": [
+    "bbq-ha-notify-targets-v1"
+  ],
   "$commentDeclaredStorageLines": "v5.5: nieuwe opslagregels die letterlijk zo in de code staan (bestand + getrimde regel). Alleen toevoegen; leegmaken bij de volgende PR.",
   "declaredStorageLines": []
 }

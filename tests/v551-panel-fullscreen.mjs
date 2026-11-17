@@ -145,7 +145,8 @@ for(const [name,type,launch] of engines){
       for(const mode of ['panel-off','masonry']){
         s=await open(browser,mode,vp);
         g=await geometry(s);
-        ok(g.style.includes('calc(100dvh - 118px)')&&g.style.includes('max-height: 94dvh'),label+' '+mode+': previous viewport sizing kept ('+g.style+')');
+        // Browsers serialise calc() differently (Chromium van Playwright 1.56: calc(-118px + 100dvh)); check the parts.
+        ok(/height: calc\((?:100dvh - 118px|-118px \+ 100dvh)\)/.test(g.style)&&g.style.includes('max-height: 94dvh'),label+' '+mode+': previous viewport sizing kept ('+g.style+')');
         ok(!s.errors.length,label+' '+mode+': no page errors');
         await s.context.close();
       }

@@ -1,8 +1,15 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.2.2](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.2) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
+> Actueel gepubliceerd: [v5.2.3](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.2.3 — Rustig Live-scherm (releasekandidaat, niet gepubliceerd)
+## v5.3.0 — Live-gerechtkaart (releasekandidaat, niet gepubliceerd)
+- Live toont één kaart per gerecht, ook bij twee gerechten op één kamado: grote kerntemperatuur → Richtkern met voortgangsbalk, omgeving en stijging in °C/min, "Op tafel rond HH:MM" met bron (eigen trend, MEATER-ETA of planning) en marge, de fase met de bestaande faseknop en hooguit één coachregel.
+- Zonder thermometer of zonder verse meting: streepjes en de planning als bron. Nooit een verzonnen waarde; na vijf minuten zonder meting verdwijnt de kern.
+- Thermometer koppelen in stap 2 (Geen / MEATER Pro / MEATER Plus) via het bestaande veld `d.meater`. Bij toevoegen: Pro naar het eerste gerecht op de grote kamado, Plus naar het eerste op de kleine. Eén probe kan niet aan twee gerechten hangen.
+- Het scherm blijft aan zolang Live zichtbaar is (Screen Wake Lock, waar de browser dat ondersteunt).
+- De uitlegregel op Live staat nu achter een ⓘ. Sensorupdates verversen alleen de vakjes van de kaart; geen herbouw van het scherm. Opslagschema en sleutels ongewijzigd.
+
+## v5.2.3 — Rustig Live-scherm (gepubliceerd 9 november 2026)
 - De 30-seconden-timer bouwt het volledige Live-scherm niet langer opnieuw op. Alleen serveeraftelling en status van de eerstvolgende handeling verversen gericht.
 - Nieuwe HA-waarden blijven direct verwerkt en meetleeftijd wordt per seconde bijgewerkt; die updates zijn losgekoppeld van de layout.
 - Gepinde/open receptstappen, scrollpositie, actieve knoppen en lokale data blijven bij klokupdates behouden. Extra browser- en jsdom-tests.

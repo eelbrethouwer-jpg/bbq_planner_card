@@ -45,7 +45,7 @@ try{
  assert.equal(d.getElementById('v5-back').textContent,'← Plan de BBQ-dag');
  d.getElementById('v5-back').click();assert.equal(root().dataset.screen,'setup','back returns to the setup step');press('prep');press('live');navigation('live');
  const live=root().querySelector('.v5-content');
- assert.ok([...live.children].indexOf(live.querySelector('.v5-hero'))<[...live.children].indexOf(live.querySelector('.v5-kamados')));
+ assert.ok([...live.children].indexOf(live.querySelector('.v5-hero'))<[...live.children].indexOf(live.querySelector('.v5-dishcards')),'v5.3: hero above the dish cards');
  press('cooking');navigation('live');
  assert.equal(d.getElementById('v5-back').textContent,'← Live');
  const cooking=d.getElementById('v47-cooking'),meater=d.getElementById('live-panel'),fullscreen=d.getElementById('v47-fullscreen');
@@ -95,11 +95,15 @@ try{
  bridge().calculate=()=>({...originalCalculate(),dishes:[{...dishes[0],kamado:'large',start:200},{...dishes[1],kamado:'large',start:100}]});render();press('recipe-in-live');assert.equal(w.__scrolledDish,dishes[1].id);
  press('dish:'+dishes[0].id);assert.equal(w.__scrolledDish,dishes[0].id);
  bridge().getProbe=()=>({ok:false,note:'Geen verse live MEATER-meting (maximaal vijf minuten oud)'});render();
- for(const probe of root().querySelectorAll('.v5-probe')){assert.equal(probe.querySelector('.v5-number'),null);assert.match(probe.textContent,/maximaal vijf minuten oud/)}
- bridge().getProbe=()=>({ok:true,core:51.2,ambient:115,updatedAt:Date.now()});render();assert.match(root().querySelector('.v5-probe').textContent,/● LIVE · HA-update/);
+ // v5.3: one card per dish; a dish with a probe but without a fresh reading shows dashes, never a value.
+ const probeCards=()=>[...root().querySelectorAll('[data-v5-dishcard]')].filter(card=>/MEATER (Pro|Plus)/.test(card.querySelector('.v5-dc-title').textContent));
+ assert.ok(probeCards().length>=1,'default probe linked to the first dish');
+ for(const card of probeCards()){const core=card.querySelector('[data-v5-slot="core"]');assert.match(core.textContent,/— °C/);assert.match(core.textContent,/maximaal vijf minuten oud/)}
+ bridge().getProbe=()=>({ok:true,core:51.2,ambient:115,updatedAt:Date.now()});render();assert.match(probeCards()[0].querySelector('[data-v5-slot="core"]').textContent,/51,2 °C[\s\S]*● LIVE · HA-update/);
  const originalKamados=dishes.map(d=>d.kamado);dishes.forEach(d=>d.kamado='large');render();
- const unused=[...root().querySelectorAll('.v5-kamados .v5-probe')].find(el=>el.textContent.includes('Geen gerecht'));
- assert.ok(unused,'unused kamado exists');assert.match(unused.textContent,/Niet in gebruik/);assert.doesNotMatch(unused.textContent,/Doel BBQ/);
+ // v5.3 replaces the per-kamado tiles: all dishes on one kamado still each get their own card.
+ assert.equal(root().querySelectorAll('[data-v5-dishcard]').length,dishes.length,'one card per dish, also on one kamado');
+ assert.doesNotMatch(root().querySelector('.v5-dishcards').textContent,/Niet in gebruik/);
  dishes.forEach((d,i)=>d.kamado=originalKamados[i]);
  bridge().getTasks=originalTasks;bridge().calculate=originalCalculate;bridge().getProbe=originalProbe;render();
  const done=d.querySelector('.v5-hero [data-v5-act^="done:"]');done.click();

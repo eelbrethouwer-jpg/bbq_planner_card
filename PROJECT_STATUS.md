@@ -4,9 +4,9 @@ Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor de regis
 
 ## Ontwikkelstatus (17 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- `main` staat op `544db13d818f54f345ced7d5bfb100e702db028c` (merge PR #41, v5.2.3).
+- `main` staat op `357252b78c9136d35d0868e4ad6b3ad4f8de7e06` (merge PR #42, PR 0 werkafspraken; code nog v5.2.3).
 - Laatste gepubliceerde GitHub-release: [v5.2.3 — Rustig Live-scherm](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3), gepubliceerd op 9 november 2026.
-- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 werkt alleen de werkafspraken bij; daarin verandert geen code en geen versie.
+- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken) is gemerged. PR 1 (v5.3.0, Live-gerechtkaart) staat als draft-PR open voor review.
 - De officiële Home Assistant-MEATER-integratie leest ongeveer iedere 30 seconden uit de MEATER Cloud. Zonder kooksessie in de MEATER-app komen alleen kern- en omgevingstemperatuur binnen. Vanuit HA kun je geen doel instellen en geen kooksessie starten.
 - Geen echte iPhone-, Home Assistant- of MEATER-hardwaretest in de CI.
 
@@ -43,8 +43,8 @@ Doel van de gebruiker: alles in deze app doen, niet in de MEATER-app. Live beant
 
 | PR | Inhoud | Beoogde versie | Status |
 | --- | --- | --- | --- |
-| 0 | Werkafspraken bijwerken (alleen documentatie) | geen bump | draft-PR |
-| 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | gepland |
+| 0 | Werkafspraken bijwerken (alleen documentatie) | geen bump | gemerged (merge-SHA `357252b78c9136d35d0868e4ad6b3ad4f8de7e06`) |
+| 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | draft-PR |
 | 2 | Eigen schattingsmodule `engine/eta.mjs` (Newton-opwarming, fasedoel, stall, marge, bronvolgorde) en meetgeschiedenis uit HA bij openen | 5.4.0 | gepland |
 | 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid | 5.5.0 | gepland |
 | 4 | Optioneel fasedoel `coreAt` in receptstappen en meldingen via `notify.mobile_app_*` | 5.6.0 | gepland |

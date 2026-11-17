@@ -6,7 +6,10 @@
 'use strict';
 const MIN=60000;
 const DEFAULTS=Object.freeze({
-  windowMin:12,        // regressievenster: laatste 10–15 min
+  windowMin:12,        // regressievenster: laatste 10–15 min ...
+  maxWindowMin:30,     // ... bij schaarse metingen stapsgewijs groter (HA schrijft alleen bij een gewijzigde waarde)
+  windowStepMin:3,
+  jitterMs:5000,       // tolerantie op tijdstempels (ms-afwijkingen tussen metingen)
   minSpanMin:5,        // pas een tijd na >= 5 min stijging ...
   minPoints:4,         // ... met minstens 4 meetpunten
   freshMin:5,          // ouder: verouderd (bestaande grens van de Live-kaart)
@@ -58,11 +61,22 @@ function cleanPoints(points,now){
   for(const p of out){if(dedup.length&&dedup[dedup.length-1].t===p.t)dedup[dedup.length-1]=p;else dedup.push(p);}
   return dedup;
 }
+// Kleinste venster (windowMin → maxWindowMin) met >= `count` punten over >= `spanMin` minuten; anders null.
+function adaptiveWindow(pts,fromMin,count,spanMin,cfg){
+  const last=pts[pts.length-1];
+  for(let w=fromMin;;w=Math.min(cfg.maxWindowMin,w+cfg.windowStepMin)){
+    const win=pts.filter(p=>p.t>=last.t-w*MIN-cfg.jitterMs);
+    if(win.length>=count&&(last.t-win[0].t)/MIN>=spanMin)return {win,minutes:w};
+    if(w>=cfg.maxWindowMin)return null;
+  }
+}
 function detectStall(pts,cfg){
   const last=pts[pts.length-1];
   if(last.core<cfg.stallLow||last.core>cfg.stallHigh)return null;
-  const w=pts.filter(p=>p.t>=last.t-cfg.stallMin*MIN);
-  if(w.length<cfg.minPoints||(last.t-w[0].t)/MIN<cfg.stallMin*0.95)return null;
+  // Ook bij schaarse metingen: tijdens een stall verandert de waarde weinig, dus HA schrijft weinig punten.
+  const found=adaptiveWindow(pts,cfg.stallMin,3,cfg.stallMin*0.95,cfg);
+  if(!found)return null;
+  const w=found.win;
   if(w.some(p=>p.core<cfg.stallLow-2||p.core>cfg.stallHigh+2))return null;
   const sample=thin(w,cfg.maxFitPoints),fit=theilSen(sample.map(p=>(p.t-last.t)/MIN),sample.map(p=>p.core));
   if(!fit||fit.slope>=cfg.stallRise)return null;
@@ -78,16 +92,20 @@ function curve(pts,target,phaseTargets,cfg){
   const res={state:'insufficient',reason:'',core:last.core,rise:null,ambient:null,model:null};
   const stall=detectStall(pts,cfg);
   if(stall)return {...res,state:'stall',stall,rise:stall.rise,reason:'Stall: de kern blijft rond '+Math.round(stall.level)+' °C hangen; geen betrouwbare tijd'};
-  const win=thin(pts.filter(p=>p.t>=last.t-cfg.windowMin*MIN),cfg.maxFitPoints);
-  const span=(last.t-win[0].t)/MIN;
+  const found=adaptiveWindow(pts,cfg.windowMin,cfg.minPoints,cfg.minSpanMin,cfg);
   if(target!==null&&last.core>=target){
-    const hit=pts.find(p=>p.t>=win[0].t&&p.core>=target)||last;
+    const from=found?found.win[0].t:last.t-cfg.windowMin*MIN;
+    const hit=pts.find(p=>p.t>=from&&p.core>=target)||last;
     return {...res,state:'reached',at:hit.t,reason:''};
   }
-  if(win.length<cfg.minPoints||span<cfg.minSpanMin){
-    const wait=Math.max(1,Math.ceil(cfg.minSpanMin-span));
-    return {...res,reason:'Nog te weinig metingen voor een schatting; wacht ongeveer '+wait+' min'};
+  if(!found){
+    // Eerlijke reden: wachten helpt alleen als de meetreeks pas net begonnen is.
+    const recent=pts.filter(p=>p.t>=last.t-cfg.maxWindowMin*MIN-cfg.jitterMs);
+    const span=(last.t-recent[0].t)/MIN,young=pts[0].t>=last.t-cfg.maxWindowMin*MIN-cfg.jitterMs;
+    if(young&&span<cfg.minSpanMin)return {...res,reason:'Nog te weinig metingen voor een schatting; wacht ongeveer '+Math.max(1,Math.ceil(cfg.minSpanMin-span))+' min'};
+    return {...res,reason:'Te weinig metingen in de laatste '+cfg.maxWindowMin+' min voor een schatting ('+recent.length+' van de minimaal '+cfg.minPoints+')'};
   }
+  const win=thin(found.win,cfg.maxFitPoints);
   const xs=win.map(p=>(p.t-last.t)/MIN),ys=win.map(p=>p.core);
   const lin=theilSen(xs,ys);
   if(!lin)return {...res,reason:'Nog te weinig metingen voor een schatting'};

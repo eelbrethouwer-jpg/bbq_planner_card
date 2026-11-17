@@ -200,10 +200,13 @@ const clock=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-
       subscribeMessage:async()=>()=>{}
     };
     const states={[P+'interne_temperatuur']:{state:'10.4',last_updated:'2026-11-16T15:56:00Z'},[P+'omgevingstemperatuur']:{state:'121',last_updated:'2026-11-16T15:56:00Z'}};
-    card.hass={states,connection};
-    const before=calls.filter(c=>c.type==='history/history_during_period').length;
-    assert.equal(before,0,'no history call before the planner is ready');
+    // Review PR #44, finding 4: planner ready before HA states are known → no call yet, but retried later.
+    card.hass={states:{},connection};
     card._onMsg({origin:w.location.origin,source:card._iframe.contentWindow,data:{__bbq:'bbq-child-ready-v1'}});
+    await new Promise(r=>setTimeout(r,20));
+    assert.equal(calls.filter(c=>c.type==='history/history_during_period').length,0,'no history call without known sensors');
+    assert.equal(card._historyWanted,true,'request stays open');
+    card.hass={states,connection};
     await new Promise(r=>setTimeout(r,20));
     const hist=calls.filter(c=>c.type==='history/history_during_period');
     assert.equal(hist.length,1,'one history call per load');

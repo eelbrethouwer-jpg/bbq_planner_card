@@ -133,9 +133,9 @@
       for(const [name,prefix] of Object.entries(PROBES))for(const key of ['internal','ambient']){
         const id=prefix+SUFFIXES[key];if(states[id]){ids.push(id);field[id]=[name,key];}
       }
-      this._historyWanted=false;
+      // Review PR #44, finding 4: without known sensors yet, keep the request open and retry on a later hass update.
       if(!ids.length)return;
-      this._historyBusy=true;
+      this._historyWanted=false;this._historyBusy=true;
       try{
         const response=await connection.sendMessagePromise({type:'history/history_during_period',
           start_time:new Date(Date.now()-3*3600000).toISOString(),entity_ids:ids,

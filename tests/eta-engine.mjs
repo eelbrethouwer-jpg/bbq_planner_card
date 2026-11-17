@@ -106,6 +106,79 @@ caseOf('pas een tijd na >= 5 min stabiele stijging met >= 4 meetpunten; anders i
   for (const r of [none, three, four, f]) assert.match(r.reason, /^[A-Z][a-zë ;,.0-9°—–-]+$/i, 'plain-language reason: ' + r.reason);
 });
 
+// Review PR #44, finding 1: HA writes a state only when the value changes, so readings can be sparse.
+const jitter = (seed) => { const r = rng(seed); return () => Math.round((r() * 2 - 1) * 900); }; // ±0.9 s
+function sparseNewton(c, everyMin, seed, until) {
+  const j = jitter(seed), pts = [];
+  for (let m = 0; m <= until + 1e-9; m += everyMin) {
+    const core = c.Ta - (c.Ta - c.c0) * Math.exp(-c.k * m);
+    if (core >= c.target) break;
+    pts.push({t: T0 + Math.round(m * MIN) + j(), core: +core.toFixed(1), ambient: c.Ta, clean: core});
+  }
+  return pts;
+}
+for (const every of [2, 4]) {
+  caseOf(`schaarse metingen elke ${every} min (met ms-jitter): adaptief venster geeft een eigen schatting binnen ±10% vanaf 50%`, () => {
+    for (const [name, c] of [['ribeye', RIBEYE], ['kip', KIP]]) {
+      const truth = trueMinutes(c.Ta, c.c0, c.target, c.k), trueEnd = T0 + truth * MIN;
+      for (let seed = 1; seed <= 10; seed++) {
+        const pts = sparseNewton(c, every, seed, truth);
+        let checked = 0, worst = 0;
+        for (let i = 0; i < pts.length; i++) {
+          const e = at(pts, i, {target: c.target});
+          if ((pts[i].clean - c.c0) / (c.target - c.c0) < 0.5) continue;
+          assert.equal(e.source, 'curve', `${name} every ${every} min seed ${seed} i=${i}: ${e.reason}`);
+          const err = Math.abs(e.cookEnd - trueEnd) / MIN;
+          worst = Math.max(worst, err);
+          assert.ok(err <= 0.1 * truth, `${name} every ${every} min: ${err.toFixed(2)} min > 10%`);
+          checked++;
+        }
+        assert.ok(checked >= 2, 'checkpoints');
+        if (seed === 1) console.log(`  ${name} elke ${every} min: grootste afwijking ${worst.toFixed(2)} min van ${truth.toFixed(1)} min`);
+      }
+    }
+  });
+}
+
+caseOf('reproductie review #44: elke 4 min, 40 min lang 9,5 → 45,5 °C bij 121 °C geeft een eigen schatting', () => {
+  const j = jitter(42), pts = [];
+  for (let k = 0; k <= 10; k++) pts.push({t: T0 + k * 4 * MIN + j(), core: +(9.5 + 3.6 * k).toFixed(1), ambient: k ? 121 : 14});
+  const e = estimate({points: pts, target: 54, now: pts.at(-1).t + 2000, rest: 8, startedAt: T0, cookMinutes: 55});
+  assert.equal(e.source, 'curve', e.reason);
+  assert.equal(e.state, 'estimate');
+  assert.ok(e.rise > 0.8 && e.rise < 1, 'rise around 0.9 °C/min: ' + e.rise);
+  assert.ok(e.cookEnd > pts.at(-1).t && e.cookEnd < pts.at(-1).t + 20 * MIN);
+});
+
+caseOf('eerlijke reden bij te weinig metingen: wachten alleen als de reeks net begonnen is', () => {
+  const young = estimate({points: [{t: T0, core: 10, ambient: 120}, {t: T0 + 2 * MIN, core: 12, ambient: 120}], target: 54, now: T0 + 2 * MIN});
+  assert.match(young.reason, /wacht ongeveer 3 min/, young.reason);
+  const sparseYoung = estimate({points: [0, 4, 8].map(m => ({t: T0 + m * MIN, core: 10 + m, ambient: 120})), target: 54, now: T0 + 8 * MIN});
+  assert.match(sparseYoung.reason, /Te weinig metingen in de laatste 30 min.*3 van de minimaal 4/, sparseYoung.reason);
+  assert.doesNotMatch(sparseYoung.reason, /wacht/, 'waiting is not the remedy once the span is long enough');
+  const old = [{t: T0, core: 10, ambient: 120}, {t: T0 + 20 * MIN, core: 20, ambient: 120}, {t: T0 + 50 * MIN, core: 40, ambient: 120}, {t: T0 + 70 * MIN, core: 48, ambient: 120}];
+  const gap = estimate({points: old, target: 54, now: T0 + 70 * MIN});
+  assert.equal(gap.state, 'insufficient');
+  assert.match(gap.reason, /Te weinig metingen in de laatste 30 min voor een schatting \(2 van de minimaal 4\)/, gap.reason);
+  for (const r of [young, sparseYoung, gap]) assert.match(r.reason, /^[A-Z][a-zë ;,.0-9°()—–-]+$/i, 'plain language: ' + r.reason);
+});
+
+caseOf('stall met schaarse metingen (HA schrijft alleen bij verandering) wordt herkend', () => {
+  const pts = [];
+  let m = 0, core = 5;
+  while (core < 70) { m += 2; core = 120 - (120 - 5) * Math.exp(-0.012 * m); pts.push({t: T0 + m * MIN + (m % 3) * 300, core: +core.toFixed(1), ambient: 120}); }
+  // Plateau 70 → 71 °C over 90 min: a new value only every 0.1 °C, i.e. every ~9 min.
+  const stallStart = m;
+  for (let i = 1; i <= 10; i++) { m = stallStart + i * 9; pts.push({t: T0 + m * MIN - 400, core: +(70 + i / 10).toFixed(1), ambient: 119}); }
+  const e = estimate({points: pts, target: 92, now: pts.at(-1).t + 2000, startedAt: T0, cookMinutes: 540, history: {medianMinutes: 600}});
+  assert.equal(e.state, 'stall', e.reason);
+  assert.notEqual(e.source, 'curve');
+  assert.ok(Math.abs(e.stall.level - 70.5) <= 1);
+  // Already after ~27 min of sparse plateau.
+  const early = estimate({points: pts.slice(0, pts.length - 7), target: 92, now: pts[pts.length - 8].t + 2000, startedAt: T0, cookMinutes: 540});
+  assert.equal(early.state, 'stall', 'after three sparse plateau points: ' + early.reason);
+});
+
 caseOf('te oude metingen: verouderd na 5 min, niet meer gebruikt na 15 min (start + duur, anders planning)', () => {
   const pts = strip(newton({...RIBEYE, until: 40}));
   const last = pts[pts.length - 1].t, startedAt = T0 - MIN;

@@ -32,6 +32,7 @@ jobs:
           node --check dist/bbq-v501.js
           node --check dist/bbq-eta.js
           node --check engine/eta.mjs
+          node --check engine/plan.mjs
           node --check sw.js
           node tests/pwa-smoke.mjs
       - name: Controleer releasefuncties
@@ -77,6 +78,8 @@ jobs:
           TZ=America/New_York node tests/v6-optimizer.mjs && TZ=Pacific/Kiritimati node tests/v6-optimizer.mjs
           node tests/eta-engine.mjs
           TZ=America/New_York node tests/eta-engine.mjs && TZ=Pacific/Kiritimati node tests/eta-engine.mjs
+          node tests/v570-planning.mjs
+          TZ=America/New_York node tests/v570-planning.mjs && TZ=Pacific/Kiritimati node tests/v570-planning.mjs
 
   mobile-browser:
     # Playwright 1.56.1 ondersteunt ubuntu 26.04 nog niet; pin mobiele browserchecks op 24.04.
@@ -96,6 +99,7 @@ jobs:
           node tests/v520-mobile-ux.mjs
           node tests/v550-live-timeline.mjs
           node tests/v551-panel-fullscreen.mjs
+          node tests/v570-planning-ui.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

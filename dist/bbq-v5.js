@@ -3,6 +3,9 @@
    v5.4.0: the card uses the shared estimate (own curve → MEATER ETA → start + duration → planning), anchored at the last reading.
    v5.5.0: timeline on Live (planned frame + expected blocks, now and serve line), a "Zo meteen" hero from estimate + phase,
            automatic MEATER recognition in the HA card, and "Pas planning aan op verwachting" only after a before/after confirmation.
+   v5.7.0: planning made simpler: kamado chosen with the fewest conflicts when a dish is ADDED (never changed afterwards), urgent conflicts in red
+           at the top of step 2 with a direct fix, confirmation on "Naar voorbereiding", "Plan opnieuw vanaf nu" when started too late, and a clear
+           notice for a preparation "de avond vooraf" that has already passed. Nothing is changed without a tap of the user.
    v5.6.0: one line "Meldingen op je telefoon" in step 2 and on Live (HA card only), with a test notification. */
 (function(){
 'use strict';
@@ -104,7 +107,7 @@ window.initBBQV5=function(b){
   function toggleRecipe(key){
     const r=b.getRecipes()[key];if(!r)return;
     const name=String(r.name||key),same=dishes().filter(d=>d.name===name);
-    if(!same.length){const dish=b.makeDish(r);defaultProbe(dish);state().dishes.push(dish);commit();render();return}
+    if(!same.length){const dish=b.makeDish(r);chooseKamadoFor(dish);defaultProbe(dish);state().dishes.push(dish);commit();render();return}
     // Remove the last added instance that has not started; a started dish is never removed by this tap.
     const target=[...same].reverse().find(d=>!d.phase||d.phase==='waiting');
     if(!target){window.alert(name+' is al gestart en blijft in het menu. Verwijder het zo nodig via ✕ bij "Jouw menu".');return}
@@ -112,7 +115,14 @@ window.initBBQV5=function(b){
   }
   function addPortion(id){
     const d=dishes().find(x=>String(x.id)===id),r=d&&recipeFor(d.name);if(!r)return;
-    const dish=b.makeDish(r);defaultProbe(dish);state().dishes.push(dish);commit();render();
+    const dish=b.makeDish(r);chooseKamadoFor(dish);defaultProbe(dish);state().dishes.push(dish);commit();render();
+  }
+  /* v5.7: only for a NEW dish that is not yet in the plan (called before it is pushed). The kamado with the fewest conflicts
+     (existing v45Score) is chosen; ties keep the recipe's own default. Existing dishes, and any kamado the user picked by hand,
+     are never touched here. */
+  function chooseKamadoFor(dish){
+    if(!b.chooseKamado)return;
+    try{const r=b.chooseKamado(dish);if(r&&(r.kamado==='large'||r.kamado==='small'))dish.kamado=r.kamado}catch(e){/* keep the recipe's own kamado */}
   }
   function select(){
     return heading('Stap 1 van 3','Kies je gerechten','Tik op een recept om het aan jouw BBQ-menu toe te voegen. Je kunt ook recepten toevoegen uit je eigen bibliotheek.')+progress(1)+
@@ -123,10 +133,58 @@ window.initBBQV5=function(b){
       '<div class="v5-row">'+action('📝 Recept uit tekst maken','recipe-generate')+action('📚 Mijn bibliotheek','recipes')+action('🔥 BBQ Junkie','recipe-junkie')+action('← Startscherm','home')+'</div>'+
       '<div class="v5-sticky-actions"><div><strong>'+dishes().length+' gerechten gekozen</strong><small>Groot en klein combineren</small></div>'+action('Volgende →','setup','primary',!dishes().length)+'</div>';
   }
+  /* v5.7: urgent conflicts (red, top of step 2), "Plan opnieuw vanaf nu" and the overdue "avond vooraf" notice.
+     In-memory UI state only (never stored). Nothing here changes the plan without a tap of the user. */
+  let lateAsk=false,lateHide=false;
+  function planIssues(){try{return b.getPlanIssues?(b.getPlanIssues().issues||[]):[]}catch(e){return []}}
+  function urgentPanel(issues){
+    if(!issues.length)return '';
+    return '<section class="v5-card v5-urgent" role="alert" data-v5-urgent aria-label="Urgente conflicten"><h3>⚠️ '+issues.length+(issues.length===1?' urgent conflict':' urgente conflicten')+'</h3>'+
+      '<p class="v5-muted">Los dit eerst op. De app past niets zelf aan.</p>'+
+      issues.map(i=>'<div class="v5-issue" data-v5-issue="'+escape(i.id)+'"><strong>'+escape(i.title)+'</strong>'+(i.reasons&&i.reasons.length?'<small>'+escape(i.reasons.join(' · '))+'</small>':'')+
+        '<p class="v5-fix"><span>Oplossing:</span> '+escape(i.solution)+'</p>'+
+        (i.fix?'<button type="button" class="v5-btn subtle v5-emph" data-v5-act="fix:'+escape(i.fix.dishId)+':'+escape(i.fix.to)+'">'+escape(i.fix.label)+'</button>':'')+'</div>').join('')+'</section>';
+  }
+  function lateModel(){try{return b.getLateStart?b.getLateStart():null}catch(e){return null}}
+  function lateBanner(){
+    const late=lateModel();if(!late||!late.late||lateHide)return '';
+    const why=late.reasons.includes('serve-past')?'De geplande serveertijd ('+clock(late.oldServe)+') is al voorbij.':'Volgens de planning had je om '+clock(late.oldFirst)+' moeten beginnen ('+(late.lateByMin>=60?Math.floor(late.lateByMin/60)+' u'+(late.lateByMin%60?' '+late.lateByMin%60+' min':''):late.lateByMin+' min')+' geleden).';
+    let body='<strong>⏰ Je begint later dan gepland</strong><p>'+escape(why)+' Er is nog niets gestart.</p>';
+    if(late.multi)body+='<p class="v5-muted">Er zijn aparte serveertijden ingesteld. Pas die zelf aan via Planning aanpassen.</p>'+action('Houd de planning zoals hij is','late-hide','subtle');
+    else if(lateAsk){
+      const s=state(),newText=taskTime(late.newServe);
+      body+='<div class="v5-tl-confirm" role="group" aria-label="Voorstel nieuwe planning"><strong>Voorstel: plan opnieuw vanaf nu</strong><ul>'+
+        '<li><span>Nu gepland</span><strong>serveren '+escape(s.mealTime)+'</strong></li>'+
+        '<li><span>Nieuw</span><strong>serveren ±'+escape(newText)+'</strong></li>'+
+        '<li><span>Benodigde tijd</span><strong>'+Math.floor(late.neededMin/60)+' u '+late.neededMin%60+' min</strong></li></ul>'+
+        '<p>Eerste actie wordt nu. Gerechten met een vaste starttijd blijven staan. Er verandert niets tot je bevestigt.</p>'+
+        '<div class="v5-row">'+action('Ja, plan opnieuw','late-apply','subtle v5-emph')+action('Annuleren','late-cancel','subtle')+'</div></div>';
+    }else body+='<div class="v5-row">'+action('Plan opnieuw vanaf nu','late-ask','subtle v5-emph')+action('Houd de planning zoals hij is','late-hide','subtle')+'</div>';
+    return '<section class="v5-card v5-late" role="alert" data-v5-late aria-label="Te laat gestart">'+body+'</section>';
+  }
+  function applyReplan(){
+    // Only after the explicit confirmation. The new serve time is "now + needed time", recomputed at the moment of the tap.
+    const late=lateModel(),s=state();lateAsk=false;
+    if(!late||!late.late||late.multi||!/^\d{4}-\d{2}-\d{2}$/.test(late.date)||!/^\d{2}:\d{2}$/.test(late.time))return;
+    const old=s.date,now=Date.now();
+    if(late.date!==old){
+      // The serve time moves past midnight: the plan date moves too; ticked tasks keep their tick under the new date key.
+      for(const key of ['v46Done','v5Actual']){
+        const o=s[key];if(!o||typeof o!=='object')continue;
+        for(const k of Object.keys(o))if(k.startsWith(old+'|')){o[late.date+k.slice(old.length)]=o[k];delete o[k]}
+      }
+      s.date=late.date;s.dateMode='manual';
+    }
+    s.mealTime=late.time;
+    // "Beschikbaar vanaf" can never be later than the start you are making right now.
+    const avail=Date.parse(s.date+'T'+(s.availableFrom||'00:00'));
+    if(s.availableFrom&&Number.isFinite(avail)&&avail>now){const d=new Date(now);s.availableFrom=late.date===today()?String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'):''}
+    commit();render();
+  }
   function setup(){
     const s=state(),c=b.calculate();
     const alerts=c.alerts||[];
-    return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+
+    return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+urgentPanel(planIssues())+
     '<div class="v5-card v5-serve-card"><h3>🍽️ Serveermoment</h3><div class="v5-grid v5-serve-fields">'+
       '<label class="v5-field">Datum<span class="v5-input-frame"><input class="v5-input" type="date" data-v5-setting="date" value="'+escape(s.date)+'"></span></label>'+
       '<label class="v5-field">Serveren om<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="mealTime" value="'+escape(s.mealTime)+'"></span></label>'+
@@ -143,7 +201,8 @@ window.initBBQV5=function(b){
     '<div class="v5-row">'+action('← Gerechten','select')+action('Naar voorbereiding →','prep','primary')+'</div>';
   }
   function prepTasks(){
-    const s=state(),tasks=b.getPrepTasks().map(t=>({id:s.date+'|'+t.dishId+':prep:'+t.id,title:t.titleFull,when:t.time?day(t.timeAt)+' '+clock(t.timeAt):day(t.timeAt)+' · tijdstip zelf bepalen',detail:t.notes||'',sort:t.timeAt}));
+    const s=state(),tasks=b.getPrepTasks().map(t=>({id:s.date+'|'+t.dishId+':prep:'+t.id,title:t.titleFull,when:t.time?day(t.timeAt)+' '+clock(t.timeAt):day(t.timeAt)+' · tijdstip zelf bepalen',detail:t.notes||'',sort:t.timeAt,
+      meta:{kind:'prep',daysBefore:Number(t.daysBefore)||0,hasTime:!!t.time,timeAt:t.timeAt}}));
     const idSet=new Set(tasks.map(t=>t.id));
     for(const d of dishes()){
       const steps=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
@@ -152,7 +211,7 @@ window.initBBQV5=function(b){
         // A separately scheduled preparation already covers the same preceding day.
         if(Array.isArray(d.prepTasks)&&d.prepTasks.some(t=>Number(t.daysBefore)>0))return;
         const id=s.date+'|'+d.id+':recipe:'+i;
-        if(!idSet.has(id)){tasks.push({id,title:(r.title||'Voorbereiding')+' · '+d.name,when:r.trigger||'Vooraf voorbereiden',detail:r.detail||'',sort:0});idSet.add(id)}
+        if(!idSet.has(id)){tasks.push({id,title:(r.title||'Voorbereiding')+' · '+d.name,when:r.trigger||'Vooraf voorbereiden',detail:r.detail||'',sort:0,meta:{kind:'recipe',trigger:String(r.trigger||'')}});idSet.add(id)}
       });
       if(!tasks.some(t=>t.id.includes('|'+d.id+':'))&&d.recipePrep){
         const id=s.date+'|'+d.id+':prep-general';
@@ -167,7 +226,9 @@ window.initBBQV5=function(b){
   }
   function prep(){
     const tasks=prepTasks(),done=state().v46Done||{},count=tasks.filter(t=>done[t.id]).length;
-    return heading('Stap 3 van 3','Voorbereiden','Alles wat je alvast kunt doen. Een taak zonder exacte tijd mag je zelf inplannen; de app verzint geen startmoment.')+progress(3)+
+    let overdue=[];try{overdue=b.getPrepOverdue?b.getPrepOverdue(tasks.filter(t=>t.meta).map(t=>({id:t.id,title:t.title,...t.meta}))):[]}catch(e){}
+    return heading('Stap 3 van 3','Voorbereiden','Alles wat je alvast kunt doen. Een taak zonder exacte tijd mag je zelf inplannen; de app verzint geen startmoment.')+progress(3)+lateBanner()+
+    (overdue.length?'<section class="v5-card v5-overdue" role="alert" data-v5-overdue aria-label="Voorbereiding al voorbij"><h3>⏰ Voorbereiding al voorbij</h3>'+overdue.map(o=>'<div class="v5-issue" data-v5-overdue-task="'+escape(o.id)+'"><strong>'+escape(o.title)+'</strong><small>Stond gepland: '+escape(o.when)+'</small><p class="v5-fix"><span>Alternatief:</span> '+escape(o.alternative)+'</p></div>').join('')+'</section>':'')+
     '<div class="v5-card"><div class="v5-between"><h3>✅ Voorbereidingslijst</h3><span class="v5-chip neutral">'+count+' / '+tasks.length+' gedaan</span></div>'+
     (tasks.length?checklist(tasks):'<div class="v5-empty">Geen afzonderlijke voorbereidingsstappen vastgelegd. Bekijk het recept voor snij- en voorbereidingsinstructies.</div>')+'</div>'+
     '<div class="v5-card"><h3>🛒 Nog nodig?</h3><p class="v5-muted">Je automatische boodschappenlijst, voorraad en uitgebreide receptinstructies blijven beschikbaar.</p>'+action('Open boodschappenlijst','more')+'</div>'+
@@ -597,7 +658,7 @@ window.initBBQV5=function(b){
     return '<div class="v5-live-bar"><div class="v5-between"><strong>Serveren '+escape(s.mealTime)+' · '+countdown+'</strong><span>'+finished+'/'+all.length+' afgerond</span></div><progress max="'+Math.max(1,all.length)+'" value="'+finished+'" aria-label="Handelingen afgerond"></progress></div>'+
     '<div class="v5-between v5-live-head"><h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1>'+
       '<details class="v5-live-info" data-v5-key="live-info"><summary aria-label="Uitleg over tijden en metingen">ⓘ</summary><p>Geplande tijden zijn indicatief; alleen afgevinkt telt als uitgevoerd. Live MEATER-metingen komen alleen via Home Assistant. Een schatting is een indicatie: controleer altijd kern en gaarheid. In de tijdlijn is het stippelkader de planning en het gekleurde blok de verwachting.</p></details></div>'+
-    (tl?'<section class="v5-card v5-tl" data-v5-tl aria-label="Tijdlijn">'+tl+'</section>':'')+heroHtml(model)+
+    (tl?'<section class="v5-card v5-tl" data-v5-tl aria-label="Tijdlijn">'+tl+'</section>':'')+heroHtml(model)+lateBanner()+
     '<div data-v5-notify>'+notifyLine('live')+'</div>'+
     '<div class="v5-dishcards">'+dishes().map(dishCard).join('')+'</div>'+
     '<h2 class="v5-sectionhead" id="v5-all-steps">Volgende handelingen</h2><div class="v5-card v5-next-tasks">'+
@@ -661,6 +722,7 @@ window.initBBQV5=function(b){
       try{localStorage.setItem(BACKUP,JSON.stringify(s))}catch(e){window.alert('Reservekopie opslaan mislukt. Exporteer eerst jouw bestaande planning via Meer.');return;}
     }
     s.dishes=[];s.v46Done={};s.v5Actual={};s.date=today();s.dateMode='auto';s.v46MultiServe=false;
+    lateAsk=false;lateHide=false;
     meta={active:true,stage:'select',created:new Date().toISOString()};saveMeta();commit();recipeSearch='';goto('select');
   }
   function setPhase(d,next){
@@ -850,6 +912,21 @@ window.initBBQV5=function(b){
     }
     if(act==='new'){start();return}
     if(act==='resume'){const fromLegacy=!meta.active;meta.active=true;meta.stage=fromLegacy||meta.stage==='finished'?'setup':meta.stage||'setup';saveMeta();goto(meta.stage);return}
+    if(act.startsWith('fix:')){
+      // A tap on a proposed fix is the user's explicit choice; only a dish that has not started is moved.
+      const rest=act.slice(4),cut=rest.lastIndexOf(':'),id=rest.slice(0,cut),to=rest.slice(cut+1),d=dishes().find(x=>String(x.id)===id);
+      if(d&&(to==='large'||to==='small')&&(!d.phase||d.phase==='waiting')){d.kamado=to;commit();render()}
+      return;
+    }
+    if(act==='late-ask'){lateAsk=true;render();return}
+    if(act==='late-cancel'){lateAsk=false;render();return}
+    if(act==='late-hide'){lateHide=true;lateAsk=false;render();return}
+    if(act==='late-apply'){applyReplan();return}
+    if(act==='prep'&&screen==='setup'){
+      // v5.7: urgent conflicts ask for a confirmation before going on to the preparation.
+      const urgent=planIssues();
+      if(urgent.length&&!window.confirm('Er '+(urgent.length===1?'is nog 1 urgent conflict':'zijn nog '+urgent.length+' urgente conflicten')+':\n'+urgent.map(i=>'• '+i.title+'\n  Oplossing: '+i.solution).join('\n')+'\n\nToch doorgaan naar voorbereiding?'))return;
+    }
     if(act==='home'||act==='select'||act==='setup'||act==='prep'){if(act!=='home'&&act!=='select'&&!dishes().length)return;goto(act);return}
     if(act==='live'){if(!dishes().length){goto('select');return}meta.active=true;goto('live');return}
     if(act==='finish'){

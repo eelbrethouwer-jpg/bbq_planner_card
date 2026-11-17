@@ -172,9 +172,13 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
   try{
     press('new');addRecipe('Ribeye 500 g');addRecipe('Kippenpoten');
     const [ribeye,chicken]=w.__v530Bridge.getState().dishes;
-    assert.equal(ribeye.kamado,'large');assert.equal(chicken.kamado,'large');
-    assert.equal(chicken.meater,'none','no default for a second dish on the same kamado');
+    // v5.7: a new dish gets the kamado with the fewest conflicts (Kippenpoten → small). This scenario needs both dishes on one
+    // kamado, so the user chooses "Groot" by hand in step 2 (a manual choice that the app never changes by itself).
+    assert.equal(ribeye.kamado,'large');assert.equal(chicken.kamado,'small','v5.7: chosen when added');
     press('setup');
+    const kamadoSelect=$('select[data-v5-kamado="'+chicken.id+'"]');kamadoSelect.value='large';kamadoSelect.dispatchEvent(new w.Event('change',{bubbles:true}));
+    assert.equal(chicken.kamado,'large');
+    assert.equal(chicken.meater,'none','no default for a second dish on the same kamado');
     const choose=(dish,value)=>{const el=$('select[data-v5-meater="'+dish.id+'"]');el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
     choose(ribeye,'pro'); // v5.5: chosen in step 2 (no automatic default on the public website)
     assert.equal(ribeye.meater,'pro');

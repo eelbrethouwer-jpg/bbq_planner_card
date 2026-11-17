@@ -1,4 +1,4 @@
-/* BBQ Planner v5.6.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen.
+/* BBQ Planner v5.7.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen; en planningshulp (BBQPlan).
    Puur: geen DOM, geen klok, geen opslag, geen netwerk. `now` is altijd een parameter.
    Klassiek script (window.BBQEta), zodat de planner geen module-lader nodig heeft; dezelfde functies
    zijn via de ES-module-ingang in Node testbaar (zie tests/eta-engine.mjs). */
@@ -233,6 +233,121 @@ function estimate(input){
   }
   return out;
 }
-const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.6.0'});
+const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.7.0'});
 root.BBQEta=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+/* v5.7.0 — planningshulp (window.BBQPlan), in hetzelfde klassieke script als de schatting zodat de planner geen extra loader nodig heeft.
+   Puur: geen DOM, geen klok, geen opslag, geen netwerk; `now` is altijd een parameter. Tijden zijn epoch-ms; tekst gebruikt
+   de lokale tijd van de aanroeper (zoals de planner zelf). Nooit wijzigen: alleen berekenen en voorstellen. */
+(function(root){
+'use strict';
+const MIN=60000,TWO_HOURS=120*MIN;
+const pad=n=>String(n).padStart(2,'0');
+const fin=v=>typeof v==='number'&&Number.isFinite(v);
+const DAYS=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const hhmm=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const clockText=(t,ref)=>hhmm(t)+(fin(ref)&&ymd(t)!==ymd(ref)?' ('+DAYS[new Date(t).getDay()]+')':'');
+const kamLabel=k=>k==='small'?'kleine kamado':'grote kamado';
+const startOfDay=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
+const endOfDay=t=>{const d=new Date(t);d.setHours(24,0,0,0);return d.getTime()};
+const hm=ms=>{const m=Math.max(0,Math.round(ms/MIN));return m>=60?Math.floor(m/60)+' u'+(m%60?' '+m%60+' min':''):m+' min'};
+
+/* 1. Kamado kiezen bij TOEVOEGEN van één gerecht. De aanroeper levert de v45-conflictscore per kamado (bestaande gerechten
+   blijven zoals ze zijn). De laagste score wint; bij gelijke score blijft de standaard van het recept. */
+function pickKamado(o){
+  const s=(o&&o.scores)||{},L=Number(s.large),S=Number(s.small),preferred=o&&o.preferred==='small'?'small':'large';
+  if(!Number.isFinite(L)||!Number.isFinite(S))return {kamado:preferred,scores:{large:L,small:S},reason:'unknown',changed:false};
+  const kamado=L<S?'large':S<L?'small':preferred;
+  return {kamado,scores:{large:L,small:S},reason:L===S?'tie':'fewest-conflicts',changed:kamado!==preferred};
+}
+
+/* 2. Urgente conflicten met een directe oplossing. alerts: de urgente meldingen van de planner met `meta`;
+   dishes: {id,name,kamado,method,cook,phase}; simulate(id,naar) → aantal urgente conflicten ná verplaatsen (of null). */
+function urgentIssues(o){
+  o=o||{};
+  const alerts=(o.alerts||[]).filter(a=>a&&a.type==='urgent'&&a.meta&&a.meta.kind);
+  const dishes=new Map((o.dishes||[]).map(d=>[String(d.id),d]));
+  const total=alerts.filter(a=>a.meta.kind==='conflict').length;
+  const out=[],groups=new Map();
+  for(const a of alerts){
+    const m=a.meta;
+    if(m.kind==='conflict'){
+      const ids=(m.dishIds||[]).map(String).sort(),key=m.kamado+':'+ids.join(':');
+      let g=groups.get(key);
+      if(!g){g={id:'conflict:'+key,kind:'conflict',kamado:m.kamado,dishIds:ids,reasons:[],fix:null};groups.set(key,g);out.push(g)}
+      if(m.reason&&!g.reasons.includes(m.reason))g.reasons.push(m.reason);
+    }else if(m.kind==='late-start'&&fin(m.first)&&fin(m.available)){
+      const late=Math.ceil((m.available-m.first)/MIN),alt=fin(o.serve)?o.serve+late*MIN:null;
+      out.push({id:'late-start',kind:'late-start',fix:null,reasons:[],
+        title:'Starttijd '+clockText(m.first,o.serve)+' is al verstreken; je kunt beginnen vanaf '+clockText(m.available,o.serve),
+        solution:'Begin om '+clockText(m.first,o.serve)+(alt!==null?' of serveer om '+clockText(alt,o.serve)+', dan begin je om '+clockText(m.available,o.serve)+' zoals je beschikbaar bent':'')+'. Of kies een gerecht dat sneller klaar is.'});
+    }else if(m.kind==='manual-late'&&fin(m.start)&&fin(m.offset)){
+      out.push({id:'manual-late:'+m.dishId,kind:'manual-late',fix:null,reasons:[],
+        title:m.name+' is met de vaste starttijd '+Math.abs(m.offset)+' min te laat klaar',
+        solution:'Start '+m.name+' om '+clockText(m.start-m.offset*MIN,o.serve)+(fin(m.serveAt)?' of serveer om '+clockText(m.serveAt+m.offset*MIN,o.serve):'')+'.'});
+    }
+  }
+  for(const g of out){
+    if(g.kind!=='conflict')continue;
+    const names=(o.dishes||[]).filter(d=>g.dishIds.includes(String(d.id))).map(d=>d.name);
+    g.title=names.join(' en ')+' botsen op de '+kamLabel(g.kamado);
+    const options=[];
+    g.dishIds.forEach((id,index)=>{
+      const d=dishes.get(id);if(!d||(d.phase&&d.phase!=='waiting')||typeof o.simulate!=='function')return;
+      const to=d.kamado==='small'?'large':'small',left=o.simulate(id,to);
+      if(!Number.isFinite(left)||left>=total)return;
+      const complex=d.method==='combo'||d.method==='directindirect'?1:0;
+      options.push({id,to,left,complex,cook:Number(d.cook)||0,index,name:d.name});
+    });
+    options.sort((a,z)=>a.left-z.left||a.complex-z.complex||a.cook-z.cook||z.index-a.index);
+    const best=options[0];
+    if(best){
+      const label='Zet '+best.name+' op de '+kamLabel(best.to);
+      g.fix={type:'move',dishId:best.id,to:best.to,label,remaining:best.left};
+      g.solution=label+(best.left>0?' (dan blijven er nog '+best.left+' urgente conflict'+(best.left===1?'':'en')+' over)':'')+'.';
+    }else g.solution='Pas de methode, het rooster of de tijd aan via Planning aanpassen.';
+  }
+  return out;
+}
+
+/* 3. Te laat gestart. Alleen als nog niets is gestart: serveertijd verstreken of vereiste starttijd > drempel (15 min) te laat.
+   Nieuwe serveertijd = nu + benodigde tijd (eerste actie → serveren), naar boven afgerond op een hele minuut. */
+function lateStart(o){
+  o=o||{};
+  const base={late:false,reasons:[],lateByMin:0,neededMin:null,newServe:null,date:null,time:null};
+  if(o.anyStarted||!fin(o.now)||!fin(o.serve)||!fin(o.first))return base;
+  const thr=fin(o.thresholdMin)?o.thresholdMin:15,reasons=[];
+  if(o.serve<o.now)reasons.push('serve-past');
+  if(o.first<o.now-thr*MIN)reasons.push('start-late');
+  if(!reasons.length)return base;
+  const needed=Math.max(0,o.serve-o.first),newServe=Math.ceil((o.now+needed)/MIN)*MIN;
+  return {late:true,reasons,lateByMin:Math.max(0,Math.round((o.now-o.first)/MIN)),neededMin:Math.round(needed/MIN),
+    newServe,date:ymd(newServe),time:hhmm(newServe),oldServe:o.serve,oldFirst:o.first};
+}
+
+/* 4. Voorbereiding "avond vooraf" die al voorbij is. tasks: {id,title,kind:'prep'|'recipe',daysBefore,hasTime,timeAt,trigger}. */
+const EVENING=/avond|nacht|dag(?:en)?\s*(?:ervoor|vooraf)/i;
+function prepOverdue(o){
+  o=o||{};const out=[],done=o.done||{};
+  if(!fin(o.now))return out;
+  for(const t of o.tasks||[]){
+    if(!t||done[t.id])continue;
+    let due=null;
+    if(t.kind==='recipe'){if(!EVENING.test(String(t.trigger||''))||!fin(o.serve))continue;due=startOfDay(o.serve)}
+    else{if(!(Number(t.daysBefore)>=1)||!fin(t.timeAt))continue;due=t.hasTime?t.timeAt:endOfDay(t.timeAt)}
+    if(o.now<due)continue;
+    const lead=fin(o.firstAction)?o.firstAction-o.now:null;let alternative;
+    if(lead!==null&&lead>=TWO_HOURS)alternative='Doe het nu: tot de eerste BBQ-actie ('+clockText(o.firstAction,o.serve)+') heb je nog '+hm(lead)+'. Een kortere inwerktijd geeft minder smaak.';
+    else if(lead!==null&&lead>0&&fin(o.serve)){
+      const shift=Math.ceil((o.serve+(TWO_HOURS-lead))/(5*MIN))*5*MIN;
+      alternative='Doe het nu en schuif de serveertijd op naar '+clockText(shift,o.serve)+', zodat er minstens 2 uur zit tussen nu en de eerste BBQ-actie, of sla de stap bewust over.';
+    }else alternative='Doe het nu en plan opnieuw vanaf nu bij Start live (de eerste BBQ-actie is al aan de beurt), of sla de stap bewust over.';
+    out.push({id:t.id,title:t.title,dueAt:due,when:t.kind==='recipe'?'de avond vooraf':(t.hasTime?DAYS[new Date(t.timeAt).getDay()]+' '+hhmm(t.timeAt):DAYS[new Date(t.timeAt).getDay()]+' (de avond vooraf)'),alternative});
+  }
+  return out;
+}
+
+root.BBQPlan=Object.freeze({pickKamado,urgentIssues,lateStart,prepOverdue,clockText});
 })(typeof globalThis!=='undefined'?globalThis:this);

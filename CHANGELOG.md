@@ -1,8 +1,16 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.5.1](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.5.1) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
+> Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.6.0 — Meldingen op je telefoon (draft-PR, niet gepubliceerd)
+## v5.7.0 — Planning eenvoudiger (draft-PR, niet gepubliceerd)
+- Bij het toevoegen van een gerecht (stap 1 en "+1") kiest de app de kamado met de minste conflicten (bestaande `v45Score`, via `b.chooseKamado`); gelijke score = standaard van het recept. Alleen voor het nieuwe gerecht: bestaande en handmatig gekozen kamado's veranderen nooit.
+- Urgente conflicten in rood bovenaan stap 2 met een directe oplossing ("Zet Kippenpoten op de kleine kamado" met knop, "Begin om 08:00 of serveer om 03:00"). Meldingen van `calc()` hebben nu een extra veld `meta` (alleen toegevoegd; `type` en `message` ongewijzigd). "Naar voorbereiding" vraagt om bevestiging bij urgente conflicten.
+- "Plan opnieuw vanaf nu" (stap 3 en Live) als er nog niets is gestart en de serveertijd voorbij is of de vereiste start > 15 min te laat is: voor/na, pas na bevestiging; nieuwe serveertijd = nu + benodigde tijd (naar boven op een minuut). Over middernacht verschuift `date` (`dateMode: manual`) en verhuizen `v46Done`/`v5Actual` mee; `availableFrom` wordt nooit later dan nu.
+- Melding bij een voorbereiding "de avond vooraf" die al voorbij is, met alternatief (stap 3).
+- Nieuwe pure planningshulp `BBQPlan` in `dist/bbq-eta.js` (ES-ingang `engine/plan.mjs`); testbaar zonder DOM en klok.
+- Opslag: geen nieuwe sleutels of velden.
+
+## v5.6.0 — Meldingen op je telefoon (gepubliceerd 17 november 2026)
 - De HA-kaart stuurt de telefoons uit `hass.services.notify` (alleen `mobile_app_*`, met de naam uit het apparaatregister als die overeenkomt) naar de planner via het nieuwe berichttype `bbq-ha-notify-targets-v1` (zelfde herkomstcontrole).
 - Eén regel "Meldingen op je telefoon: [apparaat] · aan/uit" in stap 2 en op Live, met "Stuur testmelding". Precies één telefoon en nog geen keuze: standaard aan (AANNAME, zichtbaar, niet opgeslagen tot je kiest). Meer telefoons: zelf kiezen; zonder keuze geen meldingen. Niet op de publieke website.
 - Meldingen (elk hooguit één keer per gerecht, bestaande dedup in `v46AlertSent`): kamado aansteken, gerecht erop, fasedoel, 5 min vóór het doel (vervangt de oude melding bij doel −1 °C, die nu onder hetzelfde moment valt), doel bereikt, stall, rust voorbij en meting weg (3 min `unavailable`). Bestaande timermelding ongewijzigd.

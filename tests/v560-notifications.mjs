@@ -148,7 +148,7 @@ const checkShape=reqs=>{
   const {w,$,fromHA,press,addRecipe,tick60,requests,line,parts,errors}=t;
   try{
     fromHA({__bbq:'bbq-ha-notify-targets-v1',targets:[...PHONES,{service:'notify.persistent_notification',name:'x'},{service:'switch.kamado',name:'y'}]});
-    assert.deepEqual(w.__v560Bridge.getNotify().targets,PHONES,'the planner keeps only valid mobile_app services');
+    assert.deepEqual(JSON.parse(JSON.stringify(w.__v560Bridge.getNotify().targets)),PHONES,'the planner keeps only valid mobile_app services');
     press('new');addRecipe('Ribeye 500 g');press('setup');
     assert.match(line(),/^📱 Meldingen op je telefoon:/,line());
     assert.deepEqual(parts().options,['Kies je telefoon','iPad in de keuken','Jan’s iPhone'],'phones by name, nothing chosen');

@@ -9,6 +9,7 @@ Claude Code is de bouwer in dit project. Claude in de chat is regisseur en onafh
 5. Draai de bestaande tests en voeg regressietests toe. Meld welke tests je zelf draaide en welke niet. Toon nooit nep-LIVE-data in de UI; gebruik in tests alleen duidelijk gemarkeerde fixtures.
 6. Open een **draft-PR**, vul de PR-template volledig in en meld de link aan de gebruiker. Stop daarna en wacht op de review van de regisseur.
 7. Verwerk reviewpunten op dezelfde branch en reageer per punt in de PR met de commit-SHA die het oplost.
-8. Merge, tag of release nooit zelf. Voeg geen `release-*-once.yml`-workflows toe tenzij de gebruiker daarom vraagt. Claim geen echte iPhone-, Home Assistant- of MEATER-test zonder uitvoering.
+8. Merge, tag of release nooit zelf. Publiceren gaat via de vaste workflow `.github/workflows/release.yml`; voeg geen `release-*-once.yml`-workflows meer toe. Zet de regel `Publicatie: goedgekeurd door de eigenaar op JJJJ-MM-DD` **alleen** in `RELEASE_vX.Y.Z.md` na een expliciet releaseakkoord van de gebruiker, en meld in de PR dat mergen van die PR publiceert. Zonder die regel publiceert een merge niets. Zie stap 7 in [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md).
+9. Claim geen echte iPhone-, Home Assistant- of MEATER-test zonder uitvoering.
 
 De regisseur en de bouwer synchroniseren niet automatisch; ze werken via de PR op GitHub. De centrale werkwijze staat in [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md).

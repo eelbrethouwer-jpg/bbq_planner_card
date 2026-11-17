@@ -1,0 +1,158 @@
+name: Publiceer BBQ Planner-release (na CI, alleen met goedkeuring)
+
+# Vaste releaseworkflow (vervangt de eenmalige release-vX-once.yml-bestanden).
+# Publiceert alleen als ALLES klopt op de exact geteste main-commit:
+#   - main staat nog op de geteste commit;
+#   - VERSION komt uit sw.js (const CACHE='bbq-regisseur-vX.Y.Z');
+#   - RELEASE_vVERSION.md bevat een regel "Publicatie: goedgekeurd door de eigenaar op JJJJ-MM-DD";
+#   - de vijf verplichte CI-jobs zijn groen;
+#   - VERSION is hoger dan de nieuwste gepubliceerde release.
+# De goedkeuringsregel komt alleen in een PR na een expliciet releaseakkoord van de
+# gebruiker: mergen van zo'n PR = publiceren. Zie docs/AI_WORKFLOW.md.
+# tests/release-workflow.mjs voert het run-script hieronder uit met een nagebootste gh.
+
+on:
+  workflow_run:
+    workflows: ["HACS-validatie"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: release-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'eelbrethouwer-jpg/bbq_planner_card' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publiceer de exact geteste main-commit als goedgekeurde release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET: ${{ github.event.workflow_run.head_sha }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          WORK="$(mktemp -d)"
+
+          # 1. Alleen de commit waar main nu nog op staat.
+          CURRENT="$(gh api "repos/${GH_REPO}/branches/main" --jq '.commit.sha')"
+          if [[ "$CURRENT" != "$TARGET" ]]; then
+            echo "::notice::geen publicatie: main is verder gegaan ($CURRENT), $TARGET wordt niet gepubliceerd."
+            exit 0
+          fi
+
+          # 2. Versie uit sw.js op exact deze SHA (via de API, geen checkout).
+          gh api "repos/${GH_REPO}/contents/sw.js?ref=${TARGET}" --jq '.content' | base64 -d > "$WORK/sw.js"
+          CACHE_LINES="$(grep -Eo "const[[:space:]]+CACHE[[:space:]]*=[[:space:]]*['\"]bbq-regisseur-v[0-9]+\.[0-9]+\.[0-9]+['\"]" "$WORK/sw.js" || true)"
+          if [[ -z "$CACHE_LINES" || "$(printf '%s\n' "$CACHE_LINES" | wc -l)" -ne 1 ]]; then
+            echo "::error::sw.js moet precies één const CACHE='bbq-regisseur-vX.Y.Z' bevatten."
+            exit 1
+          fi
+          VERSION="$(printf '%s\n' "$CACHE_LINES" | sed -E 's/.*bbq-regisseur-v([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+          TAG="v${VERSION}"
+          echo "Versie op ${TARGET}: ${VERSION} (tag ${TAG})"
+
+          # 3. Goedkeuring van de eigenaar in RELEASE_vVERSION.md op exact deze SHA.
+          RELEASE_FILE="RELEASE_v${VERSION}.md"
+          if ! gh api "repos/${GH_REPO}/contents/${RELEASE_FILE}?ref=${TARGET}" --jq '.content' > "$WORK/release.b64" 2>/dev/null; then
+            echo "::notice::geen publicatie: release niet goedgekeurd (${RELEASE_FILE} ontbreekt)."
+            exit 0
+          fi
+          base64 -d "$WORK/release.b64" | tr -d '\r' > "$WORK/release.md"
+          APPROVAL="$(grep -E '^Publicatie: goedgekeurd door de eigenaar op [0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]*$' "$WORK/release.md" | head -n 1 || true)"
+          APPROVAL_DATE="$(sed -E 's/^Publicatie: goedgekeurd door de eigenaar op ([0-9-]{10}).*/\1/' <<< "$APPROVAL")"
+          if [[ -z "$APPROVAL" ]] || ! date -u -d "$APPROVAL_DATE" +%F 2>/dev/null | grep -Fxq "$APPROVAL_DATE"; then
+            echo "::notice::geen publicatie: release niet goedgekeurd (geen geldige regel 'Publicatie: goedgekeurd door de eigenaar op JJJJ-MM-DD' in ${RELEASE_FILE})."
+            exit 0
+          fi
+          echo "Goedkeuring gevonden: ${APPROVAL}"
+
+          # 4. Bestaat de tag of release al? Nooit verplaatsen of overschrijven.
+          if gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" > "$WORK/tag.json" 2>/dev/null; then
+            existing="$(jq -r '.object.sha' "$WORK/tag.json")"
+            if ! gh release view "$TAG" >/dev/null 2>&1; then
+              echo "::error::Tag ${TAG} bestaat zonder release; weiger."
+              exit 1
+            fi
+            if [[ "$existing" == "$TARGET" ]]; then
+              echo "Release ${TAG} bestaat al op ${TARGET}; geen actie."
+              exit 0
+            fi
+            echo "::notice::geen publicatie: ${TAG} is al gepubliceerd op ${existing}; deze commit (${TARGET}) heeft dezelfde versie."
+            exit 0
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::Release ${TAG} bestaat zonder bijbehorende tag; weiger."
+            exit 1
+          fi
+
+          # 5. Alleen hoger dan de nieuwste gepubliceerde release (geen downgrade, geen herpublicatie).
+          semver_gt() {
+            local -a a b
+            IFS=. read -r -a a <<< "$1"
+            IFS=. read -r -a b <<< "$2"
+            for i in 0 1 2; do
+              if (( 10#${a[i]} > 10#${b[i]} )); then return 0; fi
+              if (( 10#${a[i]} < 10#${b[i]} )); then return 1; fi
+            done
+            return 1
+          }
+          # Eerst in een variabele: een API-fout stopt het script (geen stille 0.0.0).
+          RELEASE_TAGS="$(gh api --paginate "repos/${GH_REPO}/releases?per_page=100" --jq '.[] | select(.draft == false and .prerelease == false) | .tag_name')"
+          LATEST="0.0.0"
+          while IFS= read -r t; do
+            [[ "$t" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || continue
+            if semver_gt "${BASH_REMATCH[1]}" "$LATEST"; then LATEST="${BASH_REMATCH[1]}"; fi
+          done <<< "$RELEASE_TAGS"
+          if ! semver_gt "$VERSION" "$LATEST"; then
+            echo "::error::${VERSION} is niet hoger dan de nieuwste gepubliceerde release v${LATEST}; weiger."
+            exit 1
+          fi
+          echo "Nieuwste gepubliceerde release: v${LATEST}"
+
+          # 6. De geteste run en alle verplichte jobs zijn groen op deze SHA.
+          gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}" --jq '[.conclusion, .head_sha] | @tsv' > "$WORK/run.tsv"
+          if [[ "$(cat "$WORK/run.tsv")" != "success"$'\t'"${TARGET}" ]]; then
+            echo "::error::CI-run ${RUN_ID} is niet groen op ${TARGET}."
+            exit 1
+          fi
+          JOBS="$(gh api --paginate "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?per_page=100" --jq '.jobs[] | [.name,.conclusion] | @tsv')"
+          for job in validate-hacs html-javascript ui-smoke mobile-browser version-consistency; do
+            if ! grep -Fqx "$job"$'\t'success <<< "$JOBS"; then
+              echo "::error::Verplichte job $job ontbreekt of is niet groen."
+              exit 1
+            fi
+          done
+
+          # 7. Titel = eerste '# '-kop; notes = de rest van het bestand.
+          TITLE="$(grep -m1 -E '^# ' "$WORK/release.md" | sed -E 's/^# +//; s/[[:space:]]+$//' || true)"
+          if [[ -z "$TITLE" || "$TITLE" != *"v${VERSION}"* ]]; then
+            echo "::error::Eerste '# '-kop in ${RELEASE_FILE} ontbreekt of noemt v${VERSION} niet."
+            exit 1
+          fi
+          awk 'done || !/^# / { print; next } { done = 1 }' "$WORK/release.md" | sed '/./,$!d' > "$WORK/notes.md"
+          if [[ ! -s "$WORK/notes.md" ]]; then
+            echo "::error::${RELEASE_FILE} bevat geen releasetekst onder de kop."
+            exit 1
+          fi
+
+          # 8. Publiceer en controleer dat de tag exact naar de geteste SHA wijst.
+          gh release create "$TAG" --target "$TARGET" --title "$TITLE" --notes-file "$WORK/notes.md" --latest
+          ACTUAL="$(gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" --jq '.object.sha')"
+          if [[ "$ACTUAL" != "$TARGET" ]]; then
+            echo "::error::Tag ${TAG} wijst naar ${ACTUAL}, verwacht ${TARGET}."
+            exit 1
+          fi
+          gh release view "$TAG" --json tagName,name,url,targetCommitish
+          echo "::notice::Gepubliceerd: ${TAG} op ${TARGET}."

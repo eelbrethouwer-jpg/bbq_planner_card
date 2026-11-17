@@ -1,23 +1,36 @@
-# BBQ Planner v5.5.1 — Kaart op volledig scherm in een HA-panel-view
+# BBQ Planner v5.5.1 — kaart op volledig scherm
 
-**Status: draft-PR, niet gemerged en niet gepubliceerd.** Basis: `af9cf3fc730a9c5950fbd99f38aeb2fa9ebfbf20` (main na release v5.5.0). Soort wijziging: layout/fix in de Home Assistant-kaart, geen nieuwe data.
+**Status: Gepubliceerd via release.yml na merge van deze PR.** App-code gelijk aan mergecommit `c214f064ca856ff2ea602c2b076ae348b4dc00ad` (PR #47). De release komt op de main-commit na de merge van de PR met de vaste releaseworkflow; die PR verandert geen app-code.
 
-## Wat is gewijzigd?
-- **Volledig scherm in een panel-view.** Staat de kaart in een Home Assistant-panel-view (`type: panel`), dan vult ze het scherm van haar eigen bovenkant (onder de HA-kopbalk) tot de onderkant van het scherm. De hoogte wordt gemeten (`getBoundingClientRect().top` van de kaart en `window.innerHeight`), niet meer geschat met `calc(100dvh - 118px)`.
-- **Eén scrollgebied.** Alleen de planner in de kaart scrolt; de HA-pagina zelf scrolt niet. Daardoor blijft de vaste onderste navigatie van de planner altijd op de onderkant van het scherm. Heeft de HA-view onder de kaart nog opvulling, dan geeft de kaart die pixels op in plaats van de pagina te laten scrollen.
-- **Opnieuw meten** bij formaatwijziging, draaien van de telefoon (ook nog eens na 350 ms, omdat iOS de nieuwe maat laat doorgeeft), `visualViewport`-resize en bij elke hoogtemelding van de planner (`bbq-child-height-v1`, ongewijzigd).
-- **iOS safe area.** Onderaan de kaart staat ruimte ter grootte van `env(safe-area-inset-bottom)` in de planner-achtergrondkleur, zodat de navigatie niet onder de thuisbalk valt.
-- **Optie in de kaart-YAML.** `fullscreen: true` = altijd volledig scherm (ook buiten een panel-view); `fullscreen: false` = het oude gedrag; niet ingesteld = automatisch in een panel-view, anders het oude gedrag.
+Publicatie: goedgekeurd door de eigenaar op 2026-11-17
 
-## Installatie
-Zie "Koken op volledig scherm in de Home Assistant-app" in [README.md](README.md).
+## Wat verandert er?
+Kook je in de Home Assistant-app met een dashboard waarop alleen de planner staat (een **panel-view**), dan vult de planner nu het hele scherm: van net onder de kopbalk van Home Assistant tot helemaal onderaan.
 
-## Niet gewijzigd
-- Planner-engine, `engine/`, `v6/`, opslag, localStorage-sleutels en berichttypen. De versie in `dist/bbq-eta.js` is alleen opgehoogd omdat het versiecontract dat eist.
-- Kaarten buiten een panel-view zonder `fullscreen`-optie: zelfde iframe-stijl als v5.5.0.
+- **Eén scrollgebied.** Alleen de planner scrolt, de Home Assistant-pagina eromheen niet meer. Je ziet dus geen dubbele scrollbalk.
+- **De onderste knoppenbalk blijft in beeld,** ook als je de telefoon draait of van app wisselt.
+- **Ruimte voor de thuisbalk van de iPhone,** zodat de knoppen er niet onder vallen.
+- De kaart **herkent een panel-view zelf**. Je hoeft niets in te stellen.
 
-## Beperkingen
-- Geen test in de echte Home Assistant-app op een iPhone: alle tests gebruiken een nagebootste HA-pagina (kopbalk 56 px, `hui-panel-view` met shadow root). Desktop-browsers melden een safe area van 0.
-- De hoogte volgt bewust niet het schermtoetsenbord (de `visualViewport` krimpt dan); anders verspringt het invoerveld tijdens typen.
+Er verandert niets aan je recepten, reviews, planningen of opgeslagen gegevens, en niets aan de kookfuncties of de MEATER-koppeling. Op een gewoon dashboard (geen panel-view) ziet de kaart er hetzelfde uit als in v5.5.0.
 
-Zie ook [PROJECT_STATUS.md](PROJECT_STATUS.md) en [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md).
+## Bijwerken via HACS
+1. Open in Home Assistant **HACS**, kies **BBQ Bereidingsplanner + MEATER** en kies **Bijwerken** (of **Opnieuw downloaden**).
+2. Ververs daarna de Home Assistant-app of de pagina. Zie je de oude versie nog, sluit de app dan helemaal af en open hem opnieuw, of leeg de cache van de app.
+
+Wil je koken op volledig scherm? Maak een dashboard met een panel-view met alleen de planner-kaart. De voorbeeld-YAML staat in de [README](https://github.com/eelbrethouwer-jpg/bbq_planner_card#koken-op-volledig-scherm-in-de-home-assistant-app) onder "Koken op volledig scherm in de Home Assistant-app".
+
+## Terugvaloptie
+Bevalt het nieuwe gedrag niet, zet dan in de YAML van de kaart:
+
+```yaml
+type: custom:bbq-planner-meater-card
+fullscreen: false
+```
+
+Dan gedraagt de kaart zich weer zoals in v5.5.0. Met `fullscreen: true` krijg je volledig scherm ook buiten een panel-view.
+
+## Nog niet in de praktijk getest
+Dit is **niet getest op een echte iPhone** in de Home Assistant-app. De automatische tests bootsen een Home Assistant-pagina na in Chromium en WebKit. Laat graag weten of de knoppenbalk onderaan goed staat, ook na draaien, na het toetsenbord en na wisselen van app. Bewust gekozen: de hoogte volgt het schermtoetsenbord niet, anders verspringt het invoerveld tijdens typen.
+
+Projectinformatie: [PROJECT_STATUS.md](https://github.com/eelbrethouwer-jpg/bbq_planner_card/blob/main/PROJECT_STATUS.md).

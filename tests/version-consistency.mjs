@@ -7,7 +7,8 @@ const runtimeFiles=[
   'sw.js',
   'index.html',
   'dist/BBQ_bereidingsplanner_MEATER_v4.html',
-  'dist/bbq_planner_card.js'
+  'dist/bbq_planner_card.js',
+  'dist/bbq-eta.js'
 ];
 const source=Object.fromEntries(runtimeFiles.map(path=>[path,fs.readFileSync(path,'utf8')]));
 const checks={
@@ -16,7 +17,7 @@ const checks={
 };
 
 function verify(files,exists=fs.existsSync){
-  const sw=files['sw.js'],index=files['index.html'],html=files['dist/BBQ_bereidingsplanner_MEATER_v4.html'],card=files['dist/bbq_planner_card.js'];
+  const sw=files['sw.js'],index=files['index.html'],html=files['dist/BBQ_bereidingsplanner_MEATER_v4.html'],card=files['dist/bbq_planner_card.js'],eta=files['dist/bbq-eta.js'];
   const cache=[...sw.matchAll(/\bconst\s+CACHE\s*=\s*['"]bbq-regisseur-v(\d+\.\d+\.\d+)['"]/g)];
   assert.equal(cache.length,1,'sw.js must define exactly one valid versioned CACHE');
   const VERSION=cache[0][1];
@@ -29,6 +30,9 @@ function verify(files,exists=fs.existsSync){
   };
   checkHeader('sw.js',sw);
   checkHeader('dist/bbq_planner_card.js',card);
+  checkHeader('dist/bbq-eta.js',eta);
+  const etaVersion=[...eta.matchAll(/\bversion\s*:\s*['"](\d+\.\d+\.\d+)['"]/g)].map(m=>m[1]);
+  assert.deepEqual(etaVersion,[VERSION],'dist/bbq-eta.js api version differs from CACHE');
 
   const checkQueries=(file,content)=>{
     const refs=[...content.matchAll(/\?v=([^\s"'<>\x60&#?]+)/g)].map(m=>m[1]);
@@ -54,9 +58,15 @@ function verify(files,exists=fs.existsSync){
 
   const loaderAttrs=[...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)=["'](\.\/bbq-[^"']+\.(?:js|css)(?:\?v=[^"']*)?)["'][^>]*>/gi)];
   assert.ok(loaderAttrs.length>0,'Planner must contain versioned CSS/JS loader tags');
+  const pages=sw.match(/const\s+PAGES\s*=\s*\[([^\]]*)\]/)?.[1]||'';
   for(const tag of loaderAttrs){
     assert.ok(tag[1].includes('?v='+VERSION),'Unversioned or mismatched loader: '+tag[1]);
+    // v5.4: every planner asset is cached by the service worker and exists.
+    const asset='dist/'+tag[1].replace(/^\.\//,'').replace(/\?.*$/,'');
+    assert.ok(pages.includes("'"+asset+"'"),'sw.js PAGES misses '+asset);
+    assert.ok(exists(asset),'Missing asset '+asset);
   }
+  assert.match(html,/<script src="\.\/bbq-eta\.js\?v=[^"]+"><\/script>\s*<script src="\.\/bbq-v5\.js/,'ETA-module must load before bbq-v5.js');
 
   assert.ok(exists('RELEASE_v'+VERSION+'.md'),'Missing RELEASE_v'+VERSION+'.md');
   for(const [file,content] of Object.entries(checks)){
@@ -87,6 +97,19 @@ wrongVersion('loader ?v=5.0.3',files=>{
  return files;
 },'dist/BBQ_bereidingsplanner_MEATER_v4.html');
 
+// Negative 3: service worker no longer caches the ETA-module.
+wrongVersion('sw.js without bbq-eta.js',files=>{
+ assert.ok(files['sw.js'].includes("'dist/bbq-eta.js',"),'Expected ETA-module in sw.js');
+ files['sw.js']=files['sw.js'].replace("'dist/bbq-eta.js',",'');
+ return files;
+},'sw.js PAGES misses dist/bbq-eta.js');
+
+// Negative 4: ETA-module header lags behind.
+wrongVersion('bbq-eta.js header',files=>{
+ files['dist/bbq-eta.js']=files['dist/bbq-eta.js'].replace(/v\d+\.\d+\.\d+/,'v'+alternate('5.3.0'));
+ return files;
+},'dist/bbq-eta.js');
+
 // Positive: a hypothetical *consistent* new runtime version, including the release file.
 const parts=result.VERSION.split('.').map(Number);
 const future=[parts[0],parts[1],parts[2]+1].join('.');
@@ -98,5 +121,5 @@ assert.equal(hypothetical.VERSION,future,'Consistent future version must pass wi
 console.log('OK version consistency: CACHE-derived runtime v'+result.VERSION+
   '; index '+result.indexRefs+', planner '+result.htmlRefs+', HA '+result.cardRefs+
   ', asset loaders '+result.loaders);
-console.log('OK negative mutations: index.html 5.1.0 rejected; loader ?v=5.0.3 rejected');
+console.log('OK negative mutations: index.html 5.1.0 rejected; loader ?v=5.0.3 rejected; sw.js without bbq-eta.js rejected; stale bbq-eta.js header rejected');
 console.log('OK positive mutation: consistent future version '+future+' accepted');

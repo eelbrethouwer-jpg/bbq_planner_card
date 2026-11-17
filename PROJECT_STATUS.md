@@ -4,9 +4,9 @@ Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor de regis
 
 ## Ontwikkelstatus (17 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- `main` staat op `357252b78c9136d35d0868e4ad6b3ad4f8de7e06` (merge PR #42, PR 0 werkafspraken; code nog v5.2.3).
+- `main` staat op `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1` (merge PR #43, PR 1 Live-gerechtkaart; code v5.3.0, niet gepubliceerd).
 - Laatste gepubliceerde GitHub-release: [v5.2.3 — Rustig Live-scherm](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3), gepubliceerd op 9 november 2026.
-- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken) is gemerged. PR 1 (v5.3.0, Live-gerechtkaart) staat als draft-PR open voor review.
+- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken) en PR 1 (v5.3.0, Live-gerechtkaart) zijn gemerged. PR 2 (v5.4.0, eigen schattingsmodule) staat als draft-PR open voor review.
 - De officiële Home Assistant-MEATER-integratie leest ongeveer iedere 30 seconden uit de MEATER Cloud. Zonder kooksessie in de MEATER-app komen alleen kern- en omgevingstemperatuur binnen. Vanuit HA kun je geen doel instellen en geen kooksessie starten.
 - Geen echte iPhone-, Home Assistant- of MEATER-hardwaretest in de CI.
 
@@ -44,8 +44,8 @@ Doel van de gebruiker: alles in deze app doen, niet in de MEATER-app. Live beant
 | PR | Inhoud | Beoogde versie | Status |
 | --- | --- | --- | --- |
 | 0 | Werkafspraken bijwerken (alleen documentatie) | geen bump | gemerged (merge-SHA `357252b78c9136d35d0868e4ad6b3ad4f8de7e06`) |
-| 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | draft-PR |
-| 2 | Eigen schattingsmodule `engine/eta.mjs` (Newton-opwarming, fasedoel, stall, marge, bronvolgorde) en meetgeschiedenis uit HA bij openen | 5.4.0 | gepland |
+| 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | gemerged (merge-SHA `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1`) |
+| 2 | Eigen schattingsmodule `engine/eta.mjs` (Newton-opwarming, fasedoel, stall, marge, bronvolgorde) en meetgeschiedenis uit HA bij openen | 5.4.0 | draft-PR |
 | 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid | 5.5.0 | gepland |
 | 4 | Optioneel fasedoel `coreAt` in receptstappen en meldingen via `notify.mobile_app_*` | 5.6.0 | gepland |
 | 5 | Planning eenvoudiger: kamadokeuze bij toevoegen, urgente conflicten bovenaan, "Plan opnieuw vanaf nu" | 5.7.0 | gepland |
@@ -58,6 +58,7 @@ Versies zijn een plan, geen releasebelofte. Elke PR stopt na oplevering; de volg
 - Home Assistant/HACS op een echt apparaat: de iframe, persoonlijke synchronisatie en langdurig gebruik; iPad/desktop en VoiceOver.
 - Een echte kooksessie met MEATER Pro/Plus via Home Assistant, met en zonder kooksessie in de MEATER-app. Tot die tijd alleen expliciet gelabelde fixtures, nooit als echte LIVE-metingen.
 - Na PR 1: scherm blijft aan tijdens het koken (Screen Wake Lock) op een echte iPhone.
+- Na PR 2: de eigen schatting tijdens een echte kooksessie (ribeye, kip, en een lange sessie met stall) en of de meetgeschiedenis bij openen echt uit Home Assistant komt (`history/history_during_period`).
 - Na PR 4: meldingen komen echt aan op de telefoon via `notify.mobile_app_*`.
 
 ## Start- en afsluitcheck

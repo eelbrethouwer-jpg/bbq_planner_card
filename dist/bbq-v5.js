@@ -1,5 +1,6 @@
 /* BBQ Planner v5.0.0 — session-first experience. Keep v4 calculations and storage as source of truth.
-   v5.3.0: Live shows one card per dish (core → target, ambient, rise, 'op tafel rond' with source, one coach line). */
+   v5.3.0: Live shows one card per dish (core → target, ambient, rise, 'op tafel rond' with source, one coach line).
+   v5.4.0: the card uses the shared estimate (own curve → MEATER ETA → start + duration → planning), anchored at the last reading. */
 (function(){
 'use strict';
 window.initBBQV5=function(b){
@@ -143,10 +144,13 @@ window.initBBQV5=function(b){
   // Slots of one dish card. Only these are patched on a sensor update or the 1-second ticker.
   function cardSlots(d){
     const p=hasProbe(d)?b.getProbe(d):null,live=!!p?.ok,goal=goalOf(d),plan=livePlan.get(String(d.id))||{};
+    // v5.4: one shared estimate per dish; times are anchored at the last real reading, not at the clock.
+    const est=b.getEstimate&&d.phase!=='done'?b.getEstimate(d,plan):null;
     const goalHtml=goal!=null?'<span class="v5-dc-goal">→ '+escape(temp(goal,0))+' °C</span>':'<span class="v5-dc-goal">geen kerndoel</span>';
     let core;
     if(live){
-      const pct=goal!=null?Math.max(0,Math.min(100,Math.round(p.core/goal*100))):0;
+      // Progress from the first reading of this session (not from 0 °C) when known.
+      const pct=est?.progress&&Number.isFinite(est.progress.pct)?est.progress.pct:goal!=null?Math.max(0,Math.min(100,Math.round(p.core/goal*100))):0;
       core='<div class="v5-dc-temp"><span class="v5-dc-core">'+escape(temp(p.core))+' °C</span>'+goalHtml+'</div>'+
         (goal!=null?'<div class="v5-dc-bar" role="img" aria-label="'+pct+'% van de richtkern"><span style="width:'+pct+'%"></span></div>':'')+
         '<div class="v5-muted v5-dc-age">'+ageText(p)+'</div>';
@@ -163,30 +167,38 @@ window.initBBQV5=function(b){
     }else parts.push('Doel BBQ '+escape(d.grill??'—')+' °C');
     if(started!=null)parts.push('op BBQ '+started+' min');
     const env=parts.join(' · ');
-    // One estimate per dish: live trend or MEATER ETA via the existing v46Prediction, else the planning.
-    let when=null,source='planning',sub='',margin=null;
+    // One estimate per dish (ETA-module): own curve, MEATER ETA, registered start + duration, else the planning.
+    let when=null,source='planning',sub='',margin=null,label=null;
     const rest=Math.max(0,Number(d.rest)||0);
     if(d.phase==='done'){when=Number(d.doneAt)||null;source='gereed gemeld'}
     else if(d.phase==='resting'&&Number(d.restAt)>0){when=Number(d.restAt)+rest*60000;source='rusttijd'}
-    else{
-      const pred=live?b.getPrediction(d):null;
-      if(pred?.ok){
-        when=pred.eta+rest*60000;
-        if(pred.kind==='meater'){source='MEATER-ETA';sub='kern '+escape(temp(goal,0))+' °C rond '+clock(pred.eta)}
-        else if(pred.kind==='reached'){source='kerndoel bereikt';sub='controleer de gaarheid'}
-        else{source='eigen trend';margin=Math.max(2,Math.round((pred.remaining||0)*0.2));sub='kern '+escape(temp(goal,0))+' °C rond '+clock(pred.eta)}
-        if(rest&&pred.kind!=='reached')sub+=' + '+rest+' min rust';
-      }else{
-        when=Number.isFinite(plan.end)?plan.end:null;
-        if(live&&pred&&pred.why)sub='schatting volgt: '+escape(pred.why.charAt(0).toLowerCase()+pred.why.slice(1));
-      }
+    else if(est&&est.ok&&est.source!=='planning'){
+      when=est.ready;
+      const goalTxt=goal!=null?escape(temp(goal,0))+' °C':'doel';
+      if(est.source==='curve'&&est.state==='reached'){source='kerndoel bereikt';sub='controleer de gaarheid'}
+      else if(est.source==='curve'){
+        source='eigen trend';margin=est.margin;
+        sub=(est.phase?escape(temp(est.phase.target,0))+' °C (einde indirect) rond '+clock(est.phase.at)+' · ':'')+'kern '+goalTxt+' rond '+clock(est.cookEnd);
+      }else if(est.source==='meater'){source='MEATER-ETA';sub='kern '+goalTxt+' rond '+clock(est.cookEnd)}
+      else{source='start + receptduur';sub='op de BBQ sinds '+clock(Number(d.startedAt))+(live&&est.reason&&!est.stall?' · eigen schatting volgt':'')}
+      if(rest&&!(est.source==='curve'&&est.state==='reached'))sub+=' + '+rest+' min rust';
+      if(est.source==='curve'&&est.meater?.disagree)sub+=' · MEATER-ETA zegt '+clock(est.meater.cookEnd);
+      if(est.source==='curve'&&est.stale){label='Laatste schatting '+clock(when);sub+=' · verouderd: meting '+est.ageMin+' min oud'}
+    }else{
+      when=Number.isFinite(plan.end)?plan.end:null;
+      if(est&&est.reason&&hasProbe(d)&&(live||est.points>0))sub='schatting volgt: '+escape(est.reason.charAt(0).toLowerCase()+est.reason.slice(1));
     }
+    if(est?.stall){
+      const st=est.stall,med=Number.isFinite(st.medianMinutes)?' · eigen historie: meestal '+st.medianMinutes+' min':'';
+      sub='Stall rond '+escape(temp(st.level,0))+' °C sinds '+clock(st.since)+med+(sub?' · '+sub:'');
+    }
+    if(est?.advice&&est.source==='curve'&&est.state==='estimate'&&goal!=null&&est.core!=null&&est.core>=goal-12)sub+=' · '+escape(est.advice.text);
     let delta='';
     if(when!=null&&source!=='planning'&&Number.isFinite(plan.end)&&d.phase!=='done'){
       const diff=Math.round((when-plan.end)/60000);
       delta=Math.abs(diff)<=2?' · op schema':diff<0?' · '+(-diff)+' min vroeg':' · '+diff+' min later';
     }
-    const label=d.phase==='done'?'Gereed'+(when?' sinds '+clock(when):''):'Op tafel rond '+clock(when);
+    if(label==null)label=d.phase==='done'?'Gereed'+(when?' sinds '+clock(when):''):'Op tafel rond '+clock(when);
     const eta='<div class="v5-dc-when"><strong>'+escape(label)+'</strong>'+escape(delta)+'</div>'+
       '<div class="v5-muted">'+escape(source)+(margin!=null?' ±'+margin+' min':'')+(sub?' · '+sub:'')+'</div>';
     const advice=b.getAdvice?b.getAdvice(d):null;

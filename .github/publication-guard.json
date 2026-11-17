@@ -1,11 +1,13 @@
 {
   "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
-  "release": "5.3.0",
+  "release": "5.4.0",
   "protectedPaths": [
     "engine/",
     "v6/"
   ],
-  "allowProtectedChanges": [],
+  "allowProtectedChanges": [
+    "engine/eta.mjs"
+  ],
   "productionPaths": [
     "dist/",
     "index.html",
@@ -16,6 +18,7 @@
   ],
   "allowedProductionChanges": [
     "dist/BBQ_bereidingsplanner_MEATER_v4.html",
+    "dist/bbq-eta.js",
     "dist/bbq-v5.js",
     "dist/bbq-v5.css",
     "dist/bbq-v501.css",
@@ -32,6 +35,7 @@
     "bbq-child-height-v1",
     "bbq-child-ready-v1",
     "bbq-ha-sensors-v1",
+    "bbq-ha-history-v1",
     "bbq-library-error-v1",
     "bbq-library-request-v1",
     "bbq-library-snapshot-v1",
@@ -56,5 +60,8 @@
     "kamado-recipe-deletions-v1",
     "kamado-reviews-v1"
   ],
-  "allowDataContractChange": false
+  "allowDataContractChange": false,
+  "newDataContractIdentifiers": [
+    "bbq-ha-history-v1"
+  ]
 }

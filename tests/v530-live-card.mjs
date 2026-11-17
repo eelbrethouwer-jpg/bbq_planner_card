@@ -56,7 +56,7 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
 // 1. Scenario "zoals gisteren" through the real flow, own trend as source.
 {
   const t=boot({wakeLock:true});
-  const {w,d,$,press,addRecipe,slot,tick,sensor,idle,errors,wake}=t;
+  const {w,d,$,press,addRecipe,card,slot,tick,sensor,idle,errors,wake}=t;
   try{
     press('new');addRecipe('Ribeye 500 g');
     const bridge=w.__v530Bridge,ribeye=bridge.getState().dishes[0];

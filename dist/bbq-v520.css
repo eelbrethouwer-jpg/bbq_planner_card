@@ -140,3 +140,44 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 #v5-root .v5-setup-selects select{max-width:100%;width:100%;min-width:0;min-height:44px;overflow:hidden;text-overflow:ellipsis}
 /* WebKit houdt een minimale selectbreedte aan: op smalle schermen (ook de HA-iframe) onder elkaar. */
 @media (max-width:420px){#v5-root .v5-setup-selects{grid-template-columns:minmax(0,1fr)}}
+/* v5.5 Live: compact timeline (planned = dashed frame, expected = colour), now/serve lines, auto-linked probe line */
+#v5-root .v5-tl{padding:8px 10px 6px;margin-bottom:10px}
+#v5-root .v5-tl-body{position:relative}
+#v5-root .v5-tl-axis{position:relative;height:16px;margin-left:40px;font-size:11px;color:var(--v5muted);font-variant-numeric:tabular-nums}
+#v5-root .v5-tl-axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+#v5-root .v5-tl-row{display:flex;align-items:center;width:100%;min-height:44px;padding:0;margin:0;border:0;border-top:1px solid #23363d;border-radius:0;background:transparent;color:inherit;text-align:left}
+#v5-root .v5-tl-lab{flex:0 0 40px;font-size:11px;font-weight:800;color:#efb788}
+#v5-root .v5-tl-track{position:relative;flex:1 1 auto;height:32px;min-width:0}
+#v5-root .v5-tl-plan{position:absolute;top:1px;bottom:1px;border:1.5px dashed #8fa8ad;border-radius:6px}
+#v5-root .v5-tl-seg{position:absolute;top:6px;bottom:6px;border-radius:5px;font-size:10px;line-height:20px;padding:0 3px;overflow:hidden;white-space:nowrap;color:#1c1510;font-weight:800}
+#v5-root .v5-tl-seg.indirect{background:#f2a561}
+#v5-root .v5-tl-seg.direct{background:#e5654c;color:#fff}
+#v5-root .v5-tl-seg.swap{background:#c98b4e}
+#v5-root .v5-tl-seg.rest{background:#6dd3ad}
+#v5-root .v5-tl-seg.fire{background:#7d5b39;color:#f5f1e8}
+#v5-root .v5-tl-seg.done{background:#4c5f64;color:#dfe7e6}
+#v5-root .v5-tl-over{position:absolute;left:40px;right:0;top:0;bottom:0;pointer-events:none}
+#v5-root .v5-tl-now,#v5-root .v5-tl-serve{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px}
+#v5-root .v5-tl-now{background:#ff4d4d;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+#v5-root .v5-tl-serve{background:#3ccf7a}
+#v5-root .v5-tl-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;border-top:1px solid #23363d;padding-top:2px}
+#v5-root .v5-tl-legend{font-size:11px;color:var(--v5muted);display:flex;flex-wrap:wrap;align-items:center;gap:2px 5px;min-width:0}
+#v5-root .v5-tl-key{display:inline-block;width:12px;height:8px;border-radius:2px;vertical-align:middle}
+#v5-root .v5-tl-key.plan{border:1.5px dashed #8fa8ad}
+#v5-root .v5-tl-key.exp{background:#f2a561}
+#v5-root .v5-tl-key.now{width:3px;height:11px;background:#ff4d4d}
+#v5-root .v5-tl-key.serve{width:3px;height:11px;background:#3ccf7a}
+#v5-root .v5-tl-all{flex:0 0 auto;min-height:44px;font-size:13px;padding:6px 10px}
+#v5-root .v5-tl-adjust{margin-top:6px;display:grid;gap:4px}
+#v5-root .v5-tl-adjust small{font-size:12px}
+#v5-root .v5-tl-confirm{border:1px solid #af804e;border-radius:12px;padding:10px;background:#1f2a2b}
+#v5-root .v5-tl-confirm ul{list-style:none;margin:6px 0;padding:0;display:grid;gap:4px;font-size:13px}
+#v5-root .v5-tl-confirm li{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#v5-root .v5-tl-confirm p{font-size:12px;margin:0 0 8px}
+#v5-root .v5-dc-auto{font-size:13px;margin:6px 0 0;color:#cfe3df;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#v5-root .v5-linkbtn{min-height:44px;padding:4px 12px;font-size:13px}
+#v5-root .v5-dc-probechoice{display:grid;gap:4px;font-size:12px;color:var(--v5muted);margin-top:6px}
+#v5-root .v5-dc-probe-select{min-height:44px}
+/* v5.5 step 1: "+1" (extra portion) next to ✕ in "Jouw menu" */
+#v5-root .v5-menu-actions{display:flex;gap:6px;flex:0 0 auto;align-items:center}
+#v5-root .v5-menu-actions .v5-mini-btn{min-width:44px;min-height:44px}

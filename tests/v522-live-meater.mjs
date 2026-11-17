@@ -59,8 +59,14 @@ try{
  w.__testNow+=65000;w.__intervals[1000][0]();
  assert.match(kamado.textContent,/Vertraagd · HA-update 1 min 8 s geleden/,'old value labelled');
  w.__testNow+=240000;w.__intervals[1000][0]();
- assert.ok(!kamado.textContent.includes('54,8'),'expired core hidden');
- assert.match(kamado.textContent,/Geen verse live MEATER-meting/,'existing cutoff enforced');
+ // v5.5 (review PR #44, finding 2): HA writes no new state for an unchanged value; while the sensor is available the
+ // value stays with "geen verandering sinds" and is never labelled LIVE.
+ assert.match(kamado.textContent,/54,8 °C[\s\S]*Geen verandering sinds \d\d:\d\d/,'unchanged value labelled');
+ assert.ok(!kamado.textContent.includes('● LIVE'),'no LIVE label for an unchanged value');
+ // The probe goes offline: HA reports unavailable → no value (the old cutoff now follows the sensor state).
+ w.__v522FakeHaReading('pro',{internal:{state:'unavailable',last_updated:new Date(w.__testNow).toISOString()},ambient:{state:'unavailable',last_updated:new Date(w.__testNow).toISOString()}});
+ assert.ok(!kamado.textContent.includes('54,8'),'unavailable core hidden');
+ assert.match(kamado.textContent,/Kerntemperatuur niet beschikbaar/,'unavailable sensor: no value');
  assert.equal($('#v5-root .v5-content'),root,'stale update does not rebuild');
  assert.equal(w.__intervals[30000]?.length,1,'one 30-second schedule-only timer');
  w.__intervals[30000][0]();

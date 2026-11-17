@@ -61,6 +61,7 @@ jobs:
           node tests/v523-schedule-no-redraw.mjs
           node tests/v530-live-card.mjs
           node tests/v540-eta-live.mjs
+          node tests/v550-session-restore.mjs
           node tests/v520-data-upgrade.mjs
           node tests/v6-engine.mjs && node tests/v6-shadow.mjs
           node tests/v6-optimizer.mjs
@@ -92,6 +93,7 @@ jobs:
           node tests/v6-pr3-lock-browser.mjs
           node tests/v6-pr3-real-v5-browser.mjs
           node tests/v520-mobile-ux.mjs
+          node tests/v550-live-timeline.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

@@ -18,6 +18,7 @@
 //                               aan de base en aan de policy.
 //                               Een nieuw berichttype mag alleen als het in de policy staat onder
 //                               newDataContractIdentifiers én dataContractIdentifiers (geen hernoeming).
+//                               Een nieuwe opslagregel mag alleen als hij letterlijk in declaredStorageLines staat.
 // Gebruik: node tests/v5-publication-guard.mjs [--base <ref>] [--root <dir>] [--json]
 // Base: --base, anders $GUARD_BASE (CI: PR-base-SHA of push-before-SHA), anders merge-base met origin/main.
 // Zonder vaststelbare base faalt de controle (fail-closed).
@@ -263,6 +264,10 @@ export function checkPublication({root = process.cwd(), base, policyFile = '.git
     if (vsPolicy.added.length || vsPolicy.removed.length) add('STORAGE_CONTRACT', '.github/publication-guard.json', `identificatoren t.o.v. policy: +[${vsPolicy.added}] -[${vsPolicy.removed}]`);
     for (const k of new Set([...Object.keys(b.constants), ...Object.keys(h.constants)])) if (b.constants[k] !== h.constants[k]) add('STORAGE_CONTRACT', k.split(':')[0], `sleutelconstante ${k.split(':')[1]}: ${b.constants[k]} → ${h.constants[k]}`);
     const lines = diffList(b.lines, h.lines);
+    // Alleen toevoegen mag, en alleen een regel die letterlijk (bestand + getrimde regel) in declaredStorageLines staat.
+    // Een gewijzigde of verwijderde bestaande regel blijft verboden.
+    const declaredLines = Array.isArray(policy.declaredStorageLines) ? policy.declaredStorageLines : [];
+    lines.added = lines.added.filter(x => !declaredLines.includes(x));
     for (const l of lines.added) add('STORAGE_CONTRACT', l.split(':')[0], `nieuwe/gewijzigde opslag- of schemaregel: ${l.slice(l.indexOf(':') + 2, l.indexOf(':') + 160)}`);
     for (const l of lines.removed) add('STORAGE_CONTRACT', l.split(':')[0], `verwijderde/gewijzigde opslag- of schemaregel: ${l.slice(l.indexOf(':') + 2, l.indexOf(':') + 160)}`);
   }

@@ -60,12 +60,17 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
   try{
     press('new');addRecipe('Ribeye 500 g');
     const bridge=w.__v530Bridge,ribeye=bridge.getState().dishes[0];
-    assert.equal(ribeye.meater,'pro','AANNAME default: MEATER Pro on the first dish of the large kamado');
+    // v5.5 (review PR #43, finding 3): no automatic probe on the public website (no HA bridge seen yet).
+    // The default (Pro → first dish on the large kamado) only applies in the HA card; see tests/v550-live-timeline.mjs.
+    assert.equal(ribeye.meater,'none','no default probe without Home Assistant');
     press('setup');
-    const select=$('select[data-v5-meater="'+ribeye.id+'"]');
+    let select=$('select[data-v5-meater="'+ribeye.id+'"]');
     assert.ok(select,'thermometer choice in step 2');
     assert.deepEqual([...select.options].map(o=>o.value),['none','pro','plus']);
+    select.value='pro';select.dispatchEvent(new w.Event('change',{bubbles:true}));
+    select=$('select[data-v5-meater="'+ribeye.id+'"]');
     assert.equal(select.value,'pro');
+    assert.equal(bridge.getState().dishes[0].meaterAuto,false,'a choice in step 2 is marked as manual (optional field)');
     press('prep');press('live');
     await flush();
     assert.equal(wake.requests,1,'wake lock requested while Live is visible');
@@ -111,16 +116,21 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
     assert.match(slot(ribeye.id,'eta').textContent,/MEATER-ETA zegt \d\d:\d\d/,'MEATER ETA shown as second opinion');
     assert.equal($('#v5-root .v5-content'),cardRoot,'still no rebuild');
 
-    // 3. No new reading: delayed label, then (after five minutes) no core value at all.
+    // 3. No new reading: delayed label; after five minutes (v5.5, review PR #44 finding 2) "geen verandering sinds"
+    //    while HA keeps the sensor available; once the sensor is unavailable no core value at all.
     w.__testNow+=2*60000;tick();
     assert.match(slot(ribeye.id,'core').textContent,/45,5 °C[\s\S]*Vertraagd/,'stale label after a minute');
-    w.__testNow+=4*60000;tick(); // 6 minutes since the last reading
+    w.__testNow+=4*60000;tick(); // 6 minutes since the last change
+    const held=slot(ribeye.id,'core').textContent;
+    assert.match(held,/45,5 °C[\s\S]*Geen verandering sinds \d\d:\d\d/,'unchanged value kept with its own label: '+held);
+    assert.ok(!$('#v5-root').textContent.includes('● LIVE'),'an unchanged value is never labelled LIVE');
+    w.__v530Reading('pro',idle('unavailable','unavailable')); // MEATER offline: HA reports the sensors unavailable
     const stale=slot(ribeye.id,'core').textContent;
-    assert.ok(!stale.includes('45,5'),'expired core hidden: '+stale);
+    assert.ok(!stale.includes('45,5'),'unavailable core hidden: '+stale);
     assert.match(stale,/— °C/);
-    assert.match(stale,/Geen verse live MEATER-meting/,'existing five-minute cutoff');
-    assert.ok(!$('#v5-root').textContent.includes('● LIVE'),'no LIVE label for an expired value');
-    assert.doesNotMatch(slot(ribeye.id,'env').textContent,/°C\/min/,'no rise without a fresh reading');
+    assert.match(stale,/Kerntemperatuur niet beschikbaar/,'unavailable sensor');
+    assert.ok(!$('#v5-root').textContent.includes('● LIVE'),'no LIVE label for an unavailable value');
+    assert.doesNotMatch(slot(ribeye.id,'env').textContent,/°C\/min/,'no rise without a usable reading');
     // v5.4 (review PR #43, finding 2): a dish on the grill no longer jumps back to the planning.
     assert.match(slot(ribeye.id,'eta').textContent,/Laatste schatting \d\d:\d\d[\s\S]*verouderd: meting 6 min oud/,'last estimate, marked stale');
     assert.doesNotMatch(slot(ribeye.id,'eta').textContent,/planning/,'not the planning');
@@ -166,6 +176,8 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
     assert.equal(chicken.meater,'none','no default for a second dish on the same kamado');
     press('setup');
     const choose=(dish,value)=>{const el=$('select[data-v5-meater="'+dish.id+'"]');el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
+    choose(ribeye,'pro'); // v5.5: chosen in step 2 (no automatic default on the public website)
+    assert.equal(ribeye.meater,'pro');
     choose(chicken,'pro');
     assert.equal(alerts.length,1,'duplicate probe refused with a message');
     assert.equal(chicken.meater,'none','duplicate probe not stored');

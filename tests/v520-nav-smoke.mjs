@@ -55,7 +55,7 @@ try{
  press('recipes');expectLegacy('v47-recipes','← Vandaag','recipes','Vandaag → Recepten');
  back().click();expectV5('home','home','← Vandaag from Recepten');
  press('history');expectLegacy('v47-more','← Vandaag','more','Vandaag → Historie');
- assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.4.0','App en info shows loaded app version');
+ assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.5.0','App en info shows loaded app version');
  assert.equal($('v520-app-version')?.parentElement?.id,'v520-more-app','version located in App en info');
  back().click();expectV5('home','home','← Vandaag from Historie');
 
@@ -94,7 +94,11 @@ try{
  const keysAfter=Object.keys(w.localStorage).sort();
  const allowed=new Set([...keysBefore,'kamado-bereidingsplanner-v1','bbq-v5-session-v1','bbq-v5-previous-plan-v1','bbq-v47-tab','bbq-v47-expanded-v1','bbq-v501-recipe-tab-v1','kamado-recipe-book-v1','kamado-reviews-v1','kamado-recipe-deletions-v1']);
  assert.ok(keysAfter.every(k=>allowed.has(k)),'no new storage keys: '+keysAfter);
- assert.ok(!Object.values({...w.localStorage}).some(v=>/legacyReturn|"returnTo"/.test(String(v))),'return step not persisted');
+ // v5.5 (user bug "na wegklikken terug naar het eerste scherm"): the return step may now be persisted, but ONLY as part of
+ // the optional field `view` in bbq-v5-session-v1 (so a reloaded card reopens the same page); nowhere else.
+ assert.ok(!Object.entries({...w.localStorage}).some(([k,v])=>k!=='bbq-v5-session-v1'&&/legacyReturn|"returnTo"/.test(String(v))),'return step not persisted outside the session view');
+ const sessionMeta=JSON.parse(w.localStorage.getItem('bbq-v5-session-v1')||'{}');
+ assert.ok(!/legacyReturn|"returnTo"/.test(JSON.stringify({...sessionMeta,view:undefined})),'return step only inside session.view');
  assert.equal(d.querySelectorAll('nav').length,2,'no extra navigation element');
  assert.deepEqual(errors,[],'no page errors');
  console.log('PASS v5.2 navigation smoke (back destination, bottom nav, MEATER/focus reachability, list semantics)');

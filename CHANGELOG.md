@@ -2,7 +2,16 @@
 
 > Actueel gepubliceerd: [v5.2.3](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.4.0 — Eigen schattingsmodule (releasekandidaat, niet gepubliceerd)
+## v5.5.0 — Tijdlijn op Live en "Zo meteen" (releasekandidaat, niet gepubliceerd)
+- Compacte tijdlijn bovenaan Live: per kamado gepland (stippelkader) naast verwacht (kleur), fasen, nu-lijn en serveerlijn; ververst met de 30-s-timer, niet bij sensorupdates. "Alle stappen" opent de ene takenlijst.
+- "Zo meteen"-hero uit schatting en fase (bijv. "Stook de grote kamado op naar ~250 °C" rond 47 °C bij reverse sear). Aansteken wordt automatisch afgevinkt zodra een gerecht op die kamado ligt. Taken tonen "verwacht" naast "gepland" bij meer dan 5 min verschil.
+- "Pas planning aan op verwachting" alleen bij meer dan 10 min afwijking, met voor/na en bevestiging.
+- HA-kaart: MEATER automatisch herkennen en koppelen (zichtbaar, wijzigbaar, nooit over een eigen keuze); publieke website koppelt geen probe meer automatisch. Nieuw optioneel veld `meaterAuto`.
+- Bugfix stap 1: tik op een gekozen recept = uit het menu (laatste portie eerst); "+1" voor een extra portie; een gestart gerecht blijft staan met een melding.
+- Bugfix: na wisselen van app (HA laadt de kaart opnieuw) opent een actieve sessie het laatste scherm met scrollpositie (binnen 12 uur), via het optionele veld `view` in `bbq-v5-session-v1`.
+- Versheid: een ongewijzigde maar beschikbare HA-waarde is "geen verandering sinds HH:MM" en laat de schatting niet vervallen; `unavailable` of een verbroken HA-verbinding verbergt de waarde.
+
+## v5.4.0 — Eigen schattingsmodule (gemerged via PR #44, niet gepubliceerd)
 - Eén schattingsmodule (`dist/bbq-eta.js`, als ES-module `engine/eta.mjs`) voor de Live-kaart, het slimme advies, de MEATER-pagina en de meldingen. Newton-opwarming met robuuste helling, fasedoel bij reverse sear, stall-herkenning, marge uit de spreiding van de metingen en doorgaaradvies.
 - De schatting rekent vanaf de laatste meting en schuift niet meer mee met de klok. Een gerecht dat al op de BBQ ligt, valt niet meer terug op de planning: eigen curve → MEATER-ETA → werkelijke start + receptduur → planning. Een verouderde meting (5–15 min) toont "Laatste schatting HH:MM · verouderd".
 - Voortgangsbalk vanaf de eerste meting van de sessie.

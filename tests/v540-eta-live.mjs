@@ -65,6 +65,8 @@ const clock=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-
   const {w,$,slot,tick,tick30,idle,errors,ribeyeOnGrill}=t;
   try{
     const ribeye=ribeyeOnGrill(),root=$('#v5-root .v5-content');
+    // v5.5: no probe is linked on the public website; the first HA reading links the measuring MEATER Pro automatically.
+    assert.equal(w.__v540Bridge.getState().dishes[0].meater,'none','no default probe without a Home Assistant bridge');
     for(let i=0;i<=80;i++){
       if(i)w.__testNow+=30000;
       w.__v540Reading('pro',idle(coreAt(i/2).toFixed(1),i<2?14:121));
@@ -97,13 +99,21 @@ const clock=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-
     // Review finding 1: no new reading → "Op tafel rond" stays exactly the same (1-s and 30-s timers running).
     for(let s=1;s<=270;s++){w.__testNow+=1000;tick();if(s%30===0)tick30();}
     assert.equal(eta(),first,'no drift after 4.5 min without a reading');
-    // Review finding 2: 6 min without a reading → last estimate with a stale label, never the planned end.
+    // v5.5 (review PR #44, finding 2): HA writes no new state for an unchanged value. While the sensor stays available,
+    // 6 min without a change is "geen verandering sinds", the estimate stays (same time, not stale, not the planning).
     w.__testNow=lastReading+6*60000+1000;tick();tick30();
-    const stale=eta(),time=first.match(/^Op tafel rond (\d\d:\d\d)/)[1];
+    const time=first.match(/^Op tafel rond (\d\d:\d\d)/)[1];
+    assert.equal(eta().match(/^Op tafel rond (\d\d:\d\d)/)?.[1],time,'unchanged value: same estimate, not expired: '+eta());
+    assert.match(slot(ribeye.id,'core').textContent,/45,5 °C[\s\S]*Geen verandering sinds \d\d:\d\d/,'unchanged since, value kept');
+    assert.doesNotMatch(slot(ribeye.id,'core').textContent,/● LIVE/,'an unchanged value is not labelled LIVE');
+    // Review finding 2 of PR #43 (kept): the probe goes offline (HA: unavailable) → last estimate with a stale label,
+    // never the planned end. Before v5.5 a missing update alone triggered this; now only an unavailable sensor does.
+    const off=idle('unavailable','unavailable');w.__v540Reading('pro',off);tick();tick30();
+    const stale=eta();
     assert.equal(stale.match(/^Laatste schatting (\d\d:\d\d)/)?.[1],time,'same time, labelled as last estimate: '+stale);
     assert.match(stale,/verouderd: meting 6 min oud/);
     assert.doesNotMatch(stale,/planning|18:30/,'not the planned end (18:30): '+stale);
-    assert.match(slot(ribeye.id,'core').textContent,/— °C/,'existing five-minute cutoff for the core still applies');
+    assert.match(slot(ribeye.id,'core').textContent,/— °C[\s\S]*Kerntemperatuur niet beschikbaar/,'no core value while the sensor is unavailable');
     // 16 min: the curve is no longer used → registered start + recipe duration (55 + 15 ombouw) + 8 rest.
     w.__testNow=lastReading+16*60000;tick();
     const later=eta();

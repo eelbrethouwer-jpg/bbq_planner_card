@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v5.4.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v5.5.0 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.4.0', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.5.0', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'
@@ -104,11 +104,16 @@
     _snapshot(){
       if(!this._hass)return null;
       const probes={};
+      // v5.5: while the frontend has lost its connection to HA, hass.states is frozen. Report the probes as
+      // unavailable instead of letting an old value look current (hass.connected is part of the HA frontend state).
+      const offline=this._hass.connected===false;
       for(const [name,prefix] of Object.entries(PROBES)){
         const result={};
         for(const [field,suffix] of Object.entries(SUFFIXES)){
           const item=this._hass.states[prefix+suffix];
-          result[field]=item?{state:item.state,last_updated:item.last_updated}:null;
+          // last_reported (HA >= 2024.3) is only forwarded when the frontend provides it; today's hass.states does not.
+          result[field]=item?{state:offline?'unavailable':item.state,last_updated:item.last_updated,
+            ...(typeof item.last_reported==='string'&&item.last_reported?{last_reported:item.last_reported}:{})}:null;
         }
         probes[name]=result;
       }

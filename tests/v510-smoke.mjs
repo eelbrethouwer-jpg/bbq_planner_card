@@ -94,10 +94,12 @@ try{
  bridge().getTasks=()=>[{id:day+'|large:fire',time:Date.now(),title:'Aansteektaak',k:'large'}];
  bridge().calculate=()=>({...originalCalculate(),dishes:[{...dishes[0],kamado:'large',start:200},{...dishes[1],kamado:'large',start:100}]});render();press('recipe-in-live');assert.equal(w.__scrolledDish,dishes[1].id);
  press('dish:'+dishes[0].id);assert.equal(w.__scrolledDish,dishes[0].id);
+ // v5.5: the public website no longer links a probe by default (review PR #43, finding 3); fixture: probe chosen for dish 1.
+ bridge().getState().dishes[0].meater='pro';
  bridge().getProbe=()=>({ok:false,note:'Geen verse live MEATER-meting (maximaal vijf minuten oud)'});render();
  // v5.3: one card per dish; a dish with a probe but without a fresh reading shows dashes, never a value.
  const probeCards=()=>[...root().querySelectorAll('[data-v5-dishcard]')].filter(card=>/MEATER (Pro|Plus)/.test(card.querySelector('.v5-dc-title').textContent));
- assert.ok(probeCards().length>=1,'default probe linked to the first dish');
+ assert.ok(probeCards().length>=1,'probe linked to the first dish');
  for(const card of probeCards()){const core=card.querySelector('[data-v5-slot="core"]');assert.match(core.textContent,/— °C/);assert.match(core.textContent,/maximaal vijf minuten oud/)}
  bridge().getProbe=()=>({ok:true,core:51.2,ambient:115,updatedAt:Date.now()});render();assert.match(probeCards()[0].querySelector('[data-v5-slot="core"]').textContent,/51,2 °C[\s\S]*● LIVE · HA-update/);
  const originalKamados=dishes.map(d=>d.kamado);dishes.forEach(d=>d.kamado='large');render();
@@ -119,6 +121,8 @@ try{
  assert.deepEqual(Object.keys(saved).sort(),['availableFrom','date','dateMode','dishes','equipment','mealTime','preheatLarge','preheatSmall','smart','v46Done','v46MultiServe','v5Actual'],'v5.0.3 serialized plan schema');
  assert.deepEqual(Object.keys(saved.dishes[0]).sort(),['category','coachStep','cook','core','doneAt','fixedStart','grate','grate2','grill','id','kamado','meater','method','mode','name','notes','phase','phase2Minutes','phase2Temp','photo','prepTasks','recipeCook','recipeIngredients','recipePrep','recipeRest','recipeSlice','recipeSource','recipeSteps','rest','restAt','serveSlot','startedAt','transitionMins','v46BasePeople','v46TimerEndsAt'],'v5.0.3 serialized dish schema');
  assert.equal(typeof saved,'object');assert.ok(Array.isArray(saved.dishes));assert.equal(typeof saved.v46Done,'object');assert.equal(typeof saved.v5Actual,'object');
- assert.deepEqual(Object.keys(JSON.parse(w.localStorage.getItem('bbq-v5-session-v1'))).sort(),['active','created','stage','version']);
+ // v5.5: optional field `view` (last screen of an active session, bug "terug naar het eerste scherm"); the rest is unchanged.
+ assert.deepEqual(Object.keys(JSON.parse(w.localStorage.getItem('bbq-v5-session-v1'))).filter(k=>k!=='view').sort(),['active','created','stage','version']);
+ assert.equal(typeof JSON.parse(w.localStorage.getItem('bbq-v5-session-v1')).view.screen,'string','view saved while navigating');
  assert.deepEqual(errors,[]);console.log('OK v5.1.1: cooking access, dates, unused kamado, single nav, live order, render retention, exact recipe IDs, fresh/stale probes, origin badges, unchanged storage keys');
 }finally{w.close()}

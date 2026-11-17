@@ -4,10 +4,11 @@ Dit is het **enige actieve projectstatus- en overdrachtsdocument** voor de regis
 
 ## Ontwikkelstatus (17 november 2026)
 - Repository: [eelbrethouwer-jpg/bbq_planner_card](https://github.com/eelbrethouwer-jpg/bbq_planner_card).
-- `main` staat op `b2992e9364331aaf5cbc9a3150f18edea6014b37` (merge PR #45, PR 3 tijdlijn op Live en "Zo meteen"; code v5.5.0).
-- Release **v5.5.0** (bevat v5.3.0, v5.4.0 en v5.5.0): wordt gepubliceerd via `.github/workflows/release-v5.5.0-once.yml` na merge van de releasework-PR en groene CI; **nog niet geverifieerd**. Gebruikersakkoord voor deze release gegeven op 17 november 2026. v5.3.0 en v5.4.0 zijn niet afzonderlijk gepubliceerd.
-- Laatste gepubliceerde GitHub-release: [v5.2.3 — Rustig Live-scherm](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3), gepubliceerd op 9 november 2026.
-- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken), PR 1 (v5.3.0, Live-gerechtkaart), PR 2 (v5.4.0, eigen schattingsmodule) en PR 3 (v5.5.0, tijdlijn op Live en "Zo meteen") zijn gemerged. Volgende geplande stappen: eerst **kaart op volledig scherm in HA-panel-view**, daarna **meldingen**.
+- `main` staat op `af9cf3fc730a9c5950fbd99f38aeb2fa9ebfbf20` (merge PR #46, release v5.5.0 via eenmalige workflow; app-code v5.5.0 gelijk aan PR #45).
+- Release **v5.5.0** (bevat v5.3.0, v5.4.0 en v5.5.0): **gepubliceerd en geverifieerd** — tag `v5.5.0` → `af9cf3fc730a9c5950fbd99f38aeb2fa9ebfbf20`, [release v5.5.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.5.0), gepubliceerd op 17 november 2026 om 16:19 UTC (geverifieerd door de regisseur). v5.3.0 en v5.4.0 zijn niet afzonderlijk gepubliceerd.
+- Laatste gepubliceerde GitHub-release: v5.5.0 (hierboven). Daarvoor: v5.2.3 (9 november 2026).
+- In uitvoering: **draft-PR v5.5.1 "Kaart op volledig scherm in een HA-panel-view"** (branch `feat/v5.5.1-volledig-scherm`, basis `af9cf3fc730a9c5950fbd99f38aeb2fa9ebfbf20`); wacht op review van de regisseur en akkoord van de gebruiker.
+- Nieuw traject: **live koken en tijdlijn** (zie roadmap hieronder). PR 0 (werkafspraken), PR 1 (v5.3.0, Live-gerechtkaart), PR 2 (v5.4.0, eigen schattingsmodule) en PR 3 (v5.5.0, tijdlijn op Live en "Zo meteen") zijn gemerged en gepubliceerd als v5.5.0. Nu: **kaart op volledig scherm in HA-panel-view** (draft-PR v5.5.1); daarna **meldingen**.
 - Keuze van de gebruiker (17 november 2026), **route 1**: koken in de Home Assistant-app op volledig scherm (een dashboard met een panel-view met alleen de planner-kaart). Zijn HA is alleen lokaal via http bereikbaar; de publieke https-website kan daarom niet met HA verbinden (mixed content).
 - De officiële Home Assistant-MEATER-integratie leest ongeveer iedere 30 seconden uit de MEATER Cloud. Zonder kooksessie in de MEATER-app komen alleen kern- en omgevingstemperatuur binnen. Vanuit HA kun je geen doel instellen en geen kooksessie starten.
 - Geen echte iPhone-, Home Assistant- of MEATER-hardwaretest in de CI.
@@ -48,9 +49,9 @@ Doel van de gebruiker: alles in deze app doen, niet in de MEATER-app. Live beant
 | 0 | Werkafspraken bijwerken (alleen documentatie) | geen bump | gemerged (merge-SHA `357252b78c9136d35d0868e4ad6b3ad4f8de7e06`) |
 | 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | gemerged (merge-SHA `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1`) |
 | 2 | Eigen schattingsmodule `engine/eta.mjs` (Newton-opwarming, fasedoel, stall, marge, bronvolgorde) en meetgeschiedenis uit HA bij openen | 5.4.0 | gemerged (merge-SHA `948249decc1574d93f50c4141f7422d30e5b254d`) |
-| 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid; MEATER automatisch herkennen in de HA-kaart; versheid "geen verandering sinds"; bugfixes "gerecht deselecteren in stap 1" en "na wegklikken terug naar het laatste scherm" | 5.5.0 | gemerged (merge-SHA `b2992e9364331aaf5cbc9a3150f18edea6014b37`); release v5.5.0 wordt gepubliceerd via eenmalige workflow (nog niet geverifieerd) |
-| na 3 | Planner-kaart op volledig scherm in een HA-panel-view: hoogte vult het scherm zonder dubbele scrollbalk, optie `fullscreen: true` in de kaart-YAML, korte installatie-instructie in README (samen met of vóór de meldingen) | n.t.b. | gepland, volgende stap |
-| na 3 | Meldingen: `notify.mobile_app_*` automatisch voorstellen | n.t.b. | gepland, na volledig scherm |
+| 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid; MEATER automatisch herkennen in de HA-kaart; versheid "geen verandering sinds"; bugfixes "gerecht deselecteren in stap 1" en "na wegklikken terug naar het laatste scherm" | 5.5.0 | gemerged (merge-SHA `b2992e9364331aaf5cbc9a3150f18edea6014b37`); gepubliceerd als release v5.5.0 op 17 november 2026 (tag → `af9cf3fc730a9c5950fbd99f38aeb2fa9ebfbf20`, geverifieerd) |
+| na 3 | Planner-kaart op volledig scherm in een HA-panel-view: hoogte vult het scherm zonder dubbele scrollbalk, optie `fullscreen: true`/`false` in de kaart-YAML, korte installatie-instructie in README | 5.5.1 | draft-PR (branch `feat/v5.5.1-volledig-scherm`) |
+| na 3 | Meldingen: `notify.mobile_app_*` automatisch voorstellen | n.t.b. | gepland, volgende stap na volledig scherm |
 | — | Home Assistant koppelen op de publieke website (opt-in, HA-login via OAuth, live MEATER en meldingen in de PWA) | n.t.b. | **geparkeerd** — voorwaarde: HA via https bereikbaar (Nabu Casa of eigen domein) |
 | 4 | Optioneel fasedoel `coreAt` in receptstappen en meldingen via `notify.mobile_app_*` | 5.6.0 | gepland |
 | 5 | Planning eenvoudiger: kamadokeuze bij toevoegen, urgente conflicten bovenaan, "Plan opnieuw vanaf nu" | 5.7.0 | gepland |
@@ -68,6 +69,7 @@ Versies zijn een plan, geen releasebelofte. Elke PR stopt na oplevering; de volg
 - Na PR 2: de eigen schatting tijdens een echte kooksessie (ribeye, kip, en een lange sessie met stall) en of de meetgeschiedenis bij openen echt uit Home Assistant komt (`history/history_during_period`).
 - Na PR 3: met een echte MEATER in HA of de juiste probe automatisch gekoppeld wordt (ook als de andere probe uit de lader ligt), of "Geen verandering sinds HH:MM" klopt bij een stilstaande kern en of de waarde verdwijnt als de MEATER offline gaat; de leesbaarheid van de tijdlijn op een echte iPhone in de HA-app.
 - Na PR 3: in de HA-app (panel-view) wisselen naar een andere app en terug: de planner staat weer op hetzelfde scherm en dezelfde plek.
+- Na v5.5.1: in de HA-app op een echte iPhone, in een panel-view: de kaart vult het scherm tot onderaan, de HA-pagina scrolt niet, de onderste navigatie van de planner staat boven de thuisbalk en blijft in beeld na draaien, na het toetsenbord en na wisselen van app; `fullscreen: false` geeft het oude gedrag.
 - Na PR 4: meldingen komen echt aan op de telefoon via `notify.mobile_app_*`.
 
 ## Start- en afsluitcheck

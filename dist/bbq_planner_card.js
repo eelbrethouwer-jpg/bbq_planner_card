@@ -1,9 +1,9 @@
-/* BBQ-bereidingsplanner v5.5.0 — HACS/Home Assistant live bridge.
+/* BBQ-bereidingsplanner v5.5.1 — HACS/Home Assistant live bridge.
    Alleen publiek bekende entiteitsnamen, GEEN wachtwoorden / API-tokens.
    Deze custom Lovelace-kaart gebruikt de bestaande ingelogde Home Assistant-sessie. */
 (() => {
   'use strict';
-  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.5.0', import.meta.url).href;
+  const SOURCE=new URL('./BBQ_bereidingsplanner_MEATER_v4.html?v=5.5.1', import.meta.url).href;
   const PROBES={
     pro:'sensor.meater_probe_00e865be_',
     plus:'sensor.meater_probe_c7dbf045_'
@@ -81,6 +81,9 @@
       super();this._hass=null;this._iframe=null;this._lastPayload='';this._onMsg=this._onMsg.bind(this);
       this._cookbookConn=null;this._cookbookUnsub=null;this._reviewsConn=null;this._reviewsUnsub=null;this._syncQueue=Promise.resolve();
       this._historyWanted=false;this._historyBusy=false;
+      // v5.5.1: full-screen layout in a Home Assistant panel view (layout only; no data or message changes).
+      this._fullscreen=false;this._fitRaf=0;this._fitTimer=0;this._fitBound=false;this._card=null;this._safeProbe=null;
+      this._scheduleFit=this._scheduleFit.bind(this);this._onOrientation=this._onOrientation.bind(this);
     }
     setConfig(cfg){
       this._config=cfg||{};
@@ -93,12 +96,114 @@
         iframe.style.cssText='width:100%;min-height:900px;height:1100px;display:block;border:0;background:#0c1318;';
         iframe.src=SOURCE;
         iframe.addEventListener('load',()=>{this._lastPayload='';this._send();});
-        card.appendChild(iframe);this.appendChild(card);this._iframe=iframe;
+        card.appendChild(iframe);this.appendChild(card);this._iframe=iframe;this._card=card;
       }
+      this._updateFullscreen();
       this._send();
     }
-    connectedCallback(){window.addEventListener('message',this._onMsg);this._ensureCookbookSubscription();this._ensureReviewsSubscription();}
-    disconnectedCallback(){window.removeEventListener('message',this._onMsg);this._stopCookbookSubscription();this._stopReviewsSubscription();}
+    connectedCallback(){
+      window.addEventListener('message',this._onMsg);this._ensureCookbookSubscription();this._ensureReviewsSubscription();
+      // The panel view may attach the card before its own shadow tree is complete: detect now and after the next frame.
+      this._updateFullscreen();requestAnimationFrame(()=>this._updateFullscreen());
+    }
+    disconnectedCallback(){
+      window.removeEventListener('message',this._onMsg);this._stopCookbookSubscription();this._stopReviewsSubscription();
+      this._unbindFit();
+    }
+    /* v5.5.1 full screen. Choice: only the iframe scrolls, the Home Assistant page itself does not.
+       The planner has its own fixed bottom navigation inside the iframe; that navigation is only reachable when the
+       iframe bottom coincides with the visible screen bottom. A taller iframe inside a scrolling HA page would give two
+       nested scroll areas and push the navigation off screen.
+       fullscreen: true  -> always full screen; fullscreen: false -> previous behaviour (v4.7 viewport estimate);
+       not set           -> full screen only when the card sits in a hui-panel-view (auto-detected). */
+    _inPanelView(){
+      let node=this;
+      for(let depth=0;node&&depth<60;depth++){
+        const name=node.localName;
+        if(name==='hui-panel-view')return true;
+        if(name==='hui-masonry-view'||name==='hui-sections-view'||name==='hui-sidebar-view')return false;
+        const parent=node.parentNode;
+        node=parent&&parent.nodeType===11&&parent.host?parent.host:parent; // 11 = shadow root: continue at its host
+        if(node&&node.nodeType===9)break; // document
+      }
+      return false;
+    }
+    _fullscreenWanted(){
+      const option=this._config?.fullscreen;
+      if(option===true||option==='true')return true;
+      if(option===false||option==='false')return false;
+      return this.isConnected&&this._inPanelView();
+    }
+    _updateFullscreen(){
+      if(!this._iframe||!this._card)return;
+      const wanted=this._fullscreenWanted();
+      if(wanted===this._fullscreen){if(wanted&&this.isConnected){this._bindFit();this._scheduleFit();}return;}
+      this._fullscreen=wanted;
+      if(wanted){
+        this.style.display='block';
+        this._card.style.cssText='display:block;box-sizing:border-box;overflow:hidden;background:#0c1318;border-radius:0;'+
+          'padding:0 0 env(safe-area-inset-bottom,0px) 0;margin:0;';
+        this._iframe.style.cssText='width:100%;height:100%;min-height:0;display:block;border:0;background:#0c1318;';
+        if(!this._safeProbe){
+          const probe=document.createElement('div');
+          probe.setAttribute('aria-hidden','true');
+          probe.style.cssText='position:absolute;visibility:hidden;pointer-events:none;width:0;height:0;padding:0 0 env(safe-area-inset-bottom,0px) 0;';
+          this._card.appendChild(probe);this._safeProbe=probe;
+        }
+        if(this.isConnected){this._bindFit();this._fit();}
+      }else{
+        this._unbindFit();
+        this.style.display='';
+        this._card.style.cssText='display:block;overflow:hidden;background:#0c1318;border-radius:16px;';
+        if(this._safeProbe){this._safeProbe.remove();this._safeProbe=null;}
+        this._iframe.style.cssText='width:100%;min-height:900px;height:1100px;display:block;border:0;background:#0c1318;';
+      }
+    }
+    _bindFit(){
+      if(this._fitBound)return;this._fitBound=true;
+      window.addEventListener('resize',this._scheduleFit);
+      window.addEventListener('orientationchange',this._onOrientation);
+      window.visualViewport?.addEventListener('resize',this._scheduleFit);
+      if(typeof ResizeObserver==='function'){
+        this._fitObserver=new ResizeObserver(this._scheduleFit);
+        this._fitObserver.observe(document.documentElement);
+      }
+    }
+    _unbindFit(){
+      if(!this._fitBound)return;this._fitBound=false;
+      window.removeEventListener('resize',this._scheduleFit);
+      window.removeEventListener('orientationchange',this._onOrientation);
+      window.visualViewport?.removeEventListener('resize',this._scheduleFit);
+      this._fitObserver?.disconnect();this._fitObserver=null;
+      if(this._fitRaf)cancelAnimationFrame(this._fitRaf);this._fitRaf=0;
+      clearTimeout(this._fitTimer);this._fitTimer=0;
+    }
+    _onOrientation(){
+      // iOS reports the new viewport size late after a rotation: measure now and once more after it settles.
+      this._scheduleFit();clearTimeout(this._fitTimer);this._fitTimer=setTimeout(this._scheduleFit,350);
+    }
+    _scheduleFit(){
+      if(!this._fullscreen||this._fitRaf)return;
+      this._fitRaf=requestAnimationFrame(()=>{this._fitRaf=0;this._fit();});
+    }
+    _viewportHeight(){
+      // Layout viewport (the area that position:fixed content and the HA app use). The visual viewport also shrinks for
+      // the on-screen keyboard and pinch zoom; resizing the iframe while typing would make the input jump.
+      return Math.round(window.innerHeight||document.documentElement.clientHeight||0);
+    }
+    _fit(){
+      if(!this._fullscreen||!this._card||!this.isConnected)return;
+      const viewport=this._viewportHeight();if(!viewport)return;
+      const scroller=document.scrollingElement||document.documentElement;
+      const top=Math.max(0,this._card.getBoundingClientRect().top+(scroller.scrollTop||0));
+      const apply=height=>{this._card.style.height=Math.max(240,Math.floor(height))+'px';};
+      const overflow=()=>Math.max(0,Math.ceil(scroller.scrollHeight-viewport));
+      const base=viewport-top;
+      apply(base);
+      // Padding or margins of the HA view below the card would still make the page scroll a few pixels: take them off.
+      const extra=overflow();
+      if(extra>0&&extra<400){apply(base-extra);if(overflow()>=extra)apply(base);}
+    }
     set hass(hass){this._hass=hass;this._send();this._ensureCookbookSubscription();this._ensureReviewsSubscription();if(this._historyWanted)this._loadHistory();}
     getCardSize(){return 12;}
     _snapshot(){
@@ -273,6 +378,7 @@
       if(event.data.__bbq==='bbq-notify-request-v1')this._sendNotification(event.data);
       if(event.data.__bbq==='bbq-child-height-v1'){
         const h=Number(event.data.height);
+        if(this._fullscreen){this._scheduleFit();return;}
         if(event.data.mode==='viewport'){
           // v4.7: constrain iframe to visible phone viewport so fixed navigation stays on screen.
           this._iframe.style.cssText='width:100%;height:calc(100dvh - 118px);min-height:460px;max-height:94dvh;display:block;border:0;background:#0c1318;overflow:auto;';

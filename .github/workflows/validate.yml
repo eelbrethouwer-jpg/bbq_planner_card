@@ -94,6 +94,7 @@ jobs:
           node tests/v6-pr3-real-v5-browser.mjs
           node tests/v520-mobile-ux.mjs
           node tests/v550-live-timeline.mjs
+          node tests/v551-panel-fullscreen.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

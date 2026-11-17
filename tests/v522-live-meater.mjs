@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 let html=fs.readFileSync('dist/BBQ_bereidingsplanner_MEATER_v4.html','utf8');
 assert.match(html,/window\.dispatchEvent\(new Event\('bbq-meater-updated'\)\)/);
-for(const file of ['bbq-v5.js','bbq-v501.js']){
+for(const file of ['bbq-eta.js','bbq-v5.js','bbq-v501.js']){ // v5.4: ETA-module first, as in production
   const re=new RegExp('<script src="\\./'+file.replace('.','\\.')+'\\?v=[^"]+"></script>');
   assert.match(html,re,'loader for '+file);
   html=html.replace(re,()=>'<script>'+fs.readFileSync('dist/'+file,'utf8')+'</script>');

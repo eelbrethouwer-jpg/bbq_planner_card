@@ -47,7 +47,7 @@ Doel van de gebruiker: alles in deze app doen, niet in de MEATER-app. Live beant
 | 0 | Werkafspraken bijwerken (alleen documentatie) | geen bump | gemerged (merge-SHA `357252b78c9136d35d0868e4ad6b3ad4f8de7e06`) |
 | 1 | Live-gerechtkaart per gerecht met schatting, bron en één coachregel; thermometer koppelen in stap 2; Screen Wake Lock | 5.3.0 | gemerged (merge-SHA `7cdc4b6c747b1b215eabe01d1c7f7c07dcaf04d1`) |
 | 2 | Eigen schattingsmodule `engine/eta.mjs` (Newton-opwarming, fasedoel, stall, marge, bronvolgorde) en meetgeschiedenis uit HA bij openen | 5.4.0 | gemerged (merge-SHA `948249decc1574d93f50c4141f7422d30e5b254d`) |
-| 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid; MEATER automatisch herkennen in de HA-kaart; versheid "geen verandering sinds" | 5.5.0 | draft-PR |
+| 3 | Tijdlijn bovenaan Live (gepland en verwacht, nu-lijn) en een "Zo meteen"-hero op basis van de werkelijkheid; MEATER automatisch herkennen in de HA-kaart; versheid "geen verandering sinds"; bugfixes "gerecht deselecteren in stap 1" en "na wegklikken terug naar het laatste scherm" | 5.5.0 | draft-PR |
 | na 3 | Planner-kaart op volledig scherm in een HA-panel-view: hoogte vult het scherm zonder dubbele scrollbalk, optie `fullscreen: true` in de kaart-YAML, korte installatie-instructie in README (samen met of vóór de meldingen) | n.t.b. | gepland |
 | na 3 | Meldingen: `notify.mobile_app_*` automatisch voorstellen | n.t.b. | gepland |
 | — | Home Assistant koppelen op de publieke website (opt-in, HA-login via OAuth, live MEATER en meldingen in de PWA) | n.t.b. | **geparkeerd** — voorwaarde: HA via https bereikbaar (Nabu Casa of eigen domein) |
@@ -66,6 +66,7 @@ Versies zijn een plan, geen releasebelofte. Elke PR stopt na oplevering; de volg
 - Na PR 1: scherm blijft aan tijdens het koken (Screen Wake Lock) op een echte iPhone.
 - Na PR 2: de eigen schatting tijdens een echte kooksessie (ribeye, kip, en een lange sessie met stall) en of de meetgeschiedenis bij openen echt uit Home Assistant komt (`history/history_during_period`).
 - Na PR 3: met een echte MEATER in HA of de juiste probe automatisch gekoppeld wordt (ook als de andere probe uit de lader ligt), of "Geen verandering sinds HH:MM" klopt bij een stilstaande kern en of de waarde verdwijnt als de MEATER offline gaat; de leesbaarheid van de tijdlijn op een echte iPhone in de HA-app.
+- Na PR 3: in de HA-app (panel-view) wisselen naar een andere app en terug: de planner staat weer op hetzelfde scherm en dezelfde plek.
 - Na PR 4: meldingen komen echt aan op de telefoon via `notify.mobile_app_*`.
 
 ## Start- en afsluitcheck

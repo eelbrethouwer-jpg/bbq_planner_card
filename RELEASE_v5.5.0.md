@@ -10,10 +10,13 @@
 - **"Pas planning aan op verwachting"** verschijnt alleen als de verwachte serveertijd meer dan 10 minuten afwijkt. De knop toont eerst voor/na; pas na "Bevestig" verandert de serveertijd (dezelfde route als "Serveren om" in stap 2). Zonder bevestiging blijft de opslag byte-gelijk.
 - **MEATER automatisch herkennen (Home Assistant-kaart).** De probe waarvan metingen binnenkomen, wordt gekoppeld aan het gerecht dat op de BBQ ligt (bij twee actieve vrije probes: de Pro). De kaart toont "MEATER Pro automatisch gekoppeld · wijzigen". Een keuze van de gebruiker wordt nooit overschreven en een probe wordt nooit van een ander gerecht afgepakt. Op de publieke website wordt geen probe meer automatisch gekoppeld.
 - **Versheid van de meting.** Home Assistant schrijft alleen een nieuwe staat als de waarde verandert. Een ongewijzigde waarde van een beschikbare sensor heet nu "Geen verandering sinds HH:MM" in plaats van "verouderd", en de schatting vervalt dan niet. Wordt de sensor `unavailable` (MEATER offline) of verliest de HA-app de verbinding, dan verdwijnt de waarde. `last_reported` wordt gebruikt als de HA-frontend het ooit meelevert; de huidige frontend doet dat niet (zie de PR).
+- **Bug: gerecht deselecteren in stap 1.** Een tik op een gekozen recept haalt het weer uit het menu (bij meerdere porties de laatst toegevoegde). Een extra portie voeg je toe met "+1" in "Jouw menu". Een gerecht dat al gestart is, verdwijnt niet via deze tik; je krijgt een melding.
+- **Bug: na wegklikken terug naar het eerste scherm.** De Home Assistant-app laadt de kaart na het wisselen van app vaak opnieuw. Bij een actieve sessie opent de planner nu het laatste scherm (Live, planning, voorbereiden, gerechten kiezen, recepten, Meer), inclusief scrollpositie, als dat minder dan 12 uur geleden is.
 - **Publieke website:** de tekst bij een gekoppelde probe is nu "Live-metingen alleen in de Home Assistant-kaart".
 
 ## Opslag
 - Nieuw **optioneel** veld per gerecht: `meaterAuto` (`true` = automatisch gekoppeld, `false` = keuze van de gebruiker, ook "Geen"; ontbreekt = oude data, behandeld als "niet gekozen" bij geen probe en als keuze bij een gekoppelde probe). Geen nieuwe sleutels, geen schemawijziging van bestaande velden.
+- Nieuw **optioneel** veld `view` in de bestaande sessiemetadata `bbq-v5-session-v1` (scherm, legacy-tab, terugkeerdoel, scrollpositie, tijd). Oude metadata zonder `view` start op Vandaag zoals voorheen. Geen nieuwe sleutel; de ene nieuwe opslagregel staat letterlijk in `declaredStorageLines` van de publicatiebewaking.
 - Bestaande taakstatus `v46Done` krijgt bij "Op BBQ gelegd" ook de aansteektaak van die kamado.
 
 ## Niet gewijzigd

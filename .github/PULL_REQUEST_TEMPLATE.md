@@ -33,8 +33,9 @@
 - [ ] Risico, terugvalplan en openstaande tests beschreven
 - [ ] Projectoverdracht, README/CHANGELOG en release-notities waar nodig bijgewerkt
 
-## Onafhankelijke Claude-review
+## Review door de regisseur (Claude)
 - Status: niet aangevraagd / GO / GO MET OPMERKINGEN / NO-GO
+- Link naar het reviewcommentaar in deze PR:
 - Bevindingen (ernst, bestand/regel, bewijs):
 - Opgeloste reviewpunten (#nr → SHA; n.v.t. toegestaan):
 - Hardware-/praktijktests nog open:
@@ -46,4 +47,4 @@
 - Beoogde tag en exacte codecommit:
 - Release notes en rollback:
 
-**Een groene CI, Claude-GO of ingevulde template geeft op zichzelf nooit toestemming om te mergen of te publiceren.** Zie [AI_WORKFLOW.md](../docs/AI_WORKFLOW.md).
+**Een groene CI, GO van de regisseur of ingevulde template geeft op zichzelf nooit toestemming om te mergen of te publiceren.** Zie [AI_WORKFLOW.md](../docs/AI_WORKFLOW.md).

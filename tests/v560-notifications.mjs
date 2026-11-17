@@ -160,7 +160,7 @@ const checkShape=reqs=>{
     assert.equal(requests().length,0,'no notification without a choice');
     const select=$('#v5-root [data-v5-notify-service]');
     select.value='notify.mobile_app_jans_iphone';select.dispatchEvent(new w.Event('change',{bubbles:true}));
-    const stored=JSON.parse(w.localStorage.getItem('bbq-planner-v4'));
+    const stored=JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1'));
     assert.equal(stored.v46Notify,true);assert.equal(stored.v46NotifyService,'notify.mobile_app_jans_iphone','choice in the existing settings');
     assert.equal(parts().value,'notify.mobile_app_jans_iphone');assert.equal(parts().toggle,'aan');
     tick60();
@@ -183,14 +183,14 @@ const checkShape=reqs=>{
     assert.match(line(),/Automatisch aan: dit is de enige telefoon in Home Assistant/,line());
     assert.match(line(),/Alleen zolang de planner open is in de Home Assistant-app/,'limitation shown at the setting');
     assert.equal(w.__v560Bridge.getNotify().auto,true);
-    assert.equal(JSON.parse(w.localStorage.getItem('bbq-planner-v4')).v46Notify,undefined,'the default is not written to storage');
+    assert.equal(JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Notify,undefined,'the default is not written to storage');
     assert.equal($('#v46-notify').checked,true,'Meer shows the same choice');
     // Off and on again: an explicit choice, stored in the existing fields.
     press('notify-toggle');
     assert.deepEqual([parts().device,parts().toggle,parts().auto],['Jan’s iPhone','uit',false],line());
-    assert.equal(JSON.parse(w.localStorage.getItem('bbq-planner-v4')).v46Notify,false);
+    assert.equal(JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1')).v46Notify,false);
     press('notify-toggle');
-    let stored=JSON.parse(w.localStorage.getItem('bbq-planner-v4'));
+    let stored=JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1'));
     assert.equal(stored.v46Notify,true);assert.equal(stored.v46NotifyService,'notify.mobile_app_jans_iphone');
     // Test notification.
     press('notify-test');
@@ -255,7 +255,7 @@ const checkShape=reqs=>{
     for(const k of ['fire','on','phase','pre5','core','lost','serve'])assert.equal(moment(k)[0].level,'time-sensitive',k+' is time-sensitive');
     checkShape(requests());
     // Reload with the same storage: already sent moments are not sent again (existing dedup in v46AlertSent).
-    stored=JSON.parse(w.localStorage.getItem('bbq-planner-v4'));
+    stored=JSON.parse(w.localStorage.getItem('kamado-bereidingsplanner-v1'));
     for(const k of ['fire','on','phase','pre5','core','lost','serve'])assert.ok(stored.v46AlertSent[s.date+'|'+(k==='fire'?plan.kamado:ribeye.id)+'|'+k],k+' remembered');
     assert.deepEqual(errors,[]);
     console.log('PASS v5.6.0 one phone: default on, toggle, test, fire/on/phase/5 min/reached/lost/rest exactly once: '+order.join(', '));

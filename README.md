@@ -46,6 +46,23 @@ De vaste webpagina `index.html` opent automatisch de bestaande zelfstandige HTML
 type: custom:bbq-planner-meater-card
 ```
 
+### Koken op volledig scherm in de Home Assistant-app
+
+Maak in Home Assistant een apart dashboard met één **panel-view** waarin alleen de planner staat (dashboard → drie puntjes → **Dashboard bewerken** → drie puntjes → **Raw-configuratie-editor**):
+
+```yaml
+views:
+  - title: BBQ
+    path: bbq
+    type: panel
+    cards:
+      - type: custom:bbq-planner-meater-card
+```
+
+Vanaf v5.5.1 herkent de kaart de panel-view zelf en vult ze het scherm onder de kopbalk van Home Assistant precies op. Alleen de planner scrolt; de onderste navigatie van de planner blijft zichtbaar, ook na draaien van de telefoon. Optioneel in de kaart-YAML: `fullscreen: true` (altijd volledig scherm, ook buiten een panel-view) of `fullscreen: false` (het oude gedrag).
+
+**Tip:** open in de Home Assistant-app **Profiel** (je naam linksonder) en kies dit dashboard bij **Dashboard** als standaard op dit apparaat. Dan opent de app direct in de planner.
+
 **Overstap vanaf handmatige versie:** voeg **niet** beide JavaScript-resources tegelijk toe. Vervang de oude `/local/BBQplanner/bbq-planner-ha-card.js`-resource door de nieuwe `/hacsfiles/...`-resource. Je bestaande kaart-YAML blijft gelijk. Maak eventueel eerst een back-up van je instellingen.
 
 ## Live-koppeling

@@ -1,8 +1,11 @@
 # Changelog
 
-> Actueel gepubliceerd: [v5.2.3](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.2.3) (9 november 2026). Een open PR is nog geen gepubliceerde versie.
+> Actueel gepubliceerd: [v5.5.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.5.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
-## v5.5.0 — Tijdlijn op Live en "Zo meteen" (releasekandidaat, niet gepubliceerd)
+## v5.5.1 — Kaart op volledig scherm in een HA-panel-view (draft-PR, niet gepubliceerd)
+- De Home Assistant-kaart vult in een panel-view (automatisch herkend, of met `fullscreen: true`) het scherm vanaf haar eigen bovenkant tot de onderkant van het scherm, gemeten in plaats van geschat, en meet opnieuw bij draaien en formaatwijziging. Alleen de planner scrolt, niet de HA-pagina; de onderste navigatie van de planner blijft in beeld. Ruimte voor de iOS-thuisbalk (safe area) onderaan de kaart. `fullscreen: false` of geen panel-view: ongewijzigd gedrag. Geen wijziging aan planner, opslag of berichttypen.
+
+## v5.5.0 — Tijdlijn op Live en "Zo meteen" (gepubliceerd 17 november 2026)
 - Compacte tijdlijn bovenaan Live: per kamado gepland (stippelkader) naast verwacht (kleur), fasen, nu-lijn en serveerlijn; ververst met de 30-s-timer, niet bij sensorupdates. "Alle stappen" opent de ene takenlijst.
 - "Zo meteen"-hero uit schatting en fase (bijv. "Stook de grote kamado op naar ~250 °C" rond 47 °C bij reverse sear). Aansteken wordt automatisch afgevinkt zodra een gerecht op die kamado ligt. Taken tonen "verwacht" naast "gepland" bij meer dan 5 min verschil.
 - "Pas planning aan op verwachting" alleen bij meer dan 10 min afwijking, met voor/na en bevestiging.

@@ -111,7 +111,9 @@ try{
     ok(/Ribeye 500 g bereikt 47 °C \(einde indirect\) over ±\d+ min/.test(hero),engineName+': phase target from the ETA-module: '+hero);
     ok(await f.evaluate(()=>document.querySelector('#v5-root .v5-content')===window.__content&&document.querySelector('[data-v5-tl]')===window.__tl),engineName+': 30-s refresh keeps Live and the timeline element');
     // Timeline inside the first screen, now line at the right place, early ETA: expected block left of the planned frame.
-    await f.evaluate(()=>window.scrollTo(0,0));await s.page.waitForTimeout(80);
+    // Instant scroll to the top (the page may use smooth scrolling; the fake clock must not leave it half-way).
+    await f.evaluate(()=>{window.scrollTo({top:0,left:0,behavior:'instant'});document.scrollingElement.scrollTop=0;});await s.page.waitForTimeout(80);
+    ok(await f.evaluate(()=>document.scrollingElement.scrollTop)===0,engineName+': scrolled to the top');
     const g=await f.evaluate(()=>{
       const body=document.querySelector('.v5-tl-body'),tl=document.querySelector('[data-v5-tl]').getBoundingClientRect();
       const track=document.querySelector('.v5-tl-track').getBoundingClientRect(),now=document.querySelector('[data-v5-now]').getBoundingClientRect();

@@ -18,7 +18,7 @@ const dom=new JSDOM(html,{url:'https://planner.test.invalid/dist/planner.html',r
  w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
 }});
 const w=dom.window,d=w.document,root=()=>d.getElementById('v5-root'),bridge=()=>w.__bridge;
-const press=a=>{const el=d.querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click()};
+const press=a=>{const el=d.querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click();if(a==='prep'){const c=d.querySelector('[data-v5-act="prep-confirm"]');if(c)c.click()}};
 const clickRecipe=name=>{const el=[...d.querySelectorAll('[data-v5-recipe]')].find(e=>e.dataset.v5Recipe===name);assert.ok(el,name);el.click()};
 const change=(el,value)=>{el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}))};
 const visible=el=>!el.hidden&&!el.closest('[hidden]')&&!(el.id==='v47-nav'&&d.body.classList.contains('v5-ready'));

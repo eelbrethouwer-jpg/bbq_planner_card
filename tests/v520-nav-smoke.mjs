@@ -23,7 +23,7 @@ const active=()=>d.querySelector('#v5-nav [aria-current=page]')?.dataset.v5Act;
 const back=()=>$('v5-back');
 const backShown=()=>back().style.display!=='none'&&back().style.display!=='';
 const page=id=>{const el=$(id);assert.ok(el,id);return !el.hidden&&!el.closest('[hidden]')};
-const press=a=>{const el=$('v5-root').querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click()};
+const press=a=>{const el=$('v5-root').querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click();if(a==='prep'){const c=$('v5-root').querySelector('[data-v5-act="prep-confirm"]');if(c)c.click()}};
 const tab=a=>{const el=d.querySelector('#v5-nav [data-v5-act="'+a+'"]');assert.ok(el,'nav '+a);el.click()};
 const openMeaterFromMore=()=>{const fold=$('v520-meater-fold');assert.ok(fold,'MEATER fold in Meer');fold.open=true;$('v520-open-cooking').click()};
 const expectLegacy=(pageId,label,nav,msg)=>{
@@ -55,7 +55,7 @@ try{
  press('recipes');expectLegacy('v47-recipes','← Vandaag','recipes','Vandaag → Recepten');
  back().click();expectV5('home','home','← Vandaag from Recepten');
  press('history');expectLegacy('v47-more','← Vandaag','more','Vandaag → Historie');
- assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.6.0','App en info shows loaded app version');
+ assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.7.0','App en info shows loaded app version');
  assert.equal($('v520-app-version')?.parentElement?.id,'v520-more-app','version located in App en info');
  back().click();expectV5('home','home','← Vandaag from Historie');
 

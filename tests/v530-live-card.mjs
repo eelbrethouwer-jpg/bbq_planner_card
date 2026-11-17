@@ -39,7 +39,7 @@ function boot({wakeLock=false}={}){
       w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
     }});
   const w=dom.window,d=w.document,$=s=>d.querySelector(s);
-  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();};
+  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
   const addRecipe=name=>{const el=$('[data-v5-recipe="'+name+'"]');assert.ok(el,'recipe '+name);el.click();};
   const card=id=>$('[data-v5-dishcard="'+id+'"]');
   const slot=(id,key)=>card(id)?.querySelector('[data-v5-slot="'+key+'"]');
@@ -172,9 +172,13 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
   try{
     press('new');addRecipe('Ribeye 500 g');addRecipe('Kippenpoten');
     const [ribeye,chicken]=w.__v530Bridge.getState().dishes;
-    assert.equal(ribeye.kamado,'large');assert.equal(chicken.kamado,'large');
-    assert.equal(chicken.meater,'none','no default for a second dish on the same kamado');
+    // v5.7: a new dish gets the kamado with the fewest conflicts (Kippenpoten → small). This scenario needs both dishes on one
+    // kamado, so the user chooses "Groot" by hand in step 2 (a manual choice that the app never changes by itself).
+    assert.equal(ribeye.kamado,'large');assert.equal(chicken.kamado,'small','v5.7: chosen when added');
     press('setup');
+    const kamadoSelect=$('select[data-v5-kamado="'+chicken.id+'"]');kamadoSelect.value='large';kamadoSelect.dispatchEvent(new w.Event('change',{bubbles:true}));
+    assert.equal(chicken.kamado,'large');
+    assert.equal(chicken.meater,'none','no default for a second dish on the same kamado');
     const choose=(dish,value)=>{const el=$('select[data-v5-meater="'+dish.id+'"]');el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
     choose(ribeye,'pro'); // v5.5: chosen in step 2 (no automatic default on the public website)
     assert.equal(ribeye.meater,'pro');

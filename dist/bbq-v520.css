@@ -194,3 +194,23 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 #v5-root .v5-notify-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
 #v5-root .v5-notify-actions small{font-size:12px}
 #v5-root .v5-notify-note{font-size:12px;margin:6px 0 0}
+/* v5.7: urgente conflicten (rood, boven in stap 2), te laat gestart en voorbije voorbereiding */
+#v5-root .v5-urgent{border-color:#c0554a;background:linear-gradient(145deg,#3a1d1d,#2a1717)}
+#v5-root .v5-urgent h3{color:#ffb3a7}
+#v5-root .v5-late,#v5-root .v5-overdue{border-color:#af804e;background:linear-gradient(145deg,#2d2518,#221c12)}
+#v5-root .v5-late p,#v5-root .v5-overdue p{font-size:13px;margin:6px 0}
+#v5-root .v5-issue{display:grid;gap:6px;padding:10px 0;border-top:1px solid #5a3a35;min-width:0}
+#v5-root .v5-issue:first-of-type{border-top:0}
+#v5-root .v5-issue strong,#v5-root .v5-issue small,#v5-root .v5-fix{overflow-wrap:anywhere;min-width:0}
+#v5-root .v5-issue small{font-size:12px;color:#e2c3bc}
+#v5-root .v5-fix{margin:0;font-size:14px;line-height:1.4}
+#v5-root .v5-fix span{font-weight:800;color:#ffd9b0}
+#v5-root .v5-issue .v5-btn{width:100%;min-height:44px;white-space:normal}
+#v5-root .v5-late .v5-row .v5-btn{flex:1 1 150px;min-height:44px;white-space:normal}
+/* Geen scroll-ankering: een regel die later bovenaan verschijnt (bv. "Meldingen op je telefoon") mag een herstelde scrollpositie niet
+   verschuiven; zo gedraagt Chromium zich als WebKit (iOS), dat geen scroll-ankering kent. */
+#v5-root .v5-content{overflow-anchor:none}
+#v5-root .v5-prep-confirm{border-color:#c0554a;background:linear-gradient(145deg,#3a1d1d,#2a1717)}
+#v5-root .v5-prep-confirm ul{margin:6px 0;padding-left:18px;display:grid;gap:8px;font-size:13px;overflow-wrap:anywhere}
+#v5-root .v5-prep-confirm p{font-size:13px;margin:6px 0}
+#v5-root .v5-prep-confirm .v5-row .v5-btn{flex:1 1 140px;min-height:44px;white-space:normal}

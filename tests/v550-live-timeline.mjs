@@ -79,7 +79,7 @@ async function startSession(s,names){
   for(const n of names){await s.f.locator('[data-v5-recipe="'+n+'"]').click();await s.page.waitForTimeout(80);}
   await s.act('setup');
 }
-async function goLive(s){await s.act('prep');await s.act('live');}
+async function goLive(s){await s.act('prep');if(await s.f.locator('#v5-root [data-v5-act="prep-confirm"]').count())await s.act('prep-confirm');await s.act('live');}
 async function rise(s,probe='pro',minutes=40){
   // 9.5 → 45.5 °C in 40 min at 121 °C: a reading every 4 minutes (+3.6 °C).
   let core=9.5;
@@ -177,6 +177,9 @@ try{
     const s=await open(browser);
     await s.set('plus',idle('8.0','15'));
     await startSession(s,['Ribeye 500 g','Kippenpoten']);
+    // v5.7: Kippenpoten now lands on the small kamado by itself (fewest conflicts). This scenario keeps both dishes on the large
+    // kamado, as before: the user chooses "Groot" by hand (a manual choice is never changed by the app).
+    {const kip=(await s.dishes())[1].id;await s.f.locator('select[data-v5-kamado="'+kip+'"]').selectOption('large');await s.page.waitForTimeout(80);}
     let [rib,chk]=await s.dishes();
     ok(rib.meater==='pro'&&rib.meaterAuto===true,engineName+': in the HA card the default Pro is still linked, marked automatic');
     // Kippenpoten: the user chooses "Geen thermometer" explicitly.
@@ -289,7 +292,7 @@ try{
     // Started dish: put it on the grill, return to step 1, tap → message only.
     await s.act('setup');await goLive(s);
     await s.f.locator('[data-v5-act="phase:'+first+':cooking"]').click();await s.page.waitForTimeout(100);
-    await s.act('prep');await s.act('setup');await s.act('select');
+    await s.act('prep');if(await s.f.locator('#v5-root [data-v5-act="prep-confirm"]').count())await s.act('prep-confirm');await s.act('setup');await s.act('select');
     const before=await s.store();
     await tap('Ribeye 500 g');
     ok(await s.store()===before,engineName+': started dish not removed by a tap (storage unchanged)');

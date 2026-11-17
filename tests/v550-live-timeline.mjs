@@ -49,8 +49,8 @@ async function open(browser,{ha=true}={}){
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2,
     timezoneId:'Europe/Amsterdam',locale:'nl-NL',serviceWorkers:'block'});
   await context.clock.install({time:new Date(START)});
-  const page=await context.newPage(),errors=[];
-  page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>d.accept());
+  const page=await context.newPage(),errors=[],dialogs=[];
+  page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>{dialogs.push(d.message());d.accept();});
   await page.goto(origin+(ha?'/__ha-host':'/dist/BBQ_bereidingsplanner_MEATER_v4.html'),{waitUntil:'load'});
   const frame=()=>ha?page.frames().find(f=>f.url().includes('BBQ_bereidingsplanner')):page.mainFrame();
   await page.waitForFunction(()=>true);
@@ -61,7 +61,7 @@ async function open(browser,{ha=true}={}){
   const set=(probe,values,extra)=>page.evaluate(([p,v,e])=>window.__set(p,v,e),[probe,values,extra||{}]);
   const store=()=>f.evaluate(k=>localStorage.getItem(k),KEY);
   const dishes=async()=>JSON.parse(await store()).dishes;
-  return {context,page,f,act,text,set,store,dishes,errors};
+  return {context,page,f,act,text,set,store,dishes,errors,dialogs};
 }
 async function startSession(s,names){
   await s.act('new');
@@ -229,6 +229,36 @@ try{
     await goLive(s);
     ok(await s.f.locator('[data-v5-tl] .v5-tl-row').count()===1,engineName+': timeline from the planning');
     ok(!/LIVE/.test(await s.text('#v5-root')),engineName+': nowhere LIVE');
+    ok(s.errors.length===0,engineName+': no page errors '+s.errors.join(' | '));
+    await s.context.close();
+   }
+   // 7. Bug (user): step 1 tap toggles a recipe; "+1" adds a portion; a started dish is never removed by a tap.
+   {
+    const s=await open(browser,{ha:false});
+    await s.act('new');
+    const tap=async n=>{await s.f.locator('[data-v5-recipe="'+n+'"]').click();await s.page.waitForTimeout(100);};
+    await tap('Ribeye 500 g');
+    ok((await s.dishes()).length===1,engineName+': tap adds');
+    ok(/tik om te verwijderen/.test(await s.text('[data-v5-recipe="Ribeye 500 g"]')),engineName+': label says tap to remove');
+    ok(/^Verwijder uit menu: /.test(await s.f.locator('[data-v5-recipe="Ribeye 500 g"]').getAttribute('aria-label')),engineName+': aria-label');
+    await tap('Ribeye 500 g');
+    ok((await s.dishes()).length===0,engineName+': second tap removes');
+    await tap('Ribeye 500 g');
+    const first=(await s.dishes())[0].id;
+    await s.f.locator('[data-v5-extra="'+first+'"]').click();await s.page.waitForTimeout(100);
+    ok((await s.dishes()).length===2,engineName+': "+1" adds an extra portion');
+    ok(/\(2×\)/.test(await s.text('[data-v5-recipe="Ribeye 500 g"]')),engineName+': count shown');
+    await tap('Ribeye 500 g');
+    const left=await s.dishes();
+    ok(left.length===1&&left[0].id===first,engineName+': tap removes the last added portion');
+    // Started dish: put it on the grill, return to step 1, tap → message only.
+    await s.act('setup');await goLive(s);
+    await s.f.locator('[data-v5-act="phase:'+first+':cooking"]').click();await s.page.waitForTimeout(100);
+    await s.act('prep');await s.act('setup');await s.act('select');
+    const before=await s.store();
+    await tap('Ribeye 500 g');
+    ok(await s.store()===before,engineName+': started dish not removed by a tap (storage unchanged)');
+    ok(s.dialogs.some(m=>/al gestart/.test(m)),engineName+': message shown');
     ok(s.errors.length===0,engineName+': no page errors '+s.errors.join(' | '));
     await s.context.close();
    }

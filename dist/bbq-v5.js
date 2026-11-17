@@ -55,19 +55,35 @@ window.initBBQV5=function(b){
     return Object.entries(b.getRecipes()).filter(([name,r])=>r&&typeof r==='object'&&r.name).sort((a,z)=>a[0].localeCompare(z[0],'nl')).map(([key,r])=>({...r,_key:key}));
   }
   function recipeCard(r){
-    const name=String(r.name||r._key),origin=b.recipeOrigin(name),already=dishes().some(d=>d.name===name);
+    // v5.5: a tap toggles the recipe in the menu (an extra portion: "+1" in "Jouw menu").
+    const name=String(r.name||r._key),origin=b.recipeOrigin(name),count=dishes().filter(d=>d.name===name).length,already=count>0;
     const photo=typeof r.photo==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(r.photo)?'<img loading="lazy" alt="" src="'+r.photo+'">':null;
-    return '<button type="button" class="v5-recipe'+(already?' selected':'')+'" data-v5-recipe="'+escape(r._key)+'" aria-label="'+escape((already?'Nogmaals toevoegen: ':'Toevoegen: ')+name)+'">'+
+    return '<button type="button" class="v5-recipe'+(already?' selected':'')+'" data-v5-recipe="'+escape(r._key)+'" aria-pressed="'+already+'" aria-label="'+escape((already?'Verwijder uit menu: ':'Toevoegen: ')+name)+'">'+
       (photo||'<div class="v5-recipe-icon" aria-hidden="true">'+(categoryIcon[r.category]||categoryIcon.overig)+'</div>')+
-      '<span class="v5-recipe-body"><span class="v5-origin">'+(origin==='own'?'Eigen':'Voorbeeld')+'</span><span class="v5-recipe-name">'+escape(name)+'</span><span class="v5-recipe-foot">'+(already?'✓ In menu · tik voor extra portie':'＋ Toevoegen · ±'+escape(r.cook||'?')+' min')+'</span></span></button>';
+      '<span class="v5-recipe-body"><span class="v5-origin">'+(origin==='own'?'Eigen':'Voorbeeld')+'</span><span class="v5-recipe-name">'+escape(name)+'</span><span class="v5-recipe-foot">'+(already?'✓ In menu'+(count>1?' ('+count+'×)':'')+' · tik om te verwijderen':'＋ Toevoegen · ±'+escape(r.cook||'?')+' min')+'</span></span></button>';
   }
   function recipeGrid(){
     const needle=recipeSearch.trim().toLocaleLowerCase('nl-NL'),results=allRecipes().filter(r=>(recipeFilter==='all'||b.recipeOrigin(r.name)===recipeFilter)&&(r.name+' '+r.category).toLocaleLowerCase('nl-NL').includes(needle));
     return results.length?results.map(recipeCard).join(''):'<div class="v5-empty">Geen recepten gevonden. Importeer een recept via je receptenbibliotheek.</div>';
   }
+  const recipeFor=name=>allRecipes().find(r=>String(r.name)===name)||null;
   function menuLines(removeOnly=false){
     return dishes().map(d=>'<div class="v5-dishline"><div><strong>'+escape(d.name)+'</strong><small>'+escape(labelKam(d.kamado))+' · ±'+escape(d.cook)+' min garen</small></div>'+
-      '<button type="button" class="v5-mini-btn" data-v5-remove="'+escape(d.id)+'" aria-label="Verwijder '+escape(d.name)+'">✕</button></div>').join('');
+      '<span class="v5-menu-actions">'+(recipeFor(d.name)?'<button type="button" class="v5-mini-btn" data-v5-extra="'+escape(d.id)+'" aria-label="Extra portie: '+escape(d.name)+'">+1</button>':'')+
+      '<button type="button" class="v5-mini-btn" data-v5-remove="'+escape(d.id)+'" aria-label="Verwijder '+escape(d.name)+'">✕</button></span></div>').join('');
+  }
+  function toggleRecipe(key){
+    const r=b.getRecipes()[key];if(!r)return;
+    const name=String(r.name||key),same=dishes().filter(d=>d.name===name);
+    if(!same.length){const dish=b.makeDish(r);defaultProbe(dish);state().dishes.push(dish);commit();render();return}
+    // Remove the last added instance that has not started; a started dish is never removed by this tap.
+    const target=[...same].reverse().find(d=>!d.phase||d.phase==='waiting');
+    if(!target){window.alert(name+' is al gestart en blijft in het menu. Verwijder het zo nodig via ✕ bij "Jouw menu".');return}
+    state().dishes=state().dishes.filter(d=>d!==target);commit();render();
+  }
+  function addPortion(id){
+    const d=dishes().find(x=>String(x.id)===id),r=d&&recipeFor(d.name);if(!r)return;
+    const dish=b.makeDish(r);defaultProbe(dish);state().dishes.push(dish);commit();render();
   }
   function select(){
     return heading('Stap 1 van 3','Kies je gerechten','Tik op een recept om het aan jouw BBQ-menu toe te voegen. Je kunt ook recepten toevoegen uit je eigen bibliotheek.')+progress(1)+
@@ -740,7 +756,9 @@ window.initBBQV5=function(b){
     if(filter){recipeFilter=filter.dataset.v5Filter;render();return}
 
     const recipe=e.target.closest('[data-v5-recipe]');
-    if(recipe){const r=b.getRecipes()[recipe.dataset.v5Recipe];if(r){const dish=b.makeDish(r);defaultProbe(dish);state().dishes.push(dish);commit();render()}return}
+    if(recipe){toggleRecipe(recipe.dataset.v5Recipe);return}
+    const extra=e.target.closest('[data-v5-extra]');
+    if(extra){addPortion(extra.dataset.v5Extra);return}
     const remove=e.target.closest('[data-v5-remove]');
     if(remove){state().dishes=state().dishes.filter(d=>d.id!==remove.dataset.v5Remove);commit();render();return}
     const el=e.target.closest('[data-v5-act]');if(!el)return;

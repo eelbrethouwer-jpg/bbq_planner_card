@@ -57,7 +57,7 @@ async function open(browser,{ha=true}={}){
   for(let i=0;i<50&&!(frame()&&await frame().locator('#v5-root').count());i++)await page.waitForTimeout(100);
   const s={context,page,f:frame(),errors,dialogs};
   // Helpers always use the current frame (s.f), also after an iframe reload.
-  s.act=async a=>{await s.f.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);};
+  s.act=async a=>{await s.f.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);if(a==='new'){const c=s.f.locator('#v5-root [data-v5-act="new-confirm"]');if(await c.count()){await c.first().click();await page.waitForTimeout(120);}}};
   s.text=sel=>s.f.locator(sel).first().evaluate(el=>el.innerText.replace(/\s+/g,' ').trim());
   s.set=(probe,values,extra)=>page.evaluate(([p,v,e])=>window.__set(p,v,e),[probe,values,extra||{}]);
   s.store=()=>s.f.evaluate(k=>localStorage.getItem(k),KEY);
@@ -296,7 +296,7 @@ try{
     const before=await s.store();
     await tap('Ribeye 500 g');
     ok(await s.store()===before,engineName+': started dish not removed by a tap (storage unchanged)');
-    ok(s.dialogs.some(m=>/al gestart/.test(m)),engineName+': message shown');
+    ok(s.dialogs.length===0&&/al gestart/.test(await s.text('[data-v5-notice]')),engineName+': message shown in the page (no dialog)');
     ok(s.errors.length===0,engineName+': no page errors '+s.errors.join(' | '));
     await s.context.close();
    }

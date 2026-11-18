@@ -42,7 +42,7 @@ function boot({ha=true,start=local(15,0)}={}){
   const w=dom.window,d=w.document,$=s=>d.querySelector(s);
   // A message from the card: same origin, source = window.parent (as the planner checks).
   const fromHA=data=>{const ev=new w.Event('message');Object.defineProperties(ev,{data:{value:data},origin:{value:ORIGIN},source:{value:w.parent}});w.dispatchEvent(ev);};
-  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);assert.ok(!el.disabled,'action '+act+' enabled');el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
+  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);assert.ok(!el.disabled,'action '+act+' enabled');el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}if(act==='new'){const c=$('#v5-root [data-v5-act="new-confirm"]');if(c)c.click();}};
   const addRecipe=name=>{const el=$('[data-v5-recipe="'+name+'"]');assert.ok(el,'recipe '+name);el.click();};
   const tick60=()=>{w.__intervals[60000].forEach(fn=>fn());};
   const sensor=v=>({state:String(v),last_updated:new w.Date(w.__testNow-2000).toISOString()});

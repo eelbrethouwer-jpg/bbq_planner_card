@@ -86,6 +86,8 @@ try{
    await nav.locator('[data-v5-act="home"]').click();await bounds('today');await touch();await capture('vandaag');
    page.on('dialog',dialog=>dialog.accept());
    await app.locator('[data-v5-act="new"]').click();
+   // v5.9: an existing plan asks in the page first (no dialog); the panel must fit and its buttons reach 44 px, then confirm.
+   if(await app.locator('[data-v5-new-confirm]').count()){await bounds('new-confirm');await touch();await app.locator('[data-v5-act="new-confirm"]').click();}
    await bounds('select');await touch();
    if(width===390&&!embedded){
      const count=await app.locator('#v5-root').evaluate(root=>{

@@ -18,7 +18,7 @@ const dom=new JSDOM(html,{url:'https://planner.test.invalid/dist/planner.html',r
  w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
 }});
 const w=dom.window,d=w.document,root=()=>d.getElementById('v5-root'),bridge=()=>w.__bridge;
-const press=a=>{const el=d.querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click();if(a==='prep'){const c=d.querySelector('[data-v5-act="prep-confirm"]');if(c)c.click()}};
+const press=a=>{const el=d.querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click();if(a==='prep'){const c=d.querySelector('[data-v5-act="prep-confirm"]');if(c)c.click()}if(a==='new'){const c=d.querySelector('[data-v5-act="new-confirm"]');if(c)c.click();}};
 const clickRecipe=name=>{const el=[...d.querySelectorAll('[data-v5-recipe]')].find(e=>e.dataset.v5Recipe===name);assert.ok(el,name);el.click()};
 const change=(el,value)=>{el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}))};
 const visible=el=>!el.hidden&&!el.closest('[hidden]')&&!(el.id==='v47-nav'&&d.body.classList.contains('v5-ready'));
@@ -46,13 +46,15 @@ try{
  d.getElementById('v5-back').click();assert.equal(root().dataset.screen,'setup','back returns to the setup step');press('prep');press('live');navigation('live');
  const live=root().querySelector('.v5-content');
  assert.ok([...live.children].indexOf(live.querySelector('.v5-hero'))<[...live.children].indexOf(live.querySelector('.v5-dishcards')),'v5.3: hero above the dish cards');
- press('cooking');navigation('live');
- assert.equal(d.getElementById('v5-back').textContent,'← Live');
+ // v5.9: the old cooking page is no longer linked from Live; it stays reachable under Meer → Geavanceerd.
+ assert.equal(root().querySelector('[data-v5-act="cooking"]'),null,'v5.9: Live has no link to the old cooking page');
+ d.querySelector('#v5-nav [data-v5-act="more"]').click();d.getElementById('v520-open-cooking').click();
+ assert.equal(d.getElementById('v5-back').textContent,'← Meer');
  const cooking=d.getElementById('v47-cooking'),meater=d.getElementById('live-panel'),fullscreen=d.getElementById('v47-fullscreen');
- assert.equal(cooking.hidden,false,'legacy cooking reached from Live');
+ assert.equal(cooking.hidden,false,'legacy cooking reached from Meer → Geavanceerd');
  assert.ok(cooking.contains(meater)&&!meater.closest('[hidden]'),'MEATER panel visible in legacy cooking');
  assert.ok(cooking.contains(fullscreen)&&!fullscreen.closest('[hidden]'),'focus trigger visible in legacy cooking');
- d.getElementById('v5-back').click();navigation('live');
+ d.getElementById('v5-back').click();d.getElementById('v5-back').click();navigation('live');
  const task=d.querySelector('.v5-hero [data-v5-act^="done:"]').dataset.v5Act.slice(5);
  assert.ok(![...d.querySelectorAll('.v5-next-tasks [data-v5-check]')].some(e=>e.dataset.v5Check===task),'hero excluded from following tasks');
  // v5.2: Live shows at most three following tasks; the rest stays one tap away.

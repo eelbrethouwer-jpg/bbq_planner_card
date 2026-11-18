@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import {JSDOM} from 'jsdom';
 const read=x=>fs.readFileSync(x,'utf8');
 const html=read('dist/BBQ_bereidingsplanner_MEATER_v4.html');
-const mainLoader='<script src="./bbq-v5.js?v=5.8.0"></script>';
-const recipeLoader='<script src="./bbq-v501.js?v=5.8.0"></script>';
+const mainLoader='<script src="./bbq-v5.js?v=5.9.0"></script>';
+const recipeLoader='<script src="./bbq-v501.js?v=5.9.0"></script>';
 assert.ok(html.includes(mainLoader)&&html.includes(recipeLoader),'current v5 bundle and recipe switch loaded');
 const body=html.replace(mainLoader,'<script>'+read('dist/bbq-v5.js')+'</script>').replace(recipeLoader,'<script>'+read('dist/bbq-v501.js')+'</script>');
 const errors=[];
@@ -61,6 +61,7 @@ try{
  assert.equal($('v47-recipes').hidden,false,'recipes page visible');
  click($('v5-back'));
  click(d.querySelector('#v5-root [data-v5-act="new"]'));
+ {const c=d.querySelector('#v5-root [data-v5-act="new-confirm"]');if(c)click(c);} // v5.9: in-page confirmation instead of window.confirm
  click(d.querySelector('#v5-root [data-v5-act="recipe-generate"]'));
  assert.equal(current(),'generate','session CTA opens generator');
  click($('v5-back'));

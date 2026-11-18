@@ -1,6 +1,6 @@
 {
   "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
-  "release": "5.8.0",
+  "release": "5.9.0",
   "protectedPaths": [
     "engine/",
     "v6/"
@@ -68,6 +68,10 @@
   ],
   "$commentDeclaredStorageLines": "v5.5: nieuwe opslagregels die letterlijk zo in de code staan (bestand + getrimde regel). Alleen toevoegen; leegmaken bij de volgende PR.",
   "declaredStorageLines": [],
+  "$commentReplacedStorageLines": "v5.9: een bestaande opslagregel mag alleen worden vervangen door een letterlijk gedeclareerde opvolger (paar from/to, beide moeten in de diff voorkomen). Hier: alleen de foutafhandeling van de reservekopie (window.alert -> melding in de pagina); sleutel BACKUP, waarde en moment van schrijven blijven gelijk. Leegmaken bij de volgende PR.",
+  "replacedStorageLines": [
+    {"file": "dist/bbq-v5.js", "from": "try{localStorage.setItem(BACKUP,JSON.stringify(s))}catch(e){window.alert('Reservekopie opslaan mislukt. Exporteer eerst jouw bestaande planning via Meer.');return;}", "to": "try{localStorage.setItem(BACKUP,JSON.stringify(s))}catch(e){showNotice('Reservekopie opslaan mislukt. Exporteer eerst jouw bestaande planning via Meer. Er is niets veranderd.');return;}", "since": "5.9.0"}
+  ],
   "$commentOptionalDishFields": "v5.8: nieuwe OPTIONELE velden op een gerecht in de bestaande opslag (geen nieuwe sleutel). token = hoe het veld in makeDish staat; cleaner = opschoonfunctie met terugval voor oude data, aangeroepen bij het laden. Alleen toevoegen na review; de bewaking faalt op een ongedeclareerd of verwijderd veld.",
   "optionalDishFields": [
     {"field": "manual", "token": "...v58ManualField(", "cleaner": "v58ManualClean", "store": "kamado-bereidingsplanner-v1", "since": "5.8.0", "shape": "{points:[{t,core}], grill:{t,temp}|null}"}

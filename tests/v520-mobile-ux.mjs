@@ -83,6 +83,11 @@ try{
 
     // New session through the real flow, two dishes per kamado.
     await page.locator('#v5-root [data-v5-act="new"]').click();
+    // v5.9: with a plan present "Nieuwe sessie" asks in the page (no window.confirm); the panel must fit like every other screen.
+    if(await page.locator('#v5-root [data-v5-new-confirm]').count()){
+      await layout('nieuwe sessie bevestiging');
+      await page.locator('#v5-root [data-v5-act="new-confirm"]').click();
+    }
     for(const recipe of ['Pulled pork op brood','Ribeye 500 g','Krieltjes','Warmgerookte zalm op brioche'])
       await page.locator('[data-v5-recipe="'+recipe+'"]').click();
     await page.locator('#v5-root [data-v5-act="setup"]').click();
@@ -151,15 +156,19 @@ try{
     ok(JSON.stringify(saved.dishes.map(d=>[d.id,d.cook,d.rest,d.kamado]))===JSON.stringify(planBefore.dishes.map(d=>[d.id,d.cook,d.rest,d.kamado])),
       name+': UI never changes durations or kamado assignment');
 
-    // MEATER graph and focus mode stay reachable from Live.
-    await page.locator('#v5-root [data-v5-act="cooking"]').click();
-    ok(await page.locator('#live-panel').isVisible()&&await page.locator('#v47-fullscreen').isVisible(),name+': MEATER panel and focus button reachable');
+    // v5.9: the old cooking page (MEATER graph, focus mode) is no longer linked from Live; it stays reachable via Meer → Geavanceerd.
+    ok(await page.locator('#v5-root [data-v5-act="cooking"]').count()===0,name+': Live has no link to the old cooking page');
+    await nav.locator('[data-v5-act="more"]').click();
+    await page.locator('#v520-open-cooking').click();
+    ok(await page.locator('#live-panel').isVisible()&&await page.locator('#v47-fullscreen').isVisible(),name+': MEATER panel and focus button reachable via Geavanceerd');
     await layout('cooking');
     await page.locator('#v47-fullscreen').click();
     const dialog=await page.locator('#v45-cook-screen').evaluate(el=>({open:el.classList.contains('open'),pad:parseFloat(getComputedStyle(el).paddingTop)}));
     ok(dialog.open&&dialog.pad>=SAFE_TOP,name+': focus mode opens below the status bar '+JSON.stringify(dialog));
     await page.locator('#v45-close').click();
-    ok(await page.locator('#v5-back').textContent()==='← Live',name+': back label from Live MEATER says Live');
+    ok(await page.locator('#v5-back').textContent()==='← Meer',name+': back label from Geavanceerd says Meer');
+    await page.locator('#v5-back').click();
+    ok(await page.locator('#v5-back').textContent()==='← Live',name+': back on Meer points to Live');
     await page.locator('#v5-back').click();
     ok(await nav.locator('[aria-current="page"]').getAttribute('data-v5-act')==='live',name+': back returns to Live');
     ok(await page.locator('#v5-root').getAttribute('data-screen')==='live'&&!await page.locator('#v5-back').isVisible(),name+': Live screen shown, back button hidden');
@@ -189,10 +198,10 @@ try{
     await nav.locator('[data-v5-act="more"]').click();
     await layout('more');
     const groups=await page.locator('#v47-more .v520-group').evaluateAll(els=>els.map(el=>el.id));
-    ok(JSON.stringify(groups)===JSON.stringify(['v520-more-koken','v520-more-koppelingen','v520-more-gegevens','v520-more-app']),name+': four ordered groups '+groups);
-    ok(await page.locator('#v520-more-app #v520-app-version').textContent()==='Versie van deze app: v5.8.0',name+': visible app version in Meer → App en info');
-    ok((await page.title()).includes('v5.8.0'),name+': app version matches loaded HTML title');
-    const expected={koken:['v45-shopping','v46-pantry-list','v46-history'],koppelingen:['v46-notify','v520-open-cooking'],
+    ok(JSON.stringify(groups)===JSON.stringify(['v520-more-koken','v520-more-koppelingen','v520-more-gegevens','v520-more-app','v520-more-geavanceerd']),name+': four ordered groups '+groups);
+    ok(await page.locator('#v520-more-app #v520-app-version').textContent()==='Versie van deze app: v5.9.0',name+': visible app version in Meer → App en info');
+    ok((await page.title()).includes('v5.9.0'),name+': app version matches loaded HTML title');
+    const expected={koken:['v45-shopping','v46-pantry-list','v46-history'],koppelingen:['v46-notify','v520-meater-fold'],geavanceerd:['v520-open-cooking','v520-open-board','v520-open-steps'],
       gegevens:['json-export','json-import','print','export','reset','share-public'],app:['v49-install','v49-update','v49-share','v49-install-steps']};
     for(const [group,ids] of Object.entries(expected))for(const id of ids)
       ok(await page.locator('#v520-more-'+group+' #'+id).count()===1,name+': '+id+' in group '+group);

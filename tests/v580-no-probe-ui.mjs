@@ -77,7 +77,7 @@ async function openPage(browser,time,{width=390,data=seed(),ha=false}={}){
   s.f=frame();
   if(!ha)await context.clock.setFixedTime(new Date(time));
   s.q=(sel)=>s.f.locator(sel);
-  s.act=async a=>{await s.f.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);};
+  s.act=async a=>{await s.f.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);if(a==='new'){const c=s.f.locator('#v5-root [data-v5-act="new-confirm"]');if(await c.count()){await c.first().click();await page.waitForTimeout(120);}}};
   s.text=sel=>s.f.locator(sel).first().evaluate(el=>el.innerText.replace(/\s+/g,' ').trim());
   s.store=()=>s.f.evaluate(k=>localStorage.getItem(k),KEY);
   s.dishes=async()=>JSON.parse(await s.store()).dishes;

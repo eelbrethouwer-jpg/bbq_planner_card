@@ -8,7 +8,10 @@
            notice for a preparation "de avond vooraf" that has already passed. Nothing is changed without a tap of the user.
    v5.6.0: one line "Meldingen op je telefoon" in step 2 and on Live (HA card only), with a test notification.
    v5.8.0: without a probe Live shows an honest range ("geschat, geen meting"), a button "Kern invoeren" for a hand thermometer
-           (source "handmatig, HH:MM", never LIVE) and one optional kamado temperature; in-page panel, no dialogs. */
+           (source "handmatig, HH:MM", never LIVE) and one optional kamado temperature; in-page panel, no dialogs.
+   v5.9.0: cleanup, no new function: the old cooking page and both old draaiboeken left the normal navigation (still reachable under
+           Meer → Geavanceerd), one task list (Live), and "Nieuwe sessie" / "Sessie afronden" (plus the remaining notices of this layer)
+           use in-page panels instead of window.confirm/alert; cancelling changes nothing. No storage change. */
 (function(){
 'use strict';
 window.initBBQV5=function(b){
@@ -34,7 +37,7 @@ window.initBBQV5=function(b){
   const dishes=()=>state().dishes||[];
   function saveMeta(){try{localStorage.setItem(KEY,JSON.stringify({...meta,version:1}))}catch(e){/* Only session navigation metadata; dishes remain in v4 storage */}}
   function commit(){b.commit();}
-  function goto(next){prepAsk=false;screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}saveView();}
+  function goto(next){prepAsk=false;newAsk=false;finishAsk=false;notice='';screen=next;if(['select','setup','prep','live'].includes(next)&&meta.active){meta.stage=next;saveMeta();}render();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}saveView();}
   const VIEW_SCREENS=['home','select','setup','prep','live'],VIEW_TABS=['recipes','more','planning','cooking'];
   function saveView(){
     // Only navigation state of an active session; never plan data.
@@ -82,7 +85,7 @@ window.initBBQV5=function(b){
         action('＋ Nieuwe sessie samenstellen','new','primary v5-wide')+'</section>';
       if(hasPlan)secondary=row('📋','Bestaande planning openen',summary,'resume');
     }
-    return heading(active?'Welkom terug':'Welkom bij jouw BBQ',active?'Jouw BBQ-sessie':'Wat gaan we bereiden?','')+primary+
+    return heading(active?'Welkom terug':'Welkom bij jouw BBQ',active?'Jouw BBQ-sessie':'Wat gaan we bereiden?','')+newConfirmPanel()+primary+
       '<div class="v5-list">'+secondary+row('📖','Recepten','Eigen bibliotheek, import en BBQ Junkie','recipes')+row('📈','Historie en reviews','Eerdere bereidingen en leerpunten','history')+'</div>';
   }
   function allRecipes(){
@@ -112,7 +115,7 @@ window.initBBQV5=function(b){
     if(!same.length){const dish=b.makeDish(r);chooseKamadoFor(dish);defaultProbe(dish);state().dishes.push(dish);commit();render();return}
     // Remove the last added instance that has not started; a started dish is never removed by this tap.
     const target=[...same].reverse().find(d=>!d.phase||d.phase==='waiting');
-    if(!target){window.alert(name+' is al gestart en blijft in het menu. Verwijder het zo nodig via ✕ bij "Jouw menu".');return}
+    if(!target){showNotice(name+' is al gestart en blijft in het menu. Verwijder het zo nodig via ✕ bij "Jouw menu".');return}
     state().dishes=state().dishes.filter(d=>d!==target);commit();render();
   }
   function addPortion(id){
@@ -138,6 +141,31 @@ window.initBBQV5=function(b){
   /* v5.7: urgent conflicts (red, top of step 2), "Plan opnieuw vanaf nu" and the overdue "avond vooraf" notice.
      In-memory UI state only (never stored). Nothing here changes the plan without a tap of the user. */
   let lateAsk=false,lateHide=false,prepAsk=false;
+  /* v5.9: in-page confirmations instead of window.confirm/alert (the Home Assistant app/iframe may block dialogs).
+     In-memory UI state only (never stored); cancelling changes nothing. */
+  let newAsk=false,finishAsk=false,notice='';
+  function noticeHtml(){
+    if(!notice)return '';
+    return '<section class="v5-card v5-notice" role="alert" data-v5-notice><p>'+escape(notice)+'</p><div class="v5-row">'+action('Sluiten','notice-close','subtle')+'</div></section>';
+  }
+  function showNotice(text){
+    notice=text;render();
+    try{root.querySelector('[data-v5-notice]')?.scrollIntoView?.({block:'center',behavior:'instant'})}catch(e){}
+  }
+  function newConfirmPanel(){
+    if(!newAsk)return '';
+    return '<section class="v5-card v5-confirm" role="alertdialog" aria-labelledby="v5-new-confirm-t" data-v5-new-confirm>'+
+      '<h3 id="v5-new-confirm-t">Nieuwe sessie beginnen?</h3>'+
+      '<p>Dit vervangt je huidige planning ('+dishes().length+' gerecht'+(dishes().length===1?'':'en')+'). Een lokale reservekopie wordt gemaakt. Recepten, reviews en andere gegevens blijven bewaard.</p>'+
+      '<p>Er verandert niets tot je kiest.</p><div class="v5-row">'+action('Ja, nieuwe sessie','new-confirm','subtle v5-emph')+action('Annuleren','new-cancel','subtle')+'</div></section>';
+  }
+  function finishConfirmPanel(){
+    if(!finishAsk)return '';
+    return '<section class="v5-card v5-confirm" role="alertdialog" aria-labelledby="v5-finish-confirm-t" data-v5-finish-confirm>'+
+      '<h3 id="v5-finish-confirm-t">BBQ-sessie afronden?</h3>'+
+      '<p>Alle recepten, reviews en gegevens blijven bewaard. Je gaat terug naar Vandaag.</p>'+
+      '<p>Er verandert niets tot je kiest.</p><div class="v5-row">'+action('Ja, sessie afronden','finish-confirm','subtle v5-emph')+action('Annuleren','finish-cancel','subtle')+'</div></section>';
+  }
   function planIssues(){try{return b.getPlanIssues?(b.getPlanIssues().issues||[]):[]}catch(e){return []}}
   function urgentPanel(issues){
     if(!issues.length)return '';
@@ -722,7 +750,7 @@ window.initBBQV5=function(b){
     (all.some(t=>done[t.id])?'<details class="v5-card" data-v5-key="completed"><summary>Afgeronde handelingen ('+all.filter(t=>done[t.id]).length+')</summary>'+checklist(all.filter(t=>done[t.id]).map(taskRow))+'</details>':'')+
     '<h2 class="v5-sectionhead">Bereidingsdetails per gerecht</h2>'+dishes().map(d=>liveDish(d)).join('')+
     (c.alerts.length?'<details class="v5-card v5-alerts" data-v5-key="alerts"><summary>⚠️ Planning: '+c.alerts.length+' aandachtspunt(en)</summary>'+c.alerts.slice(0,10).map(a=>'<p>'+a.message+'</p>').join('')+'</details>':'')+
-    '<h2 class="v5-sectionhead">Meer acties</h2><div class="v5-action-grid">'+action('📈 MEATER & focus','cooking')+action('✎ Planning aanpassen','planning')+action('🧂 Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
+    '<h2 class="v5-sectionhead">Meer acties</h2>'+finishConfirmPanel()+'<div class="v5-action-grid">'+action('✎ Planning aanpassen','planning')+action('🧂 Voorbereiding','prep')+action('Sessie afronden','finish','warn')+'</div>';
   }
   function liveDish(d){
     const s=state(),stages=Array.isArray(d.recipeSteps)?d.recipeSteps:[];
@@ -746,7 +774,7 @@ window.initBBQV5=function(b){
     const scroll=window.scrollY,open=new Map([...root.querySelectorAll('details[data-v5-key]')].map(el=>[el.dataset.v5Key,el.open]));
     let body=screen==='home'?home():screen==='select'?select():screen==='setup'?setup():screen==='prep'?prep():screen==='live'?live():home();
     root.dataset.screen=screen;
-    root.innerHTML='<div class="v5-content">'+logo()+body+'</div>';
+    root.innerHTML='<div class="v5-content">'+logo()+noticeHtml()+body+'</div>';
     root.querySelectorAll('input[data-v5-setting]').forEach(el=>{el.setAttribute('autocomplete','off')});
     root.querySelectorAll('details[data-v5-key]').forEach(el=>{if(open.has(el.dataset.v5Key))el.open=open.get(el.dataset.v5Key)});
     renderNav();syncWakeLock();
@@ -757,7 +785,7 @@ window.initBBQV5=function(b){
   const BACK_LABEL={home:'← Vandaag',live:'← Live',select:'← Kies gerechten',setup:'← Plan de BBQ-dag',prep:'← Voorbereiden'};
   function legacy(tab,recipeTab,returnTo){
     if(returnTo)legacyReturnScroll=window.scrollY;
-    legacyFrom=screen;legacyTab=tab;legacyReturn=returnTo||'';
+    legacyFrom=screen;legacyTab=tab;legacyReturn=returnTo||'';newAsk=false;finishAsk=false;notice='';
     if(tab==='recipes'&&typeof window.v501SelectRecipeTab==='function')window.v501SelectRecipeTab(recipeTab||'library');
     b.showLegacy(tab);document.body.classList.add('v5-legacy');syncWakeLock();$('v5-back').textContent=legacyReturn==='more'?'← Meer':BACK_LABEL[legacyFrom]||'← Vandaag';$('v5-back').style.display='inline-flex';renderNav();try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){}
     saveView();
@@ -772,9 +800,9 @@ window.initBBQV5=function(b){
   }
   function start(){
     const s=state();
+    // v5.9: the confirmation is an in-page panel (act "new" → "new-confirm"); this runs only after that choice.
     if(dishes().length){
-      if(!window.confirm('Nieuwe sessie beginnen? Dit vervangt je huidige planning. Een lokale reservekopie wordt gemaakt.'))return;
-      try{localStorage.setItem(BACKUP,JSON.stringify(s))}catch(e){window.alert('Reservekopie opslaan mislukt. Exporteer eerst jouw bestaande planning via Meer.');return;}
+      try{localStorage.setItem(BACKUP,JSON.stringify(s))}catch(e){showNotice('Reservekopie opslaan mislukt. Exporteer eerst jouw bestaande planning via Meer. Er is niets veranderd.');return;}
     }
     s.dishes=[];s.v46Done={};s.v5Actual={};s.date=today();s.dateMode='auto';s.v46MultiServe=false;
     lateAsk=false;lateHide=false;
@@ -826,14 +854,34 @@ window.initBBQV5=function(b){
     const owner=id=>{const el=$(id);return el?el.closest('details.v47-fold')||null:null};
     const toolbar=page.querySelector('.toolbar'),footer=page.querySelector('footer.footer'),install=page.querySelector('.v49-install');
     const meater=document.createElement('div');meater.className='v520-info';
-    meater.innerHTML='<p>Live MEATER-metingen werken alleen in de Home Assistant-dashboardkaart. De grafiek en focusmodus open je ook vanuit Live.</p>';
-    const open=document.createElement('button');open.type='button';open.className='v5-btn subtle';open.id='v520-open-cooking';
-    open.textContent='📈 MEATER-grafiek en focusmodus openen';open.addEventListener('click',()=>legacy('cooking',null,'more'));meater.append(open);
+    meater.innerHTML='<p>Live MEATER-metingen werken alleen in de Home Assistant-dashboardkaart. Live toont per gerecht de kern, de schatting en het advies. De MEATER-grafiek en de focus-kookmodus staan onder Geavanceerd.</p>';
+    /* v5.9: the old cooking page and its two draaiboeken are no longer in the normal navigation (Live, Recepten, Meer).
+       They stay reachable here, under Meer → Geavanceerd, because some of their functions exist nowhere else.
+       The existing DOM nodes of those pages are not touched; only the way to reach them moves. */
+    const advanced=document.createElement('div');advanced.className='v520-info v520-advanced';
+    advanced.innerHTML='<p>Oudere pagina\'s. Gebruik ze alleen voor wat nergens anders staat: de MEATER-grafiek en focus-kookmodus, slim bijsturen en de volledige coach. Live en Volgende handelingen zijn de normale route; de takenlijst op Live is de enige takenlijst.</p>';
+    const openCooking=(label,id,target)=>{
+      const btn=document.createElement('button');btn.type='button';btn.className='v5-btn subtle v5-wide';btn.id=id;btn.textContent=label;
+      btn.addEventListener('click',()=>{
+        legacy('cooking',null,'more');
+        try{
+          let el=null;
+          if(target==='board')el=$('v46-board')?.closest('.v46-area')||null;
+          else if(target==='steps'){el=$('steps')?.closest('details.v47-fold')||$('steps');if(el&&el.tagName==='DETAILS')el.open=true}
+          el?.scrollIntoView?.({block:'start',behavior:'instant'});
+        }catch(e){/* the page itself is open; scrolling is a convenience */}
+      });
+      advanced.append(btn);
+    };
+    openCooking('📈 Oude kookpagina (MEATER-grafiek, focus-kookmodus, slim bijsturen, coach)','v520-open-cooking','');
+    openCooking('⏱️ Interactief draaiboek (oude takenlijst)','v520-open-board','board');
+    openCooking('📖 Uitgebreid stap-voor-stap draaiboek','v520-open-steps','steps');
     const groups=[
       ['koken','🍖 Koken','Boodschappen, voorraad en eerdere bereidingen',[owner('v45-shopping')||owner('v45-tools'),owner('v46-pantry-list'),owner('v46-history')]],
       ['koppelingen','🔗 Koppelingen','Home Assistant en MEATER',[owner('v46-notify'),fold('🌡️ MEATER en live metingen',meater,'v520-meater-fold')]],
       ['gegevens','💾 Gegevens','Planning bewaren, laden, delen en printen',[fold('💾 Planning bewaren, laden en printen',toolbar,'v520-data-fold')]],
-      ['app','📱 App en info','Installeren, bijwerken en voedselveiligheid',[fold('📱 App installeren en bijwerken',install,'v520-app-fold'),fold('ℹ️ Uitleg en voedselveiligheid',footer,'v520-info-fold')]]
+      ['app','📱 App en info','Installeren, bijwerken en voedselveiligheid',[fold('📱 App installeren en bijwerken',install,'v520-app-fold'),fold('ℹ️ Uitleg en voedselveiligheid',footer,'v520-info-fold')]],
+      ['geavanceerd','🧰 Geavanceerd','Oudere kookpagina en draaiboeken',[advanced]]
     ];
     const wrap=document.createElement('div');wrap.id='v520-more-groups';
     const jump=document.createElement('div');jump.className='v520-jump';jump.setAttribute('role','group');jump.setAttribute('aria-label','Ga naar onderdeel');
@@ -885,7 +933,7 @@ window.initBBQV5=function(b){
     if(el.matches('[data-v5-meater]')){
       const d=dishes().find(d=>d.id===el.dataset.v5Meater);if(!d)return;
       const next=['pro','plus'].includes(el.value)?el.value:'none';
-      if(next!=='none'&&dishes().some(x=>x.id!==d.id&&x.meater===next)){window.alert('Deze thermometer is al gekoppeld aan een ander gerecht. Ontkoppel hem daar eerst.');render();return}
+      if(next!=='none'&&dishes().some(x=>x.id!==d.id&&x.meater===next)){showNotice('Deze thermometer is al gekoppeld aan een ander gerecht. Ontkoppel hem daar eerst.');return}
       d.meater=next;d.meaterAuto=false;probeEdit.delete(String(d.id));commit();render();return;
     }
     if(el.matches('[data-v5-notify-service]')){if(b.setNotify)b.setNotify(!!el.value,el.value);return}
@@ -968,7 +1016,15 @@ window.initBBQV5=function(b){
       if(!/^\d{2}:\d{2}$/.test(value)||s.v46MultiServe)return;
       adjustOpen=false;s.mealTime=value;commit();render();return;
     }
-    if(act==='new'){start();return}
+    if(act==='new'){
+      // v5.9: with a plan present, ask in the page first (no window.confirm); without one, start right away as before.
+      if(dishes().length){newAsk=true;finishAsk=false;render();try{root.querySelector('[data-v5-new-confirm]')?.scrollIntoView?.({block:'center',behavior:'instant'})}catch(e){}}
+      else start();
+      return;
+    }
+    if(act==='new-cancel'){newAsk=false;render();return}
+    if(act==='new-confirm'){newAsk=false;start();return}
+    if(act==='notice-close'){notice='';render();return}
     if(act==='resume'){const fromLegacy=!meta.active;meta.active=true;meta.stage=fromLegacy||meta.stage==='finished'?'setup':meta.stage||'setup';saveMeta();goto(meta.stage);return}
     if(act.startsWith('fix:')){
       // A tap on a proposed fix is the user's explicit choice; only a dish that has not started is moved.
@@ -990,17 +1046,15 @@ window.initBBQV5=function(b){
     }
     if(act==='home'||act==='select'||act==='setup'||act==='prep'){if(act!=='home'&&act!=='select'&&!dishes().length)return;goto(act);return}
     if(act==='live'){if(!dishes().length){goto('select');return}meta.active=true;goto('live');return}
-    if(act==='finish'){
-      if(!window.confirm('BBQ-sessie afronden? Alle recepten, reviews en gegevens blijven bewaard.'))return;
-      meta.active=false;meta.stage='finished';saveMeta();goto('home');return;
-    }
+    if(act==='finish'){finishAsk=true;newAsk=false;render();try{root.querySelector('[data-v5-finish-confirm]')?.scrollIntoView?.({block:'center',behavior:'instant'})}catch(e){}return}
+    if(act==='finish-cancel'){finishAsk=false;render();return}
+    if(act==='finish-confirm'){finishAsk=false;meta.active=false;meta.stage='finished';saveMeta();goto('home');return}
     if(act==='recipes'){legacy('recipes','library');return}
     if(act==='recipe-generate'){legacy('recipes','generate');return}
     if(act==='recipe-junkie'){legacy('recipes','junkie');return}
     if(act==='history'){openHistory();return}
     if(act==='more'){legacy('more');return}
     if(act==='planning'){legacy('planning');return}
-    if(act==='cooking'){legacy('cooking');return}
     if(act==='recipe-in-live'){openDish(heroDish());return}
     if(act.startsWith('dish:')){openDish(act.slice(5));return}
     if(act.startsWith('phase:')){const [,id,phase]=act.split(':'),d=dishes().find(d=>String(d.id)===id);if(d&&['cooking','resting','done'].includes(phase)){setPhase(d,phase);commit();render()}return}

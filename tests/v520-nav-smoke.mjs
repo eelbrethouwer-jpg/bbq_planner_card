@@ -23,9 +23,9 @@ const active=()=>d.querySelector('#v5-nav [aria-current=page]')?.dataset.v5Act;
 const back=()=>$('v5-back');
 const backShown=()=>back().style.display!=='none'&&back().style.display!=='';
 const page=id=>{const el=$(id);assert.ok(el,id);return !el.hidden&&!el.closest('[hidden]')};
-const press=a=>{const el=$('v5-root').querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click();if(a==='prep'){const c=$('v5-root').querySelector('[data-v5-act="prep-confirm"]');if(c)c.click()}};
+const press=a=>{const el=$('v5-root').querySelector('[data-v5-act="'+a+'"]');assert.ok(el,'action '+a);el.click();if(a==='prep'){const c=$('v5-root').querySelector('[data-v5-act="prep-confirm"]');if(c)c.click()}if(a==='new'){const c=$('v5-root').querySelector('[data-v5-act="new-confirm"]');if(c)c.click();}};
 const tab=a=>{const el=d.querySelector('#v5-nav [data-v5-act="'+a+'"]');assert.ok(el,'nav '+a);el.click()};
-const openMeaterFromMore=()=>{const fold=$('v520-meater-fold');assert.ok(fold,'MEATER fold in Meer');fold.open=true;$('v520-open-cooking').click()};
+const openMeaterFromMore=()=>{assert.ok($('v520-meater-fold'),'MEATER info fold in Meer');assert.ok($('v520-more-geavanceerd')?.contains($('v520-open-cooking')),'old cooking page button lives in Meer → Geavanceerd');$('v520-open-cooking').click()};
 const expectLegacy=(pageId,label,nav,msg)=>{
  assert.ok(legacy(),msg+': legacy open');assert.ok(page(pageId),msg+': '+pageId+' visible');
  assert.equal(back().textContent,label,msg+': back label');assert.ok(backShown(),msg+': back visible');
@@ -55,7 +55,7 @@ try{
  press('recipes');expectLegacy('v47-recipes','← Vandaag','recipes','Vandaag → Recepten');
  back().click();expectV5('home','home','← Vandaag from Recepten');
  press('history');expectLegacy('v47-more','← Vandaag','more','Vandaag → Historie');
- assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.8.0','App en info shows loaded app version');
+ assert.equal($('v520-app-version')?.textContent,'Versie van deze app: v5.9.0','App en info shows loaded app version');
  assert.equal($('v520-app-version')?.parentElement?.id,'v520-more-app','version located in App en info');
  back().click();expectV5('home','home','← Vandaag from Historie');
 
@@ -68,8 +68,8 @@ try{
 
  // Live → MEATER → ← Live (existing route unchanged).
  press('prep');press('live');expectV5('live','live','Live');
- press('cooking');expectLegacy('v47-cooking','← Live','live','Live → MEATER');meaterReachable('Live → MEATER');
- back().click();expectV5('live','live','← Live from MEATER');
+ // v5.9: Live no longer links to the old cooking page; it is reached under Meer → Geavanceerd only.
+ assert.equal($('v5-root').querySelector('[data-v5-act="cooking"]'),null,'Live has no link to the old cooking page');
 
  // Live → Meer → MEATER → ← Meer → ← Live.
  tab('more');expectLegacy('v47-more','← Live','more','Live → Meer');
@@ -88,7 +88,7 @@ try{
  tab('more');openMeaterFromMore();tab('recipes');expectLegacy('v47-recipes','← Vandaag','recipes','nav switch from MEATER');
  back().click();expectV5('home','home','back after nav switch');
  tab('more');openMeaterFromMore();tab('live');expectV5('live','live','nav Live from MEATER');
- press('cooking');assert.equal(back().textContent,'← Live','Live → MEATER after nested route');back().click();expectV5('live','live','still back to Live');
+ expectV5('live','live','Live stays Live after the nested route');
 
  // No new storage keys: the return step lives only in memory.
  const keysAfter=Object.keys(w.localStorage).sort();

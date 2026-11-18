@@ -19,6 +19,7 @@
 //                               Een nieuw berichttype mag alleen als het in de policy staat onder
 //                               newDataContractIdentifiers én dataContractIdentifiers (geen hernoeming).
 //                               Een nieuwe opslagregel mag alleen als hij letterlijk in declaredStorageLines staat.
+//                               (v5.9) Een bestaande regel vervangen mag alleen als het paar from/to letterlijk in replacedStorageLines staat.
 //  6. OPTIONAL_FIELD            (v5.8) een nieuw veld op een gerecht (sleutel of spread in makeDish) mag alleen als het in
 //                               optionalDishFields staat, met een opschoonfunctie (terugval voor oude data) die bestaat en bij het
 //                               laden van de opgeslagen planning wordt aangeroepen. Verwijderen of ongedeclareerd toevoegen faalt.
@@ -291,6 +292,13 @@ export function checkPublication({root = process.cwd(), base, policyFile = '.git
     // Een gewijzigde of verwijderde bestaande regel blijft verboden.
     const declaredLines = Array.isArray(policy.declaredStorageLines) ? policy.declaredStorageLines : [];
     lines.added = lines.added.filter(x => !declaredLines.includes(x));
+    // v5.9: een bestaande regel vervangen mag alleen als het exacte paar (oude regel weg, nieuwe regel erbij) in replacedStorageLines staat.
+    // Een los verwijderde of een afwijkende nieuwe regel blijft een overtreding; verouderde declaraties doen niets.
+    for (const r of Array.isArray(policy.replacedStorageLines) ? policy.replacedStorageLines : []) {
+      const from = `${r.file}: ${r.from}`, to = `${r.file}: ${r.to}`;
+      const ia = lines.added.indexOf(to), ir = lines.removed.indexOf(from);
+      if (ia >= 0 && ir >= 0) { lines.added.splice(ia, 1); lines.removed.splice(ir, 1); }
+    }
     for (const l of lines.added) add('STORAGE_CONTRACT', l.split(':')[0], `nieuwe/gewijzigde opslag- of schemaregel: ${l.slice(l.indexOf(':') + 2, l.indexOf(':') + 160)}`);
     for (const l of lines.removed) add('STORAGE_CONTRACT', l.split(':')[0], `verwijderde/gewijzigde opslag- of schemaregel: ${l.slice(l.indexOf(':') + 2, l.indexOf(':') + 160)}`);
   }

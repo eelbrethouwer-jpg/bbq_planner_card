@@ -75,7 +75,7 @@ async function open(browser,{ha=false,width=390,seed=null}={}){
     await route.fulfill({response:res,body});
   });
   await context.clock.install({time:new Date(START)});
-  await context.addInitScript(()=>{window.__intervals=[];const si=window.setInterval;window.setInterval=function(fn,ms,...r){window.__intervals.push(ms);return si.call(window,fn,ms,...r)}});
+  await context.addInitScript(()=>{if(window.__intervals)return;window.__intervals=[];const si=window.setInterval;window.setInterval=function(fn,ms,...r){window.__intervals.push(ms);return si.call(window,fn,ms,...r)}});
   const page=await context.newPage(),errors=[],dialogs=[];
   page.on('pageerror',e=>errors.push(String(e)));page.on('dialog',d=>{dialogs.push(d.message());d.accept();});
   await page.goto(origin+(ha?'/__ha-host':'/dist/BBQ_bereidingsplanner_MEATER_v4.html'),{waitUntil:'load'});

@@ -63,6 +63,10 @@ const cases = [
   ['5k gedeclareerd veld zonder opschoonfunctie', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce('function v58ManualClean(', 'function v58ManualCleanGone('))],
   ['5l opschoning niet aangeroepen bij het laden', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce("if('manual' in d){const m=v58ManualClean(d.manual);", "if('manual' in d){const m=d.manual;"))],
   ['5m gerechtveld uit makeDish verwijderd', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce("restAt:data.restAt??null,", ""))],
+  // v5.9: de vervangen reservekopie-regel is een letterlijk gedeclareerd paar; elke afwijking daarvan blijft een overtreding.
+  ['5n vervangen opslagregel verder gewijzigd', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', replaceOnce("Er is niets veranderd.');return;}", "Er is niets veranderd.');window.__x=1;return;}"))],
+  ['5o extra opslagregel naast de vervangen regel', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', s => s + "\n;try{localStorage.removeItem(BACKUP)}catch(e){}\n")],
+  ['5p oorspronkelijke regel verwijderd zonder vervanger', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', s => s.replace(/\n[^\n]*localStorage\.setItem\(BACKUP[^\n]*/, '\n'))],
   ['6 niet-toegestaan productiebestand (manifest)', 'UNDECLARED_PRODUCTION_CHANGE', () => edit('manifest.webmanifest', s => s.replace('"lang": "nl"', '"lang": "en"'))],
   ['6b nieuw productiebestand', 'UNDECLARED_PRODUCTION_CHANGE', () => fs.writeFileSync(path.join(wt, 'dist/extra.js'), 'window.x=1;\n')],
   ['7 sw.js-shell naar v6', 'FORBIDDEN_REFERENCE', () => edit('sw.js', replaceOnce("'dist/bbq-v520.css'", "'dist/bbq-v520.css','v6/preview.html'"))],

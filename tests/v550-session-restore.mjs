@@ -32,7 +32,7 @@ function boot(storage={},now=START){
       w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
     }});
   const w=dom.window,d=w.document,$=s=>d.querySelector(s);
-  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]')||$('#v5-nav [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
+  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]')||$('#v5-nav [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}if(act==='new'){const c=$('#v5-root [data-v5-act="new-confirm"]');if(c)c.click();}};
   const tap=name=>{const el=$('[data-v5-recipe="'+name+'"]');assert.ok(el,'recipe '+name);el.click();};
   const dump=()=>Object.fromEntries(Object.keys(w.localStorage).map(k=>[k,w.localStorage.getItem(k)]));
   const screen=()=>$('#v5-root').dataset.screen;
@@ -126,7 +126,7 @@ function boot(storage={},now=START){
     const before=t.w.localStorage.getItem(PLAN);
     t.tap('Ribeye 500 g');
     assert.equal(t.w.localStorage.getItem(PLAN),before,'started dish stays (storage unchanged)');
-    assert.equal(t.alerts.length,1);assert.match(t.alerts[0],/al gestart/);
+    assert.equal(t.alerts.length,0,'v5.9: no window.alert');assert.match(t.$('#v5-root [data-v5-notice]')?.textContent||'',/al gestart/,'in-page notice');
     // The serialized dish has no new fields (no schema change).
     assert.ok(!('meaterAuto' in t.dishes()[0]),'no probe choice made → no optional field');
     assert.deepEqual(t.errors,[]);

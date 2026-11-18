@@ -39,7 +39,7 @@ function boot({wakeLock=false}={}){
       w.addEventListener('error',e=>errors.push(String(e.error?.stack||e.message)));
     }});
   const w=dom.window,d=w.document,$=s=>d.querySelector(s);
-  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}};
+  const press=act=>{const el=$('#v5-root [data-v5-act="'+act+'"]');assert.ok(el,'action '+act);el.click();if(act==='prep'){const c=$('#v5-root [data-v5-act="prep-confirm"]');if(c)c.click();}if(act==='new'){const c=$('#v5-root [data-v5-act="new-confirm"]');if(c)c.click();}};
   const addRecipe=name=>{const el=$('[data-v5-recipe="'+name+'"]');assert.ok(el,'recipe '+name);el.click();};
   const card=id=>$('[data-v5-dishcard="'+id+'"]');
   const slot=(id,key)=>card(id)?.querySelector('[data-v5-slot="'+key+'"]');
@@ -183,7 +183,8 @@ const flush=()=>new Promise(r=>setTimeout(r,0));
     choose(ribeye,'pro'); // v5.5: chosen in step 2 (no automatic default on the public website)
     assert.equal(ribeye.meater,'pro');
     choose(chicken,'pro');
-    assert.equal(alerts.length,1,'duplicate probe refused with a message');
+    assert.equal(alerts.length,0,'v5.9: no window.alert');
+    assert.match($('#v5-root [data-v5-notice]')?.textContent||'',/al gekoppeld aan een ander gerecht/,'duplicate probe refused with an in-page message');
     assert.equal(chicken.meater,'none','duplicate probe not stored');
     choose(chicken,'plus');
     assert.equal(chicken.meater,'plus');

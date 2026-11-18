@@ -103,6 +103,7 @@ jobs:
           node tests/v551-panel-fullscreen.mjs
           node tests/v570-planning-ui.mjs
           node tests/v580-no-probe-ui.mjs
+          node tests/v590-cleanup.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

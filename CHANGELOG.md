@@ -2,6 +2,14 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.9.0 — Opruimen (draft-PR, niet gepubliceerd)
+- De oude kookpagina, het "Interactief draaiboek" en het "Uitgebreid stap-voor-stap draaiboek" zijn uit de gewone navigatie gehaald (de knop "MEATER & focus" op Live is weg) en bereikbaar onder **Meer → Geavanceerd** (nieuwe laatste groep van Meer; knoppen `v520-open-cooking`, `v520-open-board`, `v520-open-steps`). De pagina's zelf zijn ongewijzigd.
+- Eén takenlijst in de gewone navigatie: "Volgende handelingen" op Live. De oude draaiboeken delen dezelfde afvinkstand en staan alleen nog onder Geavanceerd.
+- "Nieuwe sessie" en "Sessie afronden" gebruiken een bevestigingspaneel in de pagina in plaats van `window.confirm`; ook de overige `window.alert`-meldingen van de v5-laag ("al gestart", "thermometer al gekoppeld", "reservekopie opslaan mislukt") staan in de pagina. Annuleren verandert niets (opslag byte-gelijk). Dialogen van de oude pagina's (Recepten-import, Planning laden, voorbeeld herstellen, enzovoort) zijn niet vervangen.
+- Publicatiebewaking: nieuwe sectie `replacedStorageLines` (alleen een letterlijk gedeclareerd paar oud/nieuw mag een bestaande opslagregel vervangen) met drie nieuwe negatieve mutatietests; release 5.9.0.
+- Tests: nieuw `tests/v590-cleanup.mjs`; bestaande suites bijgewerkt voor de nieuwe route en de bevestigingspanelen.
+- Opslag: geen nieuwe sleutels of velden.
+
 ## v5.8.0 — Schatting zonder probe (draft-PR, niet gepubliceerd)
 - Nieuwe bron `start` met bereik in `dist/bbq-eta.js`: echte start + receptduur geeft "Op tafel tussen HH:MM en HH:MM", label "geschat, geen meting". AANNAME: ±20 % van de resterende kooktijd, minimaal ±15 min (constanten `rangeFrac`/`rangeMinMin`). Bronvolgorde: eigen curve → MEATER-ETA → handmatig → start + receptduur → planning; een verse probe-meting heeft altijd voorrang.
 - Knop "Kern invoeren" op de Live-gerechtkaart (paneel in de pagina, geen dialoog): 0–120 °C, komma of punt, `inputmode="decimal"`. Nieuwe bron `manual`: één invoer verfijnt de positie op een Newton-curve geijkt aan de planning, twee of meer geven een helling; label "handmatig, HH:MM", nooit LIVE; smaller bereik (AANNAME ±12 %/min. ±8 min, met helling ±8 %/min. ±5 min, nooit breder dan het bereik zonder meting).

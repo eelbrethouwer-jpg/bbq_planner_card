@@ -229,3 +229,9 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 #v5-root .v5-dc-err{margin:0 0 6px;font-size:13px;font-weight:700;color:#ffb3a7;overflow-wrap:anywhere}
 #v5-root .v5-dc-err:empty{display:none}
 #v5-root .v5-dc-note{margin:6px 0 0}
+/* v5.9: bevestigingspanelen in de pagina (Nieuwe sessie, Sessie afronden), meldingen in de pagina en Meer → Geavanceerd */
+#v5-root .v5-confirm{border-color:#af804e;background:linear-gradient(145deg,#2d2518,#221c12)}
+#v5-root .v5-confirm p,#v5-root .v5-notice p{font-size:13px;line-height:1.45;margin:6px 0;overflow-wrap:anywhere}
+#v5-root .v5-confirm .v5-row .v5-btn,#v5-root .v5-notice .v5-row .v5-btn{flex:1 1 140px;min-height:44px;white-space:normal}
+#v5-root .v5-notice{border-color:#af804e;background:linear-gradient(145deg,#2d2518,#221c12)}
+#v47-more .v520-advanced .v5-btn{width:100%;justify-content:flex-start;text-align:left;white-space:normal;margin:0 0 8px;min-height:48px}

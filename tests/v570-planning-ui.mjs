@@ -36,7 +36,7 @@ async function open(browser,time,{width=390}={}){
   await page.locator('#v5-root').waitFor();
   await context.clock.setFixedTime(new Date(time)); // de klok staat stil: tijden in de uitkomsten zijn exact
   s.f=page.mainFrame();
-  s.act=async a=>{await page.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);};
+  s.act=async a=>{await page.locator('#v5-root [data-v5-act="'+a+'"]').first().click();await page.waitForTimeout(120);if(a==='new'){const c=page.locator('#v5-root [data-v5-act="new-confirm"]');if(await c.count()){await c.first().click();await page.waitForTimeout(120);}}};
   s.text=sel=>page.locator(sel).first().evaluate(el=>el.innerText.replace(/\s+/g,' ').trim());
   s.count=sel=>page.locator(sel).count();
   s.store=()=>page.evaluate(k=>localStorage.getItem(k),KEY);

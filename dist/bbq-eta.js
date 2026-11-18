@@ -1,4 +1,4 @@
-/* BBQ Planner v5.7.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen; en planningshulp (BBQPlan).
+/* BBQ Planner v5.8.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen; en planningshulp (BBQPlan).
    Puur: geen DOM, geen klok, geen opslag, geen netwerk. `now` is altijd een parameter.
    Klassiek script (window.BBQEta), zodat de planner geen module-lader nodig heeft; dezelfde functies
    zijn via de ES-module-ingang in Node testbaar (zie tests/eta-engine.mjs). */
@@ -21,7 +21,21 @@ const DEFAULTS=Object.freeze({
   newtonGap:5,         // omgeving moet > doel + 5 °C zijn voor het Newton-model
   meaterDisagreeMin:10,
   maxHorizonMin:1440,
-  maxFitPoints:60
+  maxFitPoints:60,
+  // v5.8 — schatting zonder probe. Alle waarden hieronder zijn AANNAMES (grove richtwaarden, geen meting).
+  rangeFrac:0.2,       // bereik zonder meting: ±20 % van de resterende kooktijd ...
+  rangeMinMin:15,      // ... en minimaal ±15 min
+  manualFrac:0.12,     // bereik met één handmatige kerntemperatuur: ±12 % van de rest ...
+  manualMinMin:8,      // ... minimaal ±8 min
+  manualSlopeFrac:0.08,// bereik met twee of meer handmatige metingen (helling): ±8 % ...
+  manualSlopeMinMin:5, // ... minimaal ±5 min
+  manualMaxMin:90,     // een handmatige meting ouder dan dit telt niet meer mee
+  manualSlopeSpanMin:10,// helling pas als de metingen minstens zoveel minuten uit elkaar liggen
+  manualMaxPoints:6,   // hoeveel recente handmatige metingen de helling gebruikt
+  startCore:5,         // aanname: kern bij het opleggen (koelkast), voor positie op de curve
+  grillMinDiff:10,     // kamadotemperatuur telt pas als hij zo veel °C afwijkt van de planning
+  grillAmbient:20,     // eenvoudige schaling (zonder kerndoel): ΔT t.o.v. omgeving
+  scaleMin:0.5,scaleMax:2.5
 });
 const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)&&n>=-30&&n<=500?n:null;};
 const mins=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)&&n>=1&&n<=10000?n:null;};
@@ -167,6 +181,80 @@ function curve(pts,target,phaseTargets,cfg){
   return {...res,state:'estimate',at:Math.round(last.t+remaining*MIN),remaining,margin,rise:lin.slope,riseNow:rise,model,k,coreFit,sigma,
     confidence:model==='newton'?'normaal':'laag',phase,reason:''};
 }
+/* v5.8 — zonder probe. Handmatige kerntemperaturen en een afwijkende kamadotemperatuur verfijnen een grove, eerlijke schatting.
+   Nooit LIVE: de bron heet 'manual' (handmatig) of 'start' (geschat, geen meting). */
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+function cleanManual(list,now,startedAt,cfg){
+  const out=[];
+  if(!Array.isArray(list))return out;
+  for(const p of list){
+    if(!p||typeof p!=='object')continue;
+    const t=finiteTime(p.t),core=Number(p.core);
+    if(t===null||t>now+MIN||!(p.core!==null&&p.core!==''&&Number.isFinite(core)&&core>=0&&core<=120))continue;
+    if(startedAt!==null&&t<startedAt-MIN)continue; // meting van een eerdere keer op de BBQ
+    out.push({t,core});
+  }
+  out.sort((a,b)=>a.t-b.t);
+  return out;
+}
+// Factor op de kooktijd bij een afwijkende kamadotemperatuur. Newton (zoals de curve) als kern- en kamadodoel dat toelaten,
+// anders eenvoudige schaling op het temperatuurverschil met de omgeving. null = geen afwijking of geen bruikbare invoer.
+function grillScale(o,target,cfg){
+  const planned=num(o.grillPlanned),g=o.grillNow&&typeof o.grillNow==='object'?o.grillNow:null;
+  if(!g||planned===null)return null;
+  const temp=num(g.temp),t=finiteTime(g.t);
+  if(temp===null||t===null||temp<=0||Math.abs(temp-planned)<cfg.grillMinDiff)return null;
+  const c0=cfg.startCore;let factor=null,model='simple';
+  if(target!==null&&target>c0&&planned>target+cfg.newtonGap&&temp>target+cfg.newtonGap){
+    factor=Math.log((temp-c0)/(temp-target))/Math.log((planned-c0)/(planned-target));model='newton';
+  }else if(planned>cfg.grillAmbient+20&&temp>cfg.grillAmbient+20){
+    factor=(planned-cfg.grillAmbient)/(temp-cfg.grillAmbient);
+  }
+  if(!Number.isFinite(factor)||factor<=0)return null;
+  return {t,temp,planned,factor:clamp(factor,cfg.scaleMin,cfg.scaleMax),model};
+}
+// Einde van de kooktijd uit de echte start + receptduur (minuten, incl. omschakeltijd), met een eventuele kamadocorrectie.
+// Voor het moment van de invoer rekent de schatting op de geplande temperatuur, daarna op de ingevoerde.
+function startEnd(startedAt,total,grill){
+  const full=total*MIN;
+  if(!grill)return startedAt+full;
+  const tg=Math.max(grill.t,startedAt),done=clamp((tg-startedAt)/full,0,1);
+  return tg+full*(1-done)*grill.factor;
+}
+function rangeAround(end,now,frac,minMin){
+  const rem=Math.max(0,end-now),half=Math.max(minMin*MIN,frac*rem);
+  return {from:Math.max(now,end-half),to:Math.max(end+half,now+minMin*MIN),begin:end-half,halfMin:Math.round(half/MIN)};
+}
+// Schatting uit handmatige kerntemperaturen. Eén meting: positie op de (Newton-)curve geijkt aan de planning; twee of meer: helling.
+function manualEstimate(pts,o,target,total,grill,now,cfg){
+  if(!pts.length||target===null)return null;
+  const last=pts[pts.length-1];
+  if(now-last.t>cfg.manualMaxMin*MIN)return null;
+  const info={n:pts.length,at:last.t,core:last.core,slope:null,model:'point'};
+  if(last.core>=target)return {state:'reached',cookEnd:last.t,info};
+  let remaining=null;
+  const recent=pts.filter(p=>p.t>=now-cfg.manualMaxMin*MIN).slice(-cfg.manualMaxPoints);
+  if(recent.length>=2&&(recent[recent.length-1].t-recent[0].t)/MIN>=cfg.manualSlopeSpanMin){
+    const fit=theilSen(recent.map(p=>(p.t-last.t)/MIN),recent.map(p=>p.core));
+    if(fit&&fit.slope>=cfg.minRise&&fit.slope<=cfg.maxRise){
+      const r=(target-last.core)/fit.slope;
+      if(Number.isFinite(r)&&r>=0&&r<=cfg.maxHorizonMin){remaining=r;info.slope=fit.slope;info.model='slope';}
+    }
+  }
+  if(remaining===null){
+    if(!(total>0))return null;
+    const c0=cfg.startCore,planned=num(o.grillPlanned),A=grill?grill.temp:planned;
+    if(planned!==null&&A!==null&&target>c0&&planned>target+cfg.newtonGap&&A>target+cfg.newtonGap){
+      const k=Math.log((planned-c0)/(planned-target))/total,from=Math.max(c0,last.core);
+      remaining=Math.log((A-from)/(A-target))/k;info.model='newton';
+    }else{
+      const f=clamp((last.core-c0)/(target-c0),0,1);
+      remaining=total*(1-f)*(grill?grill.factor:1);info.model='linear';
+    }
+    if(!Number.isFinite(remaining)||remaining<0||remaining>cfg.maxHorizonMin)return null;
+  }
+  return {state:'estimate',cookEnd:Math.round(last.t+remaining*MIN),info};
+}
 function carryoverAdvice(target,rest,weightKg,allow){
   if(target===null||allow===false)return null;
   const big=Number.isFinite(weightKg)&&weightKg>=1;
@@ -180,10 +268,13 @@ function carryoverAdvice(target,rest,weightKg,allow){
    heldUntil:  v5.5, optioneel: tot dit tijdstip bevestigt de bron dat de laatste waarde nog geldt (HA last_reported,
                of: de sensor is nog beschikbaar en HA schrijft alleen bij een gewijzigde waarde). Alleen voor de versheid
                (ageMin, stale, expired); er wordt geen meetpunt verzonnen en tijden blijven aan de laatste meting verankerd.
+   manual:     v5.8, optioneel: handmatige kerntemperaturen [{t,core}] (handthermometer). Nooit LIVE; een verse probe heeft voorrang.
+   grillPlanned / grillNow: v5.8, optioneel: geplande kamadotemperatuur en één door de gebruiker ingevoerde {t,temp}.
    target:     einddoel kern (°C) of null
    meater:     {eta,at} alleen als de MEATER-ETA al gevalideerd is (incl. de 2 °C-doelcheck), anders null
    history:    {medianMinutes} uit eigen reviews, of null
-   Resultaat bevat altijd `source`: 'curve' | 'meater' | 'start' | 'planning' | 'none'. */
+   Resultaat bevat altijd `source`: 'curve' | 'meater' | 'manual' | 'start' | 'planning' | 'none'.
+   v5.8: `range` {from,to,begin,halfMin} (kooteinde; `begin` = ongeklemd begin, voor de prik-melding) en `readyRange` (incl. rust) bij 'start' en 'manual' (geschat of handmatig, nooit een meting). */
 function estimate(input){
   const o=input&&typeof input==='object'?input:{};
   const cfg={...DEFAULTS,...(o.options&&typeof o.options==='object'?o.options:{})};
@@ -195,7 +286,7 @@ function estimate(input){
   const startedAt=finiteTime(o.startedAt);
   const out={ok:false,source:'none',state:'none',cookEnd:null,ready:null,margin:null,reason:'',
     asOf:null,ageMin:null,unchangedMin:null,stale:false,core:null,rise:null,ambient:null,model:null,confidence:null,
-    phase:null,stall:null,meater:null,progress:null,points:pts.length,
+    phase:null,stall:null,meater:null,progress:null,points:pts.length,range:null,readyRange:null,manual:null,grill:null,
     advice:carryoverAdvice(target,rest,Number(o.weightKg),o.carryover)};
   let c=null;
   if(pts.length){
@@ -226,14 +317,38 @@ function estimate(input){
     if(meaterOk){const diff=Math.round((meaterEta-c.at)/MIN);out.meater={cookEnd:meaterEta,diffMin:diff,disagree:Math.abs(diff)>cfg.meaterDisagreeMin};}
   }else if(meaterOk){
     setEnd(meaterEta,'meater');out.meater={cookEnd:meaterEta,diffMin:null,disagree:false};
-  }else if(startedAt!==null&&Number(o.cookMinutes)>0){
-    setEnd(startedAt+(Number(o.cookMinutes)+Math.max(0,Number(o.transitionMinutes)||0))*MIN,'start');
-  }else if(finiteTime(o.plannedEnd)!==null){
-    setEnd(finiteTime(o.plannedEnd),'planning');
+  }else{
+    const total=Number(o.cookMinutes)>0?Number(o.cookMinutes)+Math.max(0,Number(o.transitionMinutes)||0):0;
+    const grill=grillScale(o,target,cfg);
+    const mpts=cleanManual(o.manual,now,startedAt,cfg);
+    const lastProbe=pts.length?pts[pts.length-1].t:null;
+    // Een verse probe-meting (nieuwer dan de laatste handmatige invoer) heeft altijd voorrang op het handmatige meetpunt.
+    const probeWins=lastProbe!==null&&!out.stale&&mpts.length&&lastProbe>=mpts[mpts.length-1].t;
+    const man=startedAt!==null&&!probeWins?manualEstimate(mpts,o,target,total,grill,now,cfg):null;
+    // Bereik uit de echte start + receptduur: de basis, en de bovengrens voor de breedte van een bereik met een meting.
+    const startEndAt=startedAt!==null&&total>0?startEnd(startedAt,total,grill):null;
+    const startRange=startEndAt!==null?rangeAround(startEndAt,now,cfg.rangeFrac,cfg.rangeMinMin):null;
+    if(grill)out.grill={planned:grill.planned,temp:grill.temp,at:grill.t,factor:grill.factor,model:grill.model};
+    const setRange=(end,r)=>{out.range={from:r.from,to:r.to,begin:r.begin,halfMin:r.halfMin};out.readyRange={from:r.from+rest*MIN,to:r.to+rest*MIN};};
+    if(man){
+      setEnd(man.cookEnd,'manual');out.manual=man.info;out.state=man.state;out.reason='';
+      if(man.state==='estimate'){
+        const frac=man.info.model==='slope'?cfg.manualSlopeFrac:cfg.manualFrac,min=man.info.model==='slope'?cfg.manualSlopeMinMin:cfg.manualMinMin;
+        let r=rangeAround(man.cookEnd,now,frac,min);
+        // Een meting maakt de schatting nooit onzekerder: het bereik is altijd smaller dan zonder meting.
+        if(startRange){const w=startRange.to-startRange.from;for(let h=r.halfMin;r.to-r.from>=w&&h>1;h--)r=rangeAround(man.cookEnd,now,0,h-1);}
+        setRange(man.cookEnd,r);
+      }
+    }else if(startRange){
+      setEnd(startEndAt,'start');setRange(startEndAt,startRange);
+      if(mpts.length)out.manual={n:mpts.length,at:mpts[mpts.length-1].t,core:mpts[mpts.length-1].core,slope:null,model:'stale'};
+    }else if(finiteTime(o.plannedEnd)!==null){
+      setEnd(finiteTime(o.plannedEnd),'planning');
+    }
   }
   return out;
 }
-const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.7.0'});
+const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.8.0'});
 root.BBQEta=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 

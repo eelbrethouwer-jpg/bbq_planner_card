@@ -2,6 +2,15 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.8.0 — Schatting zonder probe (draft-PR, niet gepubliceerd)
+- Nieuwe bron `start` met bereik in `dist/bbq-eta.js`: echte start + receptduur geeft "Op tafel tussen HH:MM en HH:MM", label "geschat, geen meting". AANNAME: ±20 % van de resterende kooktijd, minimaal ±15 min (constanten `rangeFrac`/`rangeMinMin`). Bronvolgorde: eigen curve → MEATER-ETA → handmatig → start + receptduur → planning; een verse probe-meting heeft altijd voorrang.
+- Knop "Kern invoeren" op de Live-gerechtkaart (paneel in de pagina, geen dialoog): 0–120 °C, komma of punt, `inputmode="decimal"`. Nieuwe bron `manual`: één invoer verfijnt de positie op een Newton-curve geijkt aan de planning, twee of meer geven een helling; label "handmatig, HH:MM", nooit LIVE; smaller bereik (AANNAME ±12 %/min. ±8 min, met helling ±8 %/min. ±5 min, nooit breder dan het bereik zonder meting).
+- Eén afwijkende kamadotemperatuur ("Het is nu 140 °C"): schaalt de kooktijd vanaf het moment van invoer (Newton als kern- en kamadodoel dat toelaten, anders eenvoudige schaling op het verschil met 20 °C; AANNAME). De planning verandert niet.
+- Prik-melding aan het begin van het bereik via de bestaande `v46NotifySend` (dedup-sleutel `…|prik|n`): één keer, herhaling na ≥ 15 min en niet kort na een invoer, maximaal drie. Alleen bij open planner.
+- Vaste veiligheidsregel bij vlees/kip zonder live meting: "Controleer de kern met een thermometer voordat je serveert".
+- Sensor-update en 1-s-timer patchen alleen slots (nieuwe slots `safe` en `manual`); het invoerpaneel is geen slot en wordt nooit door de timer overschreven. Geen extra timers.
+- Opslag: **nieuw OPTIONEEL veld** `manual` op een gerecht (`{points:[{t,core}], grill:{t,temp}|null}`) in de bestaande opslag `kamado-bereidingsplanner-v1`; geen nieuwe sleutel. Oude data zonder het veld laadt ongewijzigd. Publicatieguard: `release` 5.8.0 en `optionalDishFields` (nieuw, `manual` met opschoonfunctie).
+
 ## v5.7.0 — Planning eenvoudiger (draft-PR, niet gepubliceerd)
 - Bij het toevoegen van een gerecht (stap 1 en "+1") kiest de app de kamado met de minste conflicten (bestaande `v45Score`, via `b.chooseKamado`); gelijke score = standaard van het recept. Alleen voor het nieuwe gerecht: bestaande en handmatig gekozen kamado's veranderen nooit.
 - Urgente conflicten in rood bovenaan stap 2 met een directe oplossing ("Zet Kippenpoten op de kleine kamado" met knop, "Begin om 08:00 of serveer om 03:00"). Meldingen van `calc()` hebben nu een extra veld `meta` (alleen toegevoegd; `type` en `message` ongewijzigd). "Naar voorbereiding" vraagt bij urgente conflicten om bevestiging in een paneel in de pagina (geen window.confirm).

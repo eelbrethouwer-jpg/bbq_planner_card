@@ -214,3 +214,18 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 #v5-root .v5-prep-confirm ul{margin:6px 0;padding-left:18px;display:grid;gap:8px;font-size:13px;overflow-wrap:anywhere}
 #v5-root .v5-prep-confirm p{font-size:13px;margin:6px 0}
 #v5-root .v5-prep-confirm .v5-row .v5-btn{flex:1 1 140px;min-height:44px;white-space:normal}
+/* v5.8: zonder probe: veiligheidsregel, "Kern invoeren" en het invoerpaneel (in de pagina, geen dialoog) */
+#v5-root .v5-dc-safe{margin:8px 0 0;padding:8px 10px;border-left:4px solid #e0b24e;background:#2a2414;border-radius:8px;font-size:13px;line-height:1.45;color:#ffe9b8;overflow-wrap:anywhere}
+#v5-root .v5-dc-manualrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:8px;min-width:0}
+#v5-root .v5-dc-manualrow .v5-btn{min-height:44px;font-size:14px}
+#v5-root .v5-dc-manualrow small{min-width:0;overflow-wrap:anywhere}
+#v5-root .v5-dc-panel{margin-top:8px;padding:10px;border:1px solid #4a6670;border-radius:12px;background:#14252d;min-width:0}
+#v5-root .v5-dc-panel:empty,#v5-root [data-v5-manual-panel]:empty{display:none}
+#v5-root .v5-dc-form{display:grid;gap:6px;margin:0 0 10px;min-width:0}
+#v5-root .v5-dc-form label{display:grid;gap:4px;font-size:13px;font-weight:700;color:#dfe7e6;min-width:0;overflow-wrap:anywhere}
+#v5-root .v5-dc-form input{width:100%;min-width:0;min-height:44px;font-size:16px;box-sizing:border-box}
+#v5-root .v5-dc-panelbtns{display:flex;flex-wrap:wrap;gap:8px}
+#v5-root .v5-dc-panelbtns .v5-btn{flex:1 1 130px;min-height:44px;white-space:normal}
+#v5-root .v5-dc-err{margin:0 0 6px;font-size:13px;font-weight:700;color:#ffb3a7;overflow-wrap:anywhere}
+#v5-root .v5-dc-err:empty{display:none}
+#v5-root .v5-dc-note{margin:6px 0 0}

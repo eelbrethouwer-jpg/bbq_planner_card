@@ -114,12 +114,18 @@ const clock=t=>new Date(t).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-
     assert.match(stale,/verouderd: meting 6 min oud/);
     assert.doesNotMatch(stale,/planning|18:30/,'not the planned end (18:30): '+stale);
     assert.match(slot(ribeye.id,'core').textContent,/— °C[\s\S]*Kerntemperatuur niet beschikbaar/,'no core value while the sensor is unavailable');
-    // 16 min: the curve is no longer used → registered start + recipe duration (55 + 15 ombouw) + 8 rest.
+    // 16 min: the curve is no longer used → registered start + recipe duration (55 + 15 ombouw) + 8 rest, now as a range (v5.8).
     w.__testNow=lastReading+16*60000;tick();
     const later=eta();
-    assert.match(later,/start \+ receptduur/,later);
-    assert.match(later,new RegExp('Op tafel rond '+clock(START+(55+15+8)*60000)),later);
+    // v5.8: without a (fresh) measurement the registered start + duration is shown as an honest range "geschat, geen meting"
+    // (±20 %, min. ±15 min); the point estimate (start + 55 + 15 ombouw + 8 rest) lies inside it.
+    assert.match(later,/geschat, geen meting/,later);
+    const range=later.match(/Op tafel tussen (\d\d:\d\d) en (\d\d:\d\d)/);
+    assert.ok(range,'range label: '+later);
+    const point=clock(START+(55+15+8)*60000);
+    assert.ok(range[1]<=point&&point<=range[2],'point estimate '+point+' inside '+range[1]+'–'+range[2]+': '+later);
     assert.doesNotMatch(later,/planning/);
+    assert.doesNotMatch(later,/LIVE/);
     assert.equal($('#v5-root .v5-content'),root,'no Live rebuild');
     assert.deepEqual(errors,[]);
     console.log('PASS v5.4.0 shared estimate: own curve, phase 47 °C, no drift over 4.5 min, last estimate at 6 min, start + duration at 16 min, progress from first reading');

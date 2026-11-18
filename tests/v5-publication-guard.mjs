@@ -19,6 +19,9 @@
 //                               Een nieuw berichttype mag alleen als het in de policy staat onder
 //                               newDataContractIdentifiers én dataContractIdentifiers (geen hernoeming).
 //                               Een nieuwe opslagregel mag alleen als hij letterlijk in declaredStorageLines staat.
+//  6. OPTIONAL_FIELD            (v5.8) een nieuw veld op een gerecht (sleutel of spread in makeDish) mag alleen als het in
+//                               optionalDishFields staat, met een opschoonfunctie (terugval voor oude data) die bestaat en bij het
+//                               laden van de opgeslagen planning wordt aangeroepen. Verwijderen of ongedeclareerd toevoegen faalt.
 // Gebruik: node tests/v5-publication-guard.mjs [--base <ref>] [--root <dir>] [--json]
 // Base: --base, anders $GUARD_BASE (CI: PR-base-SHA of push-before-SHA), anders merge-base met origin/main.
 // Zonder vaststelbare base faalt de controle (fail-closed).
@@ -194,6 +197,26 @@ function analyseFile(file, src, prodFiles, policy) {
   return {issues, sinks};
 }
 
+// v5.8: de sleutels (en spreads) op het hoogste niveau van de object-literal in `const makeDish=(data={})=>({ ... })`.
+// Een nieuw gerechtveld in de opslag moet hier zichtbaar worden; zo kan een veld niet ongemerkt bijkomen.
+function dishFieldTokens(src) {
+  const at = src ? src.search(/const\s+makeDish\s*=\s*\(data\s*=\s*\{\}\)\s*=>\s*\(\{/) : -1;
+  if (at < 0) return null;
+  let i = src.indexOf('({', at) + 1, depth = 0, quote = null;
+  const tokens = new Set();
+  let top = '';
+  for (; i < src.length; i++) {
+    const c = src[i];
+    if (quote) { if (c === '\\') i++; else if (c === quote) quote = null; if (depth === 1) top += ' '; continue; }
+    if (c === '"' || c === "'" || c === '`') { quote = c; if (depth === 1) top += ' '; continue; }
+    if ('({['.includes(c)) { depth++; if (depth > 1) { if (depth === 2) top += ' '; continue; } top += c; continue; }
+    if (')}]'.includes(c)) { depth--; if (depth === 0) break; continue; }
+    if (depth === 1) top += c;
+  }
+  for (const m of top.matchAll(/(?:^|,)\s*(?:\.\.\.\s*([A-Za-z_$][\w$]*)\s*|([A-Za-z_$][\w$]*)\s*:)/g)) tokens.add(m[1] ? '...' + m[1] + '(' : m[2]);
+  return [...tokens].sort();
+}
+
 function storageFingerprint(files, read) {
   const identifiers = new Set(), lines = [], constants = {};
   for (const f of files) {
@@ -270,6 +293,24 @@ export function checkPublication({root = process.cwd(), base, policyFile = '.git
     lines.added = lines.added.filter(x => !declaredLines.includes(x));
     for (const l of lines.added) add('STORAGE_CONTRACT', l.split(':')[0], `nieuwe/gewijzigde opslag- of schemaregel: ${l.slice(l.indexOf(':') + 2, l.indexOf(':') + 160)}`);
     for (const l of lines.removed) add('STORAGE_CONTRACT', l.split(':')[0], `verwijderde/gewijzigde opslag- of schemaregel: ${l.slice(l.indexOf(':') + 2, l.indexOf(':') + 160)}`);
+  }
+  // 6. optionele gerechtvelden (v5.8)
+  {
+    const HTML_FILE = 'dist/BBQ_bereidingsplanner_MEATER_v4.html';
+    const headSrc = readAt(root, null, HTML_FILE), baseSrc = readAt(root, resolvedBase, HTML_FILE);
+    const ht = dishFieldTokens(headSrc), bt = dishFieldTokens(baseSrc);
+    const declared = Array.isArray(policy.optionalDishFields) ? policy.optionalDishFields : [];
+    if (ht === null || bt === null) add('OPTIONAL_FIELD', HTML_FILE, 'makeDish niet gevonden; gerechtvelden kunnen niet worden bewaakt');
+    else {
+      const tokens = diffList(bt, ht), declaredTokens = declared.map(x => x.token);
+      for (const t of tokens.added) if (!declaredTokens.includes(t)) add('OPTIONAL_FIELD', HTML_FILE, `nieuw gerechtveld ${t} in makeDish staat niet in optionalDishFields`);
+      for (const t of tokens.removed) add('OPTIONAL_FIELD', HTML_FILE, `gerechtveld ${t} uit makeDish verwijderd t.o.v. base`);
+      for (const d of declared) {
+        if (!ht.includes(d.token)) { add('OPTIONAL_FIELD', HTML_FILE, `gedeclareerd veld ${d.field} (${d.token}) komt niet voor in makeDish`); continue; }
+        if (!new RegExp(`function\\s+${d.cleaner}\\s*\\(`).test(headSrc)) add('OPTIONAL_FIELD', HTML_FILE, `opschoonfunctie ${d.cleaner} voor veld ${d.field} ontbreekt (terugval voor oude data)`);
+        if (!new RegExp(`'${d.field}'\\s+in\\s+d\\)[^\\n]*${d.cleaner}\\(d\\.${d.field}\\)`).test(headSrc)) add('OPTIONAL_FIELD', HTML_FILE, `bij het laden van opgeslagen gerechten ontbreekt '${d.field}' in d … ${d.cleaner}(d.${d.field})`);
+      }
+    }
   }
   return {ok: issues.length === 0, base: resolvedBase, head: tryGit(root, ['rev-parse', 'HEAD']), changed: [...changed].sort(), productionChanged: prodChanged.sort(), headVersion, baseVersion, issues, notes,
     stats: {productionFiles: headProd.length, identifiers: h.identifiers.length, storageLines: h.lines.length}};

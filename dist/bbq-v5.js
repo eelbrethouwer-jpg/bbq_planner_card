@@ -6,7 +6,9 @@
    v5.7.0: planning made simpler: kamado chosen with the fewest conflicts when a dish is ADDED (never changed afterwards), urgent conflicts in red
            at the top of step 2 with a direct fix, confirmation on "Naar voorbereiding", "Plan opnieuw vanaf nu" when started too late, and a clear
            notice for a preparation "de avond vooraf" that has already passed. Nothing is changed without a tap of the user.
-   v5.6.0: one line "Meldingen op je telefoon" in step 2 and on Live (HA card only), with a test notification. */
+   v5.6.0: one line "Meldingen op je telefoon" in step 2 and on Live (HA card only), with a test notification.
+   v5.8.0: without a probe Live shows an honest range ("geschat, geen meting"), a button "Kern invoeren" for a hand thermometer
+           (source "handmatig, HH:MM", never LIVE) and one optional kamado temperature; in-page panel, no dialogs. */
 (function(){
 'use strict';
 window.initBBQV5=function(b){
@@ -20,7 +22,7 @@ window.initBBQV5=function(b){
   const categoryIcon={rund:'🥩',varken:'🥓',gevogelte:'🍗',vis:'🐟',lam:'🍖',groenten:'🥦',vegetarisch:'🥬',dessert:'🍰',overig:'🍽️'};
   let wakeLock=null,wakePending=false,livePlan=new Map();
   // v5.5 in-memory UI state only (never stored): open probe choices on cards, acknowledged hero actions, open adjust panel.
-  const probeEdit=new Set(),heroAck=new Set();let adjustOpen=false;
+  const probeEdit=new Set(),heroAck=new Set(),manualOpen=new Set();let adjustOpen=false;
   let meta={active:false,stage:'select',created:''},screen='home',recipeSearch='',legacyFrom='home',legacyTab='',legacyReturn='',legacyReturnScroll=0,showAllTasks=false,recipeFilter='all';
   try{const saved=JSON.parse(localStorage.getItem(KEY));if(saved&&typeof saved==='object'&&saved.version===1){meta={active:saved.active===true,stage:['select','setup','prep','live','finished'].includes(saved.stage)?saved.stage:'select',created:String(saved.created||'')}}}catch(e){}
   /* v5.5: optional field `view` in the existing session metadata (bbq-v5-session-v1): last screen, legacy tab, return target,
@@ -254,6 +256,7 @@ window.initBBQV5=function(b){
       ['pro','plus'].map(k=>'<option value="'+k+'"'+(value===k?' selected':'')+(used(k)&&value!==k?' disabled':'')+'>'+PROBE_LABEL[k]+(used(k)&&value!==k?' (bezet)':'')+'</option>').join('')+'</select>';
   }
   const temp=(v,digits=1)=>Number(v).toLocaleString('nl-NL',{minimumFractionDigits:digits,maximumFractionDigits:digits});
+  const tempAuto=v=>Number.isInteger(Number(v))?temp(v,0):temp(v,1);
   const goalOf=d=>{const g=Number(d?.core);return d&&d.core!==''&&d.core!=null&&Number.isFinite(g)&&g>0?g:null};
   function ageText(p){
     // v5.5 (review PR #44, finding 2): HA keeps an unchanged value without a new timestamp. While the sensor is available
@@ -287,7 +290,11 @@ window.initBBQV5=function(b){
       const trend=b.getTrend(d);
       parts.push('Omgeving '+(p.ambient==null?'—':escape(temp(p.ambient,0))+' °C'));
       parts.push(trend?.ok?(trend.slope>=0?'+':'')+escape(temp(trend.slope))+' °C/min':'stijging volgt');
-    }else parts.push('Doel BBQ '+escape(d.grill??'—')+' °C');
+    }else{
+      const g=d.manual&&d.manual.grill;
+      // v5.8: one optional kamado temperature typed by the user; the plan stays as it is.
+      parts.push(g&&Number.isFinite(Number(g.temp))?'Kamado nu '+escape(temp(g.temp,0))+' °C (handmatig, '+clock(Number(g.t))+') · plan '+escape(d.grill??'—')+' °C':'Doel BBQ '+escape(d.grill??'—')+' °C');
+    }
     if(started!=null)parts.push('op BBQ '+started+' min');
     const env=parts.join(' · ');
     // One estimate per dish (ETA-module): own curve, MEATER ETA, registered start + duration, else the planning.
@@ -303,8 +310,19 @@ window.initBBQV5=function(b){
         source='eigen trend';margin=est.margin;
         sub=(est.phase?escape(temp(est.phase.target,0))+' °C (einde indirect) rond '+clock(est.phase.at)+' · ':'')+'kern '+goalTxt+' rond '+clock(est.cookEnd);
       }else if(est.source==='meater'){source='MEATER-ETA';sub='kern '+goalTxt+' rond '+clock(est.cookEnd)}
+      else if(est.source==='manual'){
+        // v5.8: hand thermometer. Labelled "handmatig, HH:MM", never LIVE.
+        const m=est.manual||{};
+        if(est.state==='reached'){source='kerndoel bereikt (handmatig, '+clock(m.at)+')';sub=escape(tempAuto(m.core))+' °C gemeten · controleer de gaarheid'}
+        else{
+          source='handmatig, '+clock(m.at);
+          sub=escape(tempAuto(m.core))+' °C gemeten'+(m.model==='slope'&&Number.isFinite(m.slope)?' · helling '+(m.slope>=0?'+':'')+escape(temp(m.slope))+' °C/min':'')+' · kern '+goalTxt+' rond '+clock(est.cookEnd);
+        }
+      }
+      else if(est.range&&!live){source='geschat, geen meting';sub='op de BBQ sinds '+clock(Number(d.startedAt))+' · kern '+goalTxt+' tussen '+clock(est.range.from)+' en '+clock(est.range.to)}
       else{source='start + receptduur';sub='op de BBQ sinds '+clock(Number(d.startedAt))+(live&&est.reason&&!est.stall?' · eigen schatting volgt':'')}
-      if(rest&&!(est.source==='curve'&&est.state==='reached'))sub+=' + '+rest+' min rust';
+      if(est.grill&&(est.source==='start'||est.source==='manual')&&!live)sub+=' · gerekend met '+escape(temp(est.grill.temp,0))+' °C kamado';
+      if(rest&&!(est.source==='curve'&&est.state==='reached')&&!(est.source==='manual'&&est.state==='reached'))sub+=' + '+rest+' min rust';
       if(est.source==='curve'&&est.meater?.disagree)sub+=' · MEATER-ETA zegt '+clock(est.meater.cookEnd);
       if(est.source==='curve'&&est.stale){label='Laatste schatting '+clock(when);sub+=' · verouderd: meting '+est.ageMin+' min oud'}
     }else{
@@ -316,18 +334,43 @@ window.initBBQV5=function(b){
       sub='Stall rond '+escape(temp(st.level,0))+' °C sinds '+clock(st.since)+med+(sub?' · '+sub:'');
     }
     if(est?.advice&&est.source==='curve'&&est.state==='estimate'&&goal!=null&&est.core!=null&&est.core>=goal-12)sub+=' · '+escape(est.advice.text);
+    // v5.8: a range (no probe, or a hand reading) is shown as "tussen HH:MM en HH:MM"; the point estimate stays inside it.
+    const ranged=d.phase==='cooking'&&est&&est.ok&&est.range&&est.readyRange&&(est.source==='manual'||(est.source==='start'&&!live));
     let delta='';
-    if(when!=null&&source!=='planning'&&Number.isFinite(plan.end)&&d.phase!=='done'){
+    if(!ranged&&when!=null&&source!=='planning'&&Number.isFinite(plan.end)&&d.phase!=='done'){
       const diff=Math.round((when-plan.end)/60000);
       delta=Math.abs(diff)<=2?' · op schema':diff<0?' · '+(-diff)+' min vroeg':' · '+diff+' min later';
     }
-    if(label==null)label=d.phase==='done'?'Gereed'+(when?' sinds '+clock(when):''):'Op tafel rond '+clock(when);
+    if(label==null)label=d.phase==='done'?'Gereed'+(when?' sinds '+clock(when):''):ranged?'Op tafel tussen '+clock(est.readyRange.from)+' en '+clock(est.readyRange.to):'Op tafel rond '+clock(when);
     const eta='<div class="v5-dc-when"><strong>'+escape(label)+'</strong>'+escape(delta)+'</div>'+
       '<div class="v5-muted">'+escape(source)+(margin!=null?' ±'+margin+' min':'')+(sub?' · '+sub:'')+'</div>';
     const advice=b.getAdvice?b.getAdvice(d):null;
     const text=advice&&advice.text?String(advice.text).replace(/(\d)\.(\d) °C/g,'$1,$2 °C'):'';
     const coach=text?'<p class="v5-dc-coach'+(advice.warn?' warn':'')+'">'+escape(text.charAt(0).toUpperCase()+text.slice(1))+'</p>':'';
-    return {probe:probeSlot(d),link:linkSlot(d),core,env,eta,coach};
+    // v5.8: fixed food-safety line for meat and poultry without a probe measurement.
+    const meat=['rund','varken','gevogelte','lam'].includes(d.category);
+    const safe=!live&&meat&&d.phase!=='done'?'<p class="v5-dc-safe">Controleer de kern met een thermometer voordat je serveert</p>':'';
+    return {probe:probeSlot(d),link:linkSlot(d),core,env,eta,safe,coach,manual:manualSlot(d)};
+  }
+  /* v5.8: "Kern invoeren". The button and the last hand reading are a patched slot; the input panel is NOT a slot (never patched, so typing
+     is never disturbed by the 1-second ticker) and lives in the page, not in a dialog (the HA app/iframe blocks window.confirm and prompt). */
+  function manualSlot(d){
+    if(d.phase==='done')return '';
+    const pts=d.manual&&Array.isArray(d.manual.points)?d.manual.points:[],last=pts.length?pts[pts.length-1]:null;
+    return '<div class="v5-dc-manualrow">'+action('Kern invoeren','manual-open:'+d.id,'subtle')+
+      (last?'<small class="v5-muted">Laatst: '+escape(tempAuto(last.core))+' °C · handmatig, '+escape(clock(Number(last.t)))+(pts.length>1?' ('+pts.length+' metingen)':'')+'</small>':'')+'</div>';
+  }
+  function manualPanel(d){
+    const id=escape(d.id),g=d.manual&&d.manual.grill,planned=Number(d.grill)>0?Math.round(Number(d.grill)):null;
+    return '<div class="v5-dc-panel" role="group" aria-label="Kern invoeren voor '+escape(d.name)+'">'+
+      '<form class="v5-dc-form" data-v5-manual-form="core:'+id+'" novalidate><label>Kerntemperatuur in °C'+
+        '<input type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" data-v5-manual-input placeholder="bijvoorbeeld 62 of 62,5" aria-label="Kerntemperatuur in graden Celsius"></label>'+
+        '<div class="v5-dc-panelbtns"><button type="submit" class="v5-btn primary">Opslaan</button>'+action('Sluiten','manual-close:'+d.id,'subtle')+'</div></form>'+
+      '<form class="v5-dc-form" data-v5-manual-form="grill:'+id+'" novalidate><label>Kamado nu in °C <span class="v5-muted">(alleen als het afwijkt'+(planned?' van '+planned+' °C':'')+')</span>'+
+        '<input type="text" inputmode="decimal" autocomplete="off" enterkeyhint="done" data-v5-manual-input placeholder="bijvoorbeeld 140" aria-label="Kamadotemperatuur nu in graden Celsius"></label>'+
+        '<div class="v5-dc-panelbtns"><button type="submit" class="v5-btn subtle">Kamado opslaan</button>'+(g?action('Terug naar planning','grill-clear:'+d.id,'subtle'):'')+'</div></form>'+
+      '<p class="v5-dc-err" role="alert" aria-live="polite" data-v5-manual-err></p>'+
+      '<p class="v5-muted v5-dc-note">Met de hand ingevoerd: dit is geen live meting. De planning verandert niet.</p></div>';
   }
   function probeSlot(d){return '<small class="v5-muted">'+escape(labelKam(d.kamado)+' · '+(hasProbe(d)?PROBE_LABEL[d.meater]:'geen thermometer'))+'</small>'}
   function linkSlot(d){
@@ -350,7 +393,10 @@ window.initBBQV5=function(b){
       '<div data-v5-slot="core">'+slots.core+'</div>'+
       '<p class="v5-dc-line" data-v5-slot="env">'+slots.env+'</p>'+
       '<div class="v5-dc-eta" data-v5-slot="eta">'+slots.eta+'</div>'+
+      '<div data-v5-slot="safe">'+slots.safe+'</div>'+
       '<div data-v5-slot="coach">'+slots.coach+'</div>'+
+      '<div data-v5-slot="manual">'+slots.manual+'</div>'+
+      '<div data-v5-manual-panel="'+escape(d.id)+'">'+(manualOpen.has(String(d.id))?manualPanel(d):'')+'</div>'+
       '<div class="v5-dc-actions">'+(phaseNext?action(nextName[phaseNext],'phase:'+d.id+':'+phaseNext,'subtle v5-emph'):'')+
       action('Details ›','dish:'+d.id,'subtle')+'</div></section>';
   }
@@ -566,7 +612,7 @@ window.initBBQV5=function(b){
       const kam=kamOf(d)==='large'?'grote':'kleine',hot=Number(d.phase2Temp)||250;
       if(d.phase==='cooking'){
         const pt=(b.getPhaseTargets?b.getPhaseTargets(d):[])[0];
-        const reached=(est&&est.source==='curve'&&est.state==='reached')||(core!=null&&goal!=null&&core>=goal);
+        const reached=(est&&(est.source==='curve'||est.source==='manual')&&est.state==='reached')||(core!=null&&goal!=null&&core>=goal);
         const nextPhase=Number(d.rest)>0?'resting':'done';
         if(reached){cands.push({kind:'dish',key:'off:'+id,time:now-MIN,dish:id,title:Number(d.rest)>0?'Haal '+d.name+' van de BBQ':d.name+' is klaar',
           detail:'Kern '+(core!=null?temp(core)+' °C':'doel')+' bereikt · controleer de gaarheid',act:['phase:'+id+':'+nextPhase,nextPhase==='resting'?'⏱️ Begin rusten':'✓ Gerecht gereed']});continue}
@@ -586,7 +632,7 @@ window.initBBQV5=function(b){
           }
         }
         if(e)cands.push({kind:'dish',key:'off:'+id,time:e.cookEnd,dish:id,title:Number(d.rest)>0?'Haal '+d.name+' van de BBQ':'Rond '+d.name+' af',
-          detail:(core!=null&&goal!=null?'Kern '+temp(core)+' → '+temp(goal,0)+' °C · ':'')+(est&&est.ok&&est.source==='curve'?'eigen schatting':est&&est.ok&&est.source==='meater'?'MEATER-ETA':est&&est.ok&&est.source==='start'?'start + receptduur':'planning')+(core==null?' · controleer de kern zelf':''),
+          detail:(core!=null&&goal!=null?'Kern '+temp(core)+' → '+temp(goal,0)+' °C · ':'')+(est&&est.ok&&est.source==='curve'?'eigen schatting':est&&est.ok&&est.source==='meater'?'MEATER-ETA':est&&est.ok&&est.source==='manual'?'handmatig, '+clock(est.manual.at):est&&est.ok&&est.source==='start'?(est.range&&core==null?'geschat, geen meting':'start + receptduur'):'planning')+(core==null?' · controleer de kern zelf':''),
           act:['phase:'+id+':'+nextPhase,nextPhase==='resting'?'⏱️ Begin rusten':'✓ Gerecht gereed']});
       }else if(d.phase==='resting'&&e){
         cands.push({kind:'dish',key:'serve:'+id,time:e.ready,dish:id,title:'Serveer '+d.name,detail:'Rusttijd '+(Number(d.rest)||0)+' min · klaar '+clock(e.ready),act:['phase:'+id+':done','✓ Gerecht gereed']});
@@ -737,7 +783,7 @@ window.initBBQV5=function(b){
   function setPhase(d,next){
     const t=Date.now();d.phase=next;
     if(next==='cooking'){
-      d.startedAt=t;d.restAt=null;d.doneAt=null;
+      d.startedAt=t;d.restAt=null;d.doneAt=null;delete d.manual; // v5.8: hand readings belong to one time on the grill
       // v5.5: the kamado is evidently lit once a dish is on it; tick "Steek … aan" off (existing task state, no time invented).
       const s=state(),fire=s.date+'|'+kamOf(d)+':fire';s.v46Done=s.v46Done||{};s.v46Done[fire]=true;
       autoLink();
@@ -908,6 +954,9 @@ window.initBBQV5=function(b){
     if(act==='all-steps'){showAllTasks=true;render();$('v5-all-steps')?.scrollIntoView?.({behavior:'smooth',block:'start'});return}
     if(act.startsWith('card:')){scrollToCard(act.slice(5));return}
     if(act.startsWith('probe-edit:')){probeEdit.add(act.slice(11));refreshLiveMeater();return}
+    if(act.startsWith('manual-open:')){manualToggle(act.slice(12),true);return}
+    if(act.startsWith('manual-close:')){manualToggle(act.slice(13),false);return}
+    if(act.startsWith('grill-clear:')){const id=act.slice(12);if(b.clearManualGrill)b.clearManualGrill(id);manualToggle(id,false);refreshLiveMeater();refreshLiveSchedule();return}
     if(act.startsWith('hero-ack:')){heroAck.add(act.slice(9));refreshLiveSchedule();return}
     if(act==='notify-toggle'){const n=b.getNotify?b.getNotify():null;if(n&&n.service)b.setNotify(!n.on,n.service);return}
     if(act==='notify-test'){if(b.testNotify)b.testNotify();return}
@@ -957,6 +1006,26 @@ window.initBBQV5=function(b){
     if(act.startsWith('phase:')){const [,id,phase]=act.split(':'),d=dishes().find(d=>String(d.id)===id);if(d&&['cooking','resting','done'].includes(phase)){setPhase(d,phase);commit();render()}return}
     if(act.startsWith('done:')){const id=act.slice(5);toggleDone(id,!(state().v46Done||{})[id]);return}
   }
+  /* v5.8: open/close the input panel of one dish card. Only that panel container is written; the card, the Live DOM and the timers stay as they are. */
+  function manualToggle(id,open){
+    id=String(id);
+    const holder=root.querySelector('[data-v5-manual-panel="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]'),d=dishes().find(x=>String(x.id)===id);
+    if(!holder||!d)return;
+    if(open)manualOpen.add(id);else manualOpen.delete(id);
+    holder.innerHTML=open?manualPanel(d):'';
+    if(open){const input=holder.querySelector('[data-v5-manual-input]');try{input?.focus({preventScroll:false})}catch(e){}}
+  }
+  root.addEventListener('submit',e=>{
+    const form=e.target.closest&&e.target.closest('[data-v5-manual-form]');
+    if(!form)return;
+    e.preventDefault();
+    const [kind,id]=form.dataset.v5ManualForm.split(/:(.+)/),input=form.querySelector('[data-v5-manual-input]'),err=form.parentElement.querySelector('[data-v5-manual-err]');
+    const result=kind==='grill'?(b.setManualGrill?b.setManualGrill(id,input.value):{ok:false,error:'Niet beschikbaar.'}):(b.addManualCore?b.addManualCore(id,input.value):{ok:false,error:'Niet beschikbaar.'});
+    if(!result.ok){if(err)err.textContent=result.error||'Ongeldige invoer.';input.setAttribute('aria-invalid','true');return}
+    input.removeAttribute('aria-invalid');if(err)err.textContent='';
+    // Saved: close the panel, then only patch the slots (estimate, source label, last reading) like a sensor update.
+    manualToggle(id,false);refreshLiveMeater();refreshLiveSchedule();
+  });
   root.addEventListener('click',handleClick);nav.addEventListener('click',handleClick);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render();else syncWakeLock()});
   window.addEventListener('bbq-meater-updated',onSensorUpdate);

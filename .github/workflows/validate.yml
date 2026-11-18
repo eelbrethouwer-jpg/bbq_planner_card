@@ -80,6 +80,8 @@ jobs:
           TZ=America/New_York node tests/eta-engine.mjs && TZ=Pacific/Kiritimati node tests/eta-engine.mjs
           node tests/v570-planning.mjs
           TZ=America/New_York node tests/v570-planning.mjs && TZ=Pacific/Kiritimati node tests/v570-planning.mjs
+          node tests/v580-eta-no-probe.mjs
+          TZ=America/New_York node tests/v580-eta-no-probe.mjs && TZ=Pacific/Kiritimati node tests/v580-eta-no-probe.mjs
 
   mobile-browser:
     # Playwright 1.56.1 ondersteunt ubuntu 26.04 nog niet; pin mobiele browserchecks op 24.04.
@@ -100,6 +102,7 @@ jobs:
           node tests/v550-live-timeline.mjs
           node tests/v551-panel-fullscreen.mjs
           node tests/v570-planning-ui.mjs
+          node tests/v580-no-probe-ui.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

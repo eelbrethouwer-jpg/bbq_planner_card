@@ -1,0 +1,117 @@
+{
+ "_comment": "FIXTURE: echte opslag van de planner v5.7.0 (main 1d4aa7a): twee gerechten, Kippenpoten staat op de BBQ. Geen veld `manual`. Alleen voor tests/v580-no-probe-ui.mjs (oude data laadt foutloos).",
+ "appVersion": "BBQ Planner · The Cooking Experience v5.7.0",
+ "state": {
+  "date": "2026-11-16",
+  "dateMode": "auto",
+  "equipment": {
+   "large": [],
+   "small": []
+  },
+  "mealTime": "18:30",
+  "availableFrom": "16:30",
+  "preheatLarge": 30,
+  "preheatSmall": 25,
+  "smart": {
+   "enabled": true,
+   "mode": "fixed"
+  },
+  "dishes": [
+   {
+    "id": "gerecht-1794830400000-4",
+    "name": "Ribeye 500 g",
+    "category": "rund",
+    "method": "combo",
+    "grate": "rvs",
+    "grate2": "cast",
+    "phase2Temp": 250,
+    "phase2Minutes": 6,
+    "transitionMins": 15,
+    "kamado": "large",
+    "cook": 55,
+    "rest": 8,
+    "core": "54",
+    "grill": 120,
+    "mode": "auto",
+    "fixedStart": "17:30",
+    "notes": "Reverse sear: 110–120°C indirect en kort 230–260°C direct. Controleer de kern.",
+    "recipeIngredients": "",
+    "recipePrep": "",
+    "recipeCook": "",
+    "recipeRest": "",
+    "recipeSlice": "",
+    "recipeSteps": [],
+    "recipeSource": "",
+    "photo": "",
+    "coachStep": 0,
+    "serveSlot": "main",
+    "v46BasePeople": 0,
+    "v46TimerEndsAt": 0,
+    "prepTasks": [],
+    "meater": "none",
+    "phase": "waiting",
+    "startedAt": null,
+    "restAt": null,
+    "doneAt": null
+   },
+   {
+    "id": "gerecht-1794830400000-5",
+    "name": "Kippenpoten",
+    "category": "gevogelte",
+    "method": "indirect",
+    "grate": "rvs",
+    "grate2": "cast",
+    "phase2Temp": 180,
+    "phase2Minutes": 6,
+    "transitionMins": 0,
+    "kamado": "small",
+    "cook": 55,
+    "rest": 0,
+    "core": "75",
+    "grill": 180,
+    "mode": "auto",
+    "fixedStart": "17:30",
+    "notes": "Controleer in het dikste deel, weg van het bot.",
+    "recipeIngredients": "",
+    "recipePrep": "",
+    "recipeCook": "",
+    "recipeRest": "",
+    "recipeSlice": "",
+    "recipeSteps": [],
+    "recipeSource": "",
+    "photo": "",
+    "coachStep": 0,
+    "serveSlot": "main",
+    "v46BasePeople": 0,
+    "v46TimerEndsAt": 0,
+    "prepTasks": [],
+    "meater": "none",
+    "phase": "cooking",
+    "startedAt": 1794830400000,
+    "restAt": null,
+    "doneAt": null
+   }
+  ],
+  "v46Done": {
+   "2026-11-16|small:fire": true,
+   "2026-11-16|gerecht-1794830400000-5:on": true
+  },
+  "v5Actual": {
+   "2026-11-16|gerecht-1794830400000-5:on": 1794830400000
+  },
+  "v46MultiServe": false
+ },
+ "session": {
+  "active": true,
+  "stage": "live",
+  "created": "2026-11-16T12:00:00.000Z",
+  "view": {
+   "screen": "live",
+   "legacyTab": "",
+   "legacyReturn": "",
+   "scroll": 619,
+   "at": 1794830400000
+  },
+  "version": 1
+ }
+}

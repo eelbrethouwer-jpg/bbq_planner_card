@@ -58,6 +58,11 @@ const cases = [
   // v5.5: a declared storage line may be added only literally; any edit of it is a new, undeclared storage line.
   ['5i gedeclareerde opslagregel gewijzigd', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', replaceOnce('?.view;savedView=', '?.view;window.__x=v;savedView='))],
   ['5h nieuw bestand in engine/ naast het toegestane eta.mjs', 'PROTECTED_PATH', () => fs.writeFileSync(path.join(wt, 'engine/eta-extra.mjs'), 'export const y=2;\n')],
+  // v5.8: nieuwe gerechtvelden moeten gedeclareerd zijn en een opschoonfunctie met terugval hebben.
+  ['5j nieuw ongedeclareerd gerechtveld in makeDish', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce("doneAt:data.doneAt??null,", "doneAt:data.doneAt??null,secretNote:data.secretNote??'',"))],
+  ['5k gedeclareerd veld zonder opschoonfunctie', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce('function v58ManualClean(', 'function v58ManualCleanGone('))],
+  ['5l opschoning niet aangeroepen bij het laden', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce("if('manual' in d){const m=v58ManualClean(d.manual);", "if('manual' in d){const m=d.manual;"))],
+  ['5m gerechtveld uit makeDish verwijderd', 'OPTIONAL_FIELD', () => edit(HTML, replaceOnce("restAt:data.restAt??null,", ""))],
   ['6 niet-toegestaan productiebestand (manifest)', 'UNDECLARED_PRODUCTION_CHANGE', () => edit('manifest.webmanifest', s => s.replace('"lang": "nl"', '"lang": "en"'))],
   ['6b nieuw productiebestand', 'UNDECLARED_PRODUCTION_CHANGE', () => fs.writeFileSync(path.join(wt, 'dist/extra.js'), 'window.x=1;\n')],
   ['7 sw.js-shell naar v6', 'FORBIDDEN_REFERENCE', () => edit('sw.js', replaceOnce("'dist/bbq-v520.css'", "'dist/bbq-v520.css','v6/preview.html'"))],

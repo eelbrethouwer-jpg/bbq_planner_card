@@ -1,6 +1,6 @@
 # BBQ Planner v5.7.0 — planning eenvoudiger
 
-**Status: draft-PR, nog niet gepubliceerd.** Er is nog geen releaseakkoord van de eigenaar; deze notitie bevat daarom bewust geen goedkeuringsregel. Mergen publiceert dus niets.
+**Status: gemerged in main (PR #50) en gepubliceerd samen met v5.8.0.** Er is geen aparte v5.7.0-release of -tag; de eigenaar gaf op 18 november 2026 akkoord voor beide tegelijk. Deze notitie bevat daarom bewust geen eigen goedkeuringsregel.
 
 ## Wat verandert er?
 Je plant nu met minder gedoe en je ziet meteen wat er mis is, en wat je eraan kunt doen. De app past je planning nooit zelf aan: alles wat verandert is een tik van jou.

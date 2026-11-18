@@ -1,6 +1,6 @@
 {
   "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
-  "release": "5.7.0",
+  "release": "5.8.0",
   "protectedPaths": [
     "engine/",
     "v6/"
@@ -67,5 +67,9 @@
     "bbq-ha-notify-targets-v1"
   ],
   "$commentDeclaredStorageLines": "v5.5: nieuwe opslagregels die letterlijk zo in de code staan (bestand + getrimde regel). Alleen toevoegen; leegmaken bij de volgende PR.",
-  "declaredStorageLines": []
+  "declaredStorageLines": [],
+  "$commentOptionalDishFields": "v5.8: nieuwe OPTIONELE velden op een gerecht in de bestaande opslag (geen nieuwe sleutel). token = hoe het veld in makeDish staat; cleaner = opschoonfunctie met terugval voor oude data, aangeroepen bij het laden. Alleen toevoegen na review; de bewaking faalt op een ongedeclareerd of verwijderd veld.",
+  "optionalDishFields": [
+    {"field": "manual", "token": "...v58ManualField(", "cleaner": "v58ManualClean", "store": "kamado-bereidingsplanner-v1", "since": "5.8.0", "shape": "{points:[{t,core}], grill:{t,temp}|null}"}
+  ]
 }

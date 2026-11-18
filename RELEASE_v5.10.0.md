@@ -1,6 +1,6 @@
 # BBQ Planner v5.10.0 — vaste fasedoelen per recept
 
-**Status: concept (draft-PR), niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel van de eigenaar: mergen publiceert niets. Er is geen releaseakkoord gegeven. Let op: v5.9.0 (opruimen) is gemerged maar ook nog niet gepubliceerd; de laatste gepubliceerde release is v5.8.0.
+**Status: gepubliceerd via release.yml.** Releaseakkoord van de eigenaar op 18 november 2026 (in de chat met de regisseur: "En je mag publiceren inderdaad", na "Ja" op het mergen van PR #53). Deze release bevat ook v5.9.0 (opruimen, PR #52) en v5.10.0 (vaste fasedoelen per recept, PR #53); v5.9.0 is niet apart gepubliceerd.
 
 ## Wat verandert er?
 Tot nu toe nam de app aan dat een reverse-sear-gerecht (zoals de ribeye) op "doel − 7 °C" moet worden opgestookt. Dat was een aanname. Nu kan een receptstap een vast fasedoel hebben.
@@ -22,3 +22,5 @@ De planning verandert niet zonder jouw tik. Handmatige en geschatte waarden blij
 Niet getest op een echte iPhone, in de Home Assistant-app of met een echte MEATER. De automatische tests gebruiken een nagebootste klok, fixtures en de echte planner in een browser. Of de meldingen op een echte kooksessie op het juiste moment en niet dubbel aankomen, en of 47 °C (midden van "circa 46–48 °C") voor jouw ribeye het goede moment is om op te stoken, is nog niet in de praktijk bevestigd.
 
 Projectinformatie: [PROJECT_STATUS.md](https://github.com/eelbrethouwer-jpg/bbq_planner_card/blob/main/PROJECT_STATUS.md).
+
+Publicatie: goedgekeurd door de eigenaar op 2026-11-18

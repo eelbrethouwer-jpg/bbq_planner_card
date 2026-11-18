@@ -1,6 +1,6 @@
 # BBQ Planner v5.9.0 — opruimen
 
-**Status: concept (draft-PR), niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel van de eigenaar: mergen publiceert niets. Er is geen releaseakkoord gegeven.
+**Status: gemerged in main (PR #52) en gepubliceerd samen met v5.10.0.** Er is geen aparte v5.9.0-release of -tag; de eigenaar gaf op 18 november 2026 akkoord voor de publicatie. Deze notitie bevat daarom bewust geen eigen goedkeuringsregel.
 
 ## Wat verandert er?
 Opruimen, zonder nieuwe functie. De gewone navigatie wordt rustiger en er blijft één takenlijst over.

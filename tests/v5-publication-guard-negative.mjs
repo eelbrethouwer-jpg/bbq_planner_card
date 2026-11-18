@@ -67,6 +67,12 @@ const cases = [
   ['5n vervangen opslagregel verder gewijzigd', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', replaceOnce("Er is niets veranderd.');return;}", "Er is niets veranderd.');window.__x=1;return;}"))],
   ['5o extra opslagregel naast de vervangen regel', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', s => s + "\n;try{localStorage.removeItem(BACKUP)}catch(e){}\n")],
   ['5p oorspronkelijke regel verwijderd zonder vervanger', 'STORAGE_CONTRACT', () => edit('dist/bbq-v5.js', s => s.replace(/\n[^\n]*localStorage\.setItem\(BACKUP[^\n]*/, '\n'))],
+  // v5.10: nieuwe velden op een receptstap moeten gedeclareerd zijn, in de bibliotheek behouden blijven en bij het laden worden opgeschoond.
+  ['5q nieuw ongedeclareerd stapveld in de stap-mapper', 'OPTIONAL_STEP_FIELD', () => edit(HTML, replaceOnce("...v510CoreAtField(s)})) : []", "...v510CoreAtField(s),secretNote:String(s.secretNote||'')})) : []"))],
+  ['5r stapveld uit de stap-mapper van makeDish verwijderd', 'OPTIONAL_STEP_FIELD', () => edit(HTML, replaceOnce(",...v510CoreAtField(s)})) : []", "})) : []"))],
+  ['5s bibliotheek (cleanLibraryRecipe) behoudt het stapveld niet', 'OPTIONAL_STEP_FIELD', () => edit(HTML, replaceOnce(",...v510CoreAtField(x)})):[];", "})):[];"))],
+  ['5t stapveld zonder opschoonfunctie', 'OPTIONAL_STEP_FIELD', () => edit(HTML, replaceOnce('function v510CoreAtClean(', 'function v510CoreAtCleanGone('))],
+  ['5u stapveld niet opgeschoond bij het laden', 'OPTIONAL_STEP_FIELD', () => edit(HTML, replaceOnce("const c=v510CoreAtClean(s.coreAt);if(c!=null)s.coreAt=c;", "const c=s.coreAt;if(c!=null)s.coreAt=c;"))],
   ['6 niet-toegestaan productiebestand (manifest)', 'UNDECLARED_PRODUCTION_CHANGE', () => edit('manifest.webmanifest', s => s.replace('"lang": "nl"', '"lang": "en"'))],
   ['6b nieuw productiebestand', 'UNDECLARED_PRODUCTION_CHANGE', () => fs.writeFileSync(path.join(wt, 'dist/extra.js'), 'window.x=1;\n')],
   ['7 sw.js-shell naar v6', 'FORBIDDEN_REFERENCE', () => edit('sw.js', replaceOnce("'dist/bbq-v520.css'", "'dist/bbq-v520.css','v6/preview.html'"))],

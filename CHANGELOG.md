@@ -2,6 +2,15 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.10.0 — Vaste fasedoelen per recept (draft-PR, niet gepubliceerd)
+- **Nieuw OPTIONEEL veld `coreAt`** (getal, 0–120 °C) op receptstappen (`recipeSteps[]`), naast de vrije tekst `trigger`; zelfde opslag (`kamado-bereidingsplanner-v1`, `kamado-recipe-book-v1`, `bbq_planner_cookbook_v1`), **geen nieuwe sleutel**. Oude data zonder het veld laadt ongewijzigd; een ongeldige waarde valt weg (`v510CoreAtParse`/`v510CoreAtClean`/`v510CoreAtField`, ook bij laden, import en bibliotheek).
+- Standaardrecepten: Ribeye 500 g krijgt receptstappen (afgeleid van de bestaande tekst) met `coreAt` 47 (opstoken/schroeien; midden van "circa 46–48 °C", AANNAME) en 54 (eindkern); Pulled pork op brood 70 (saus) en 88 (malsheid testen). Zalm en overige standaardrecepten: geen `coreAt`.
+- Fasedoelen op één plek (`v510PhasePlan`, bron `recept` of `aanname`): de ETA-module (`phaseTargets`), Live-kaart, hero en meldingen gebruiken `coreAt`; zonder `coreAt` blijft doel − 7 °C voor reverse sear (label "aanname"). Een `coreAt` op of boven het kerndoel telt niet als tussendoel. Live/hero tonen de bron ("uit recept" of "aanname") en de stapnaam.
+- Meldingen via de bestaande `v46NotifySend`: het opstookdoel behoudt tekst en sleutel (`…|phase`); andere fasedoelen krijgen één melding met sleutel `…|phase|<temp>`. Alleen bij open planner (bestaande beperking).
+- Receptbewerker en generator: veld "Kern bij deze stap (°C)" met melding in de pagina bij ongeldige invoer (geen dialoog); de generator doet een voorstel uit "bij/vanaf ongeveer NN °C" (met "kern" in de zin) dat de gebruiker moet overnemen.
+- Publicatiebewaking: nieuwe sectie `optionalStepFields` met controle 7 (`OPTIONAL_STEP_FIELD`: gedeclareerd veld, opschoonfunctie, behoud in `cleanLibraryRecipe`, opschoning bij het laden) en vijf nieuwe negatieve mutatietests; release 5.10.0. Geen verzwakking; geen nieuwe `declaredStorageLines` of `replacedStorageLines`.
+- Tests: nieuw `tests/v5100-fasedoelen.mjs` (Playwright, Chromium + WebKit; fixture `tests/fixtures/v5100-bibliotheek.json`), nieuw ETA-geval in `tests/eta-engine.mjs`.
+
 ## v5.9.0 — Opruimen (draft-PR, niet gepubliceerd)
 - De oude kookpagina, het "Interactief draaiboek" en het "Uitgebreid stap-voor-stap draaiboek" zijn uit de gewone navigatie gehaald (de knop "MEATER & focus" op Live is weg) en bereikbaar onder **Meer → Geavanceerd** (nieuwe laatste groep van Meer; knoppen `v520-open-cooking`, `v520-open-board`, `v520-open-steps`). De pagina's zelf zijn ongewijzigd.
 - Eén takenlijst in de gewone navigatie: "Volgende handelingen" op Live. De oude draaiboeken delen dezelfde afvinkstand en staan alleen nog onder Geavanceerd.

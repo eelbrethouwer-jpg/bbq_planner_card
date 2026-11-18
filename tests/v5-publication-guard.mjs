@@ -23,6 +23,10 @@
 //  6. OPTIONAL_FIELD            (v5.8) een nieuw veld op een gerecht (sleutel of spread in makeDish) mag alleen als het in
 //                               optionalDishFields staat, met een opschoonfunctie (terugval voor oude data) die bestaat en bij het
 //                               laden van de opgeslagen planning wordt aangeroepen. Verwijderen of ongedeclareerd toevoegen faalt.
+//  7. OPTIONAL_STEP_FIELD       (v5.10) idem voor een veld op een RECEPTSTAP (recipeSteps[] in makeDish): een nieuwe sleutel of spread in de
+//                               stap-mapper van makeDish mag alleen als hij in optionalStepFields staat; opschoonfunctie en spread-functie
+//                               moeten bestaan, de spread moet ook in cleanLibraryRecipe (bibliotheek, import/export, HA-sync) staan en de
+//                               opschoonfunctie moet bij het laden van opgeslagen gerechten worden aangeroepen. Verwijderen faalt.
 // Gebruik: node tests/v5-publication-guard.mjs [--base <ref>] [--root <dir>] [--json]
 // Base: --base, anders $GUARD_BASE (CI: PR-base-SHA of push-before-SHA), anders merge-base met origin/main.
 // Zonder vaststelbare base faalt de controle (fail-closed).
@@ -218,6 +222,16 @@ function dishFieldTokens(src) {
   return [...tokens].sort();
 }
 
+// v5.10: de sleutels en spreads in de stap-mapper van makeDish (`recipeSteps:Array.isArray(data.recipeSteps)?...map(s=>({ ... }))`).
+function stepFieldTokens(src) {
+  const line = src ? src.split('\n').find(l => /^\s*const\s+makeDish\s*=/.test(l)) : null;
+  const m = line && line.match(/recipeSteps\s*:\s*Array\.isArray\(data\.recipeSteps\)\s*\?[^\n]*?\.map\(\s*\w+\s*=>\s*\(\{(.*?)\}\)\s*\)\s*:\s*\[\]/);
+  if (!m) return null;
+  const tokens = new Set();
+  for (const t of m[1].matchAll(/(?:^|,)\s*(?:\.\.\.\s*([A-Za-z_$][\w$]*)\s*\(|([A-Za-z_$][\w$]*)\s*:)/g)) tokens.add(t[1] ? '...' + t[1] + '(' : t[2]);
+  return [...tokens].sort();
+}
+
 function storageFingerprint(files, read) {
   const identifiers = new Set(), lines = [], constants = {};
   for (const f of files) {
@@ -317,6 +331,30 @@ export function checkPublication({root = process.cwd(), base, policyFile = '.git
         if (!ht.includes(d.token)) { add('OPTIONAL_FIELD', HTML_FILE, `gedeclareerd veld ${d.field} (${d.token}) komt niet voor in makeDish`); continue; }
         if (!new RegExp(`function\\s+${d.cleaner}\\s*\\(`).test(headSrc)) add('OPTIONAL_FIELD', HTML_FILE, `opschoonfunctie ${d.cleaner} voor veld ${d.field} ontbreekt (terugval voor oude data)`);
         if (!new RegExp(`'${d.field}'\\s+in\\s+d\\)[^\\n]*${d.cleaner}\\(d\\.${d.field}\\)`).test(headSrc)) add('OPTIONAL_FIELD', HTML_FILE, `bij het laden van opgeslagen gerechten ontbreekt '${d.field}' in d … ${d.cleaner}(d.${d.field})`);
+      }
+    }
+  }
+  // 7. optionele receptstapvelden (v5.10)
+  {
+    const HTML_FILE = 'dist/BBQ_bereidingsplanner_MEATER_v4.html';
+    const headSrc = readAt(root, null, HTML_FILE), baseSrc = readAt(root, resolvedBase, HTML_FILE);
+    const ht = stepFieldTokens(headSrc), bt = stepFieldTokens(baseSrc);
+    const declared = Array.isArray(policy.optionalStepFields) ? policy.optionalStepFields : [];
+    if (ht === null) add('OPTIONAL_STEP_FIELD', HTML_FILE, 'stap-mapper van makeDish (recipeSteps) niet gevonden; stapvelden kunnen niet worden bewaakt');
+    else {
+      const declaredTokens = declared.map(x => x.token);
+      // Zonder tokens in de base (eerste invoering van deze bewaking) is er geen verwijdering vast te stellen.
+      const tokens = bt === null ? {added: ht.filter(t => !['title', 'trigger', 'detail'].includes(t)), removed: []} : diffList(bt, ht);
+      for (const t of tokens.added) if (!declaredTokens.includes(t)) add('OPTIONAL_STEP_FIELD', HTML_FILE, `nieuw stapveld ${t} in makeDish staat niet in optionalStepFields`);
+      for (const t of tokens.removed) add('OPTIONAL_STEP_FIELD', HTML_FILE, `stapveld ${t} uit makeDish verwijderd t.o.v. base`);
+      const lib = headSrc.split('\n').find(l => /result\.recipeSteps\s*=/.test(l)) || '';
+      for (const d of declared) {
+        if (!ht.includes(d.token)) { add('OPTIONAL_STEP_FIELD', HTML_FILE, `gedeclareerd stapveld ${d.field} (${d.token}) komt niet voor in de stap-mapper van makeDish`); continue; }
+        const spread = d.token.replace(/^\.\.\./, '').replace(/\($/, '');
+        if (!new RegExp(`function\\s+${d.cleaner}\\s*\\(`).test(headSrc)) add('OPTIONAL_STEP_FIELD', HTML_FILE, `opschoonfunctie ${d.cleaner} voor stapveld ${d.field} ontbreekt (terugval voor oude data)`);
+        if (!new RegExp(`function\\s+${spread}\\s*\\(`).test(headSrc)) add('OPTIONAL_STEP_FIELD', HTML_FILE, `functie ${spread} voor stapveld ${d.field} ontbreekt`);
+        if (!lib.includes(d.token)) add('OPTIONAL_STEP_FIELD', HTML_FILE, `cleanLibraryRecipe (bibliotheek, import/export, HA-sync) behoudt stapveld ${d.field} niet (${d.token} ontbreekt)`);
+        if (!new RegExp(`'${d.field}'\\s+in\\s+s\\)[^\\n]*${d.cleaner}\\(s\\.${d.field}\\)`).test(headSrc)) add('OPTIONAL_STEP_FIELD', HTML_FILE, `bij het laden van opgeslagen gerechten ontbreekt '${d.field}' in s … ${d.cleaner}(s.${d.field})`);
       }
     }
   }

@@ -31,7 +31,7 @@ const RIBEYE = {Ta: 120, c0: 9.5, target: 54, k: kFor(120, 9.5, 45.5, 40)}; // 9
 const KIP = {Ta: 180, c0: 5, target: 75, k: kFor(180, 5, 75, 55)};          // kippenpoot, 55 min recipe time
 
 caseOf('module: version, defaults and frozen API', () => {
-  assert.equal(ETA_VERSION, '5.9.0');
+  assert.equal(ETA_VERSION, '5.10.0');
   assert.equal(ETA_DEFAULTS.windowMin, 12);
   assert.equal(ETA_DEFAULTS.minSpanMin, 5);
   assert.equal(ETA_DEFAULTS.minPoints, 4);
@@ -401,6 +401,25 @@ caseOf('heldUntil: puur (invoer onveranderd, zelfde antwoord)', () => {
   const copy = JSON.stringify(input);
   const a = estimate(input), b = estimate(input);
   assert.equal(JSON.stringify(input), copy); assert.deepEqual(a, b);
+});
+
+// v5.10: fasedoelen uit het recept (coreAt) komen als phaseTargets binnen; zonder coreAt blijft de aanname (doel − 7 °C) of geen fase.
+caseOf('fasedoel uit het recept (coreAt) in plaats van de aanname doel − 7 °C', () => {
+  const pts = newton({...RIBEYE, until: 30});
+  const withCoreAt = at(pts, pts.length - 1, {target: 54, phaseTargets: [50]});      // recept: coreAt 50
+  const assumption = at(pts, pts.length - 1, {target: 54, phaseTargets: [54 - 7]});  // aanname: 47
+  const none = at(pts, pts.length - 1, {target: 54, phaseTargets: []});              // geen fasedoel
+  assert.equal(withCoreAt.phase.target, 50, 'het fasedoel uit het recept wordt geschat');
+  assert.equal(assumption.phase.target, 47, 'zonder coreAt: de aanname blijft');
+  assert.equal(none.phase, null, 'zonder fasedoel geen fasetijd');
+  const t = v => trueMinutes(RIBEYE.Ta, RIBEYE.c0, v, RIBEYE.k);
+  assert.ok(Math.abs(withCoreAt.phase.at - (T0 + t(50) * MIN)) / MIN <= 0.1 * t(50), 'fasetijd voor 50 °C binnen 10%');
+  assert.ok(withCoreAt.phase.at > assumption.phase.at && withCoreAt.phase.at < withCoreAt.cookEnd, '50 °C komt na 47 °C en vóór 54 °C');
+  // Het einddoel verandert er niet door.
+  assert.equal(withCoreAt.cookEnd, assumption.cookEnd); assert.equal(withCoreAt.cookEnd, none.cookEnd);
+  // Meerdere fasedoelen (bijvoorbeeld pulled pork 70 en 88 °C): het eerstvolgende niet-bereikte telt; een doel op of boven het einddoel niet.
+  const multi = at(pts, pts.length - 1, {target: 54, phaseTargets: [54, 20, 52, 50, 'x', null]});
+  assert.equal(multi.phase.target, 50, 'het eerstvolgende fasedoel boven de huidige kern en onder het einddoel');
 });
 
 const failed = results.filter(r => r.status === 'FAIL');

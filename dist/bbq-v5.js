@@ -11,7 +11,9 @@
            (source "handmatig, HH:MM", never LIVE) and one optional kamado temperature; in-page panel, no dialogs.
    v5.9.0: cleanup, no new function: the old cooking page and both old draaiboeken left the normal navigation (still reachable under
            Meer → Geavanceerd), one task list (Live), and "Nieuwe sessie" / "Sessie afronden" (plus the remaining notices of this layer)
-           use in-page panels instead of window.confirm/alert; cancelling changes nothing. No storage change. */
+           use in-page panels instead of window.confirm/alert; cancelling changes nothing. No storage change.
+   v5.10.0: fixed phase targets per recipe: optional field `coreAt` on a recipe step (same storage, no new key) feeds the estimate, the Live card,
+           the hero and the notifications; the source is shown ("uit recept" or "aanname" = old rule target - 7 °C). */
 (function(){
 'use strict';
 window.initBBQV5=function(b){
@@ -295,6 +297,13 @@ window.initBBQV5=function(b){
     const elapsed=age==null?'tijd onbekend':age<60?age+' s geleden':Math.floor(age/60)+' min '+age%60+' s geleden';
     return (age!=null&&age<60?'● LIVE':'● Vertraagd')+' · HA-update '+elapsed;
   }
+  // v5.10: phase targets from the planner (b.getPhasePlan): source 'recept' = coreAt on a recipe step, 'aanname' = old rule target - 7 °C.
+  function phasePlan(d){try{return b.getPhasePlan?b.getPhasePlan(d)||[]:[]}catch(e){return []}}
+  const phaseSource=p=>p?(p.source==='recept'?'uit recept':'aanname'):'';
+  function phaseSub(d,ph){
+    const i=phasePlan(d).find(p=>p.target===ph.target)||null,stoke=!i||i.kind==='stoke';
+    return escape(temp(ph.target,0))+' °C'+(stoke?' (einde indirect)':i.title?' · '+escape(i.title):'')+' rond '+clock(ph.at)+(i?' ('+phaseSource(i)+')':'');
+  }
   // Slots of one dish card. Only these are patched on a sensor update or the 1-second ticker.
   function cardSlots(d){
     const p=hasProbe(d)?b.getProbe(d):null,live=!!p?.ok,goal=goalOf(d),plan=livePlan.get(String(d.id))||{};
@@ -336,7 +345,7 @@ window.initBBQV5=function(b){
       if(est.source==='curve'&&est.state==='reached'){source='kerndoel bereikt';sub='controleer de gaarheid'}
       else if(est.source==='curve'){
         source='eigen trend';margin=est.margin;
-        sub=(est.phase?escape(temp(est.phase.target,0))+' °C (einde indirect) rond '+clock(est.phase.at)+' · ':'')+'kern '+goalTxt+' rond '+clock(est.cookEnd);
+        sub=(est.phase?phaseSub(d,est.phase)+' · ':'')+'kern '+goalTxt+' rond '+clock(est.cookEnd);
       }else if(est.source==='meater'){source='MEATER-ETA';sub='kern '+goalTxt+' rond '+clock(est.cookEnd)}
       else if(est.source==='manual'){
         // v5.8: hand thermometer. Labelled "handmatig, HH:MM", never LIVE.
@@ -356,6 +365,11 @@ window.initBBQV5=function(b){
     }else{
       when=Number.isFinite(plan.end)?plan.end:null;
       if(est&&est.reason&&hasProbe(d)&&(live||est.points>0))sub='schatting volgt: '+escape(est.reason.charAt(0).toLowerCase()+est.reason.slice(1));
+    }
+    // v5.10: a phase target from the recipe is also shown when there is no own curve yet (not for the old assumption: unchanged).
+    if(d.phase==='cooking'&&!(est&&est.source==='curve'&&est.phase)){
+      const cur=live&&Number.isFinite(p.core)?p.core:null,ph=phasePlan(d).find(x=>x.source==='recept'&&(cur==null||x.target>cur));
+      if(ph)sub+=(sub?' · ':'')+'fasedoel '+escape(temp(ph.target,0))+' °C'+(ph.title?' · '+escape(ph.title):'')+' (uit recept)';
     }
     if(est?.stall){
       const st=est.stall,med=Number.isFinite(st.medianMinutes)?' · eigen historie: meestal '+st.medianMinutes+' min':'';
@@ -639,7 +653,7 @@ window.initBBQV5=function(b){
       const d=r.d,id=String(d.id),e=r.times?.expected,est=r.est,goal=goalOf(d),core=liveCore(d)??(est&&!est.stale&&Number.isFinite(est.core)?est.core:null);
       const kam=kamOf(d)==='large'?'grote':'kleine',hot=Number(d.phase2Temp)||250;
       if(d.phase==='cooking'){
-        const pt=(b.getPhaseTargets?b.getPhaseTargets(d):[])[0];
+        const pt=(b.getPhaseTargets?b.getPhaseTargets(d):[])[0],plan0=phasePlan(d)[0]||null;
         const reached=(est&&(est.source==='curve'||est.source==='manual')&&est.state==='reached')||(core!=null&&goal!=null&&core>=goal);
         const nextPhase=Number(d.rest)>0?'resting':'done';
         if(reached){cands.push({kind:'dish',key:'off:'+id,time:now-MIN,dish:id,title:Number(d.rest)>0?'Haal '+d.name+' van de BBQ':d.name+' is klaar',
@@ -650,15 +664,31 @@ window.initBBQV5=function(b){
             const swap=r.times&&r.times.expected.segs.length>1?r.times.expected.segs[0].end:null;
             const when=at??swap;
             cands.push({kind:'dish',key:'stoke:'+id,time:when??now,dish:id,title:'Stook de '+kam+' kamado op naar ~'+hot+' °C',
-              detail:d.name+' bereikt '+temp(pt,0)+' °C (einde indirect) '+(at!=null?(at<=now+MIN?'nu':'over ±'+Math.round((at-now)/MIN)+' min'):when!=null?'rond '+clock(when)+' (planning)':'binnenkort')+' · kern nu '+temp(core)+' °C',act:['hero-ack:stoke:'+id,'✓ Gedaan']});
+              detail:d.name+' bereikt '+temp(pt,0)+' °C (einde indirect) '+(at!=null?(at<=now+MIN?'nu':'over ±'+Math.round((at-now)/MIN)+' min'):when!=null?'rond '+clock(when)+' (planning)':'binnenkort')+' · kern nu '+temp(core)+' °C · '+phaseSource(plan0),act:['hero-ack:stoke:'+id,'✓ Gedaan']});
             continue;
           }
           if(core!=null&&core>=pt&&goal!=null&&core<goal&&!heroAck.has('sear:'+id)){
             cands.push({kind:'dish',key:'sear:'+id,time:now,dish:id,title:'Schroei '+d.name+' direct op ~'+hot+' °C',
-              detail:'Kern '+temp(core)+' °C · doel '+temp(goal,0)+' °C rond '+clock(e?.cookEnd),act:['hero-ack:sear:'+id,'✓ Gedaan']});
+              detail:'Kern '+temp(core)+' °C · doel '+temp(goal,0)+' °C rond '+clock(e?.cookEnd)+' · fasedoel '+temp(pt,0)+' °C '+phaseSource(plan0),act:['hero-ack:sear:'+id,'✓ Gedaan']});
             continue;
           }
         }
+        // v5.10: other phase targets from the recipe (coreAt): the next one ahead (with the estimate) or the one just reached.
+        let phaseHero=false;
+        for(const ph of phasePlan(d)){
+          if(ph.source!=='recept'||d.method==='combo'&&ph.kind==='stoke')continue;
+          const pk='phase:'+id+':'+ph.target,name=ph.title||'Fasedoel '+temp(ph.target,0)+' °C';
+          if(core==null||heroAck.has(pk))continue;
+          if(core>=ph.target&&core<ph.target+4){
+            cands.push({kind:'dish',key:pk,time:now,dish:id,title:name,detail:d.name+' · kern '+temp(core)+' °C · fasedoel '+temp(ph.target,0)+' °C uit recept',act:['hero-ack:'+pk,'✓ Gedaan']});phaseHero=true;break;
+          }
+          if(core<ph.target){
+            const at=est&&est.phase&&est.phase.target===ph.target&&Number.isFinite(est.phase.at)?est.phase.at:null;
+            if(at!=null){cands.push({kind:'dish',key:pk,time:at,dish:id,title:name,detail:d.name+' bereikt '+temp(ph.target,0)+' °C '+(at<=now+MIN?'nu':'over ±'+Math.round((at-now)/MIN)+' min')+' · kern nu '+temp(core)+' °C · uit recept',act:['hero-ack:'+pk,'✓ Gedaan']});}
+            break;
+          }
+        }
+        if(phaseHero)continue;
         if(e)cands.push({kind:'dish',key:'off:'+id,time:e.cookEnd,dish:id,title:Number(d.rest)>0?'Haal '+d.name+' van de BBQ':'Rond '+d.name+' af',
           detail:(core!=null&&goal!=null?'Kern '+temp(core)+' → '+temp(goal,0)+' °C · ':'')+(est&&est.ok&&est.source==='curve'?'eigen schatting':est&&est.ok&&est.source==='meater'?'MEATER-ETA':est&&est.ok&&est.source==='manual'?'handmatig, '+clock(est.manual.at):est&&est.ok&&est.source==='start'?(est.range&&core==null?'geschat, geen meting':'start + receptduur'):'planning')+(core==null?' · controleer de kern zelf':''),
           act:['phase:'+id+':'+nextPhase,nextPhase==='resting'?'⏱️ Begin rusten':'✓ Gerecht gereed']});
@@ -760,7 +790,7 @@ window.initBBQV5=function(b){
       '<p class="v5-muted" style="margin-top:10px">'+escape(labelKam(d.kamado))+' · '+escape(d.grill)+' °C gepland'+(d.core!==''?' · Richtkern '+escape(d.core)+' °C':'')+'</p>'+
       (stages.length?stages.map((r,i)=>{
         const id=s.date+'|'+d.id+':recipe:'+i;
-        return '<div class="v5-recipestage"><details data-v5-key="stage:'+escape(d.id)+':'+i+'"><summary>'+(checked[id]?'✓ ':'○ ')+escape(r.title||'Stap '+(i+1))+' · '+escape(r.trigger||'Op volgorde')+'</summary><p>'+escape(r.detail||'Geen extra uitleg.')+'</p>'+action(checked[id]?'↺ Heropen stap':'✓ Stap uitgevoerd','done:'+id,checked[id]?'subtle':'subtle v5-emph')+'</details></div>';
+        return '<div class="v5-recipestage"><details data-v5-key="stage:'+escape(d.id)+':'+i+'"><summary>'+(checked[id]?'✓ ':'○ ')+escape(r.title||'Stap '+(i+1))+' · '+escape(r.trigger||'Op volgorde')+(Number.isFinite(Number(r.coreAt))&&r.coreAt!==null&&r.coreAt!==''?' · kern '+escape(temp(Number(r.coreAt),0))+' °C':'')+'</summary><p>'+escape(r.detail||'Geen extra uitleg.')+'</p>'+action(checked[id]?'↺ Heropen stap':'✓ Stap uitgevoerd','done:'+id,checked[id]?'subtle':'subtle v5-emph')+'</details></div>';
       }).join(''):'<details class="v5-recipestage" data-v5-key="instructions:'+escape(d.id)+'"><summary>Bereidingsinstructies</summary><p>'+escape(b.getRecipeDetails(d).cook||d.notes||'Volg de kerntemperatuur en controleer de gaarheid.')+'</p></details>')+
       '</details>';
   }

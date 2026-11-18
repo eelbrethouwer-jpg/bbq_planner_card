@@ -104,6 +104,7 @@ jobs:
           node tests/v570-planning-ui.mjs
           node tests/v580-no-probe-ui.mjs
           node tests/v590-cleanup.mjs
+          node tests/v5100-fasedoelen.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

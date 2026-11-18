@@ -1,0 +1,72 @@
+{
+  "_comment": "FIXTURE (geen echte gebruikersdata) voor tests/v5100-fasedoelen.mjs. Back-upformaat bbq-receptenbibliotheek-v1. Recept 1 is zoals v5.9.0 het exporteerde: receptstappen ZONDER veld coreAt. Recept 2 bevat coreAt (geldig: 70, 88.5, 0; ongeldig: 130, -5, 'abc', null, '') om te bewijzen dat een geldige waarde blijft en een ongeldige wegvalt.",
+  "format": "bbq-receptenbibliotheek-v1",
+  "exportedAt": "2026-11-18T09:00:00.000Z",
+  "recipes": [
+    {
+      "name": "Fixture oud recept zonder coreAt",
+      "category": "varken",
+      "method": "indirect",
+      "grate": "rvs",
+      "grate2": "cast",
+      "kamado": "large",
+      "grill": 120,
+      "core": "92",
+      "cook": 480,
+      "rest": 45,
+      "phase2Temp": 180,
+      "phase2Minutes": 6,
+      "transitionMins": 0,
+      "notes": "Fixture.",
+      "recipeSource": "",
+      "recipeIngredients": "2 kg fixture",
+      "recipePrep": "Voorbereiden.",
+      "recipeCook": "Garen.",
+      "recipeRest": "Rusten.",
+      "recipeSlice": "Snijden.",
+      "recipeSteps": [
+        {"title": "Voorbereiden", "trigger": "Avond vooraf", "detail": "Kruiden."},
+        {"title": "Roken", "trigger": "Tot ongeveer 70 °C kern", "detail": "Gaar indirect."},
+        {"title": "Inpakken", "trigger": "Bij ongeveer 70 °C kern", "detail": "Pak strak in folie."}
+      ],
+      "prepTasks": [],
+      "photo": "",
+      "updatedAt": "2026-10-01T10:00:00.000Z"
+    },
+    {
+      "name": "Fixture nieuw recept met coreAt",
+      "category": "rund",
+      "method": "combo",
+      "grate": "rvs",
+      "grate2": "cast",
+      "kamado": "large",
+      "grill": 120,
+      "core": "54",
+      "cook": 55,
+      "rest": 8,
+      "phase2Temp": 250,
+      "phase2Minutes": 6,
+      "transitionMins": 15,
+      "notes": "Fixture.",
+      "recipeSource": "",
+      "recipeIngredients": "500 g fixture",
+      "recipePrep": "Voorbereiden.",
+      "recipeCook": "Garen.",
+      "recipeRest": "Rusten.",
+      "recipeSlice": "Snijden.",
+      "recipeSteps": [
+        {"title": "Opstoken", "trigger": "Bij circa 47 °C kern", "detail": "Stook op.", "coreAt": 70},
+        {"title": "Eindkern", "trigger": "Bij 54 °C", "detail": "Van de BBQ.", "coreAt": 88.5},
+        {"title": "Nul", "trigger": "Test", "detail": "Grens.", "coreAt": 0},
+        {"title": "Te hoog", "trigger": "Test", "detail": "Ongeldig.", "coreAt": 130},
+        {"title": "Negatief", "trigger": "Test", "detail": "Ongeldig.", "coreAt": -5},
+        {"title": "Tekst", "trigger": "Test", "detail": "Ongeldig.", "coreAt": "abc"},
+        {"title": "Null", "trigger": "Test", "detail": "Leeg.", "coreAt": null},
+        {"title": "Leeg", "trigger": "Test", "detail": "Leeg.", "coreAt": ""}
+      ],
+      "prepTasks": [],
+      "photo": "",
+      "updatedAt": "2026-10-02T10:00:00.000Z"
+    }
+  ]
+}

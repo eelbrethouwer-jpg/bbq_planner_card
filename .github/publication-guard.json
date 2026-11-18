@@ -1,6 +1,6 @@
 {
   "$comment": "Contract voor tests/v5-publication-guard.mjs. Wijzigingen aan dit bestand zijn zichtbaar in de PR-diff en vragen een bewuste review. Productiebestanden mogen alleen wijzigen als ze hier staan EN de appversie (sw.js CACHE) gelijk is aan 'release' en verschilt van de PR-base.",
-  "release": "5.9.0",
+  "release": "5.10.0",
   "protectedPaths": [
     "engine/",
     "v6/"
@@ -75,5 +75,9 @@
   "$commentOptionalDishFields": "v5.8: nieuwe OPTIONELE velden op een gerecht in de bestaande opslag (geen nieuwe sleutel). token = hoe het veld in makeDish staat; cleaner = opschoonfunctie met terugval voor oude data, aangeroepen bij het laden. Alleen toevoegen na review; de bewaking faalt op een ongedeclareerd of verwijderd veld.",
   "optionalDishFields": [
     {"field": "manual", "token": "...v58ManualField(", "cleaner": "v58ManualClean", "store": "kamado-bereidingsplanner-v1", "since": "5.8.0", "shape": "{points:[{t,core}], grill:{t,temp}|null}"}
+  ],
+  "$commentOptionalStepFields": "v5.10: nieuwe OPTIONELE velden op een receptstap (recipeSteps[]) in de bestaande opslag (gerecht in kamado-bereidingsplanner-v1, bibliotheek in kamado-recipe-book-v1 en bbq_planner_cookbook_v1; geen nieuwe sleutel). token = spread in de stap-mapper van makeDish; cleaner = opschoonfunctie met terugval voor oude data (bij het laden aangeroepen); de spread staat ook in cleanLibraryRecipe. Alleen toevoegen na review.",
+  "optionalStepFields": [
+    {"field": "coreAt", "token": "...v510CoreAtField(", "cleaner": "v510CoreAtClean", "store": "kamado-bereidingsplanner-v1 + bibliotheek", "since": "5.10.0", "shape": "getal in graden Celsius, 0-120 (optioneel)"}
   ]
 }

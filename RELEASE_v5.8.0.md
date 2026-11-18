@@ -1,6 +1,6 @@
 # BBQ Planner v5.8.0 â€” schatting zonder probe
 
-**Status: draft-PR, nog niet gepubliceerd.** Er is nog geen releaseakkoord van de eigenaar; deze notitie bevat daarom bewust geen goedkeuringsregel. Mergen publiceert dus niets.
+**Status: gepubliceerd via release.yml na merge van PR #51.** Releaseakkoord van de eigenaar op 18 november 2026 (in de chat met de regisseur: "ja dat mag en publiceren mag ook"). Deze release bevat ook v5.7.0 (planning eenvoudiger, PR #50), die niet apart is gepubliceerd.
 
 ## Wat verandert er?
 Ook zonder MEATER-probe (of zonder Home Assistant) zie je op Live per gerecht wanneer het ongeveer klaar is, en je kunt zelf een kerntemperatuur invoeren om de schatting te verbeteren. Alles wat zo geschat of ingevoerd is, heet ook zo: nooit "LIVE".
@@ -19,3 +19,5 @@ Recepten, reviews, planningen en opgeslagen gegevens blijven zoals ze zijn. **EÃ
 Niet getest op een echte iPhone, in de Home Assistant-app of met een echte MEATER. De automatische tests gebruiken een nagebootste klok, fixtures en de echte planner in een browser. De bereikbreedte en de kamadoschaling zijn grove aannames: controleer tijdens een echte bereiding of de schatting klopt.
 
 Projectinformatie: [PROJECT_STATUS.md](https://github.com/eelbrethouwer-jpg/bbq_planner_card/blob/main/PROJECT_STATUS.md).
+
+Publicatie: goedgekeurd door de eigenaar op 2026-11-18

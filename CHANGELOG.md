@@ -2,6 +2,14 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.11.0 — Receptgenerator: reverse sear en kerndoel (draft-PR, niet gepubliceerd)
+- Alleen parsinglogica in `analyzeRecipeText` (`dist/BBQ_bereidingsplanner_MEATER_v4.html`); geen nieuwe opslagvelden of -sleutels, geen wijziging van opgeslagen recepten.
+- Kerndoel: een gelabelde kern (`kerntemperatuur`, `eindkern`, `doelkern`, `kern:`) gaat voor op een tussen-waarde; eind-labels gaan voor op `kerntemperatuur`. Zonder label is het doel de hoogste kernwaarde die ook de laatste is, anders blijft het veld leeg met herkomst "meerdere kernwaarden, controleer". Een "bij/vanaf NN °C kern" is bij reverse sear een opstook-trigger, geen doel.
+- Reverse sear (`reverse sear`, of indirect gevolgd door opstoken/schroeien op ≥ 200 °C) geeft methode combo; de schroeitemperatuur is `phase2Temp`. Een kernwaarde wordt nooit BBQ- of fase-2-temperatuur. Fase-2-duur en ombouwtijd blijven leeg.
+- Bijvangst: "BBQ 120 °C" zonder "temperatuur" geeft BBQ-temperatuur 120; "Kerntemperatuur 54 °C" is geen BBQ-temperatuur meer; "80" uit "BBQ 180 °C" is geen fase 2 meer. Het v5.10-voorstel voor `coreAt` blijft een voorstel.
+- Gedrag voor de bestaande testteksten (smoke, v5.1.0, pulled pork- en zalmrecept) is gelijk, behalve de "90" uit "BBQ temperatuur 190 °C" (bugfix). "tot 63 °C kern" zonder het woord "kerntemperatuur" geeft nu 63.
+- Tests: nieuw `tests/v5110-generator.mjs` (Playwright, Chromium + WebKit; 16 teksten, 390 en 320 px); versie overal 5.11.0; publicatiebewaking: release 5.11.0 (geen andere wijziging).
+
 ## v5.10.0 — Vaste fasedoelen per recept (draft-PR, niet gepubliceerd)
 - **Nieuw OPTIONEEL veld `coreAt`** (getal, 0–120 °C) op receptstappen (`recipeSteps[]`), naast de vrije tekst `trigger`; zelfde opslag (`kamado-bereidingsplanner-v1`, `kamado-recipe-book-v1`, `bbq_planner_cookbook_v1`), **geen nieuwe sleutel**. Oude data zonder het veld laadt ongewijzigd; een ongeldige waarde valt weg (`v510CoreAtParse`/`v510CoreAtClean`/`v510CoreAtField`, ook bij laden, import en bibliotheek).
 - Standaardrecepten: Ribeye 500 g krijgt receptstappen (afgeleid van de bestaande tekst) met `coreAt` 47 (opstoken/schroeien; midden van "circa 46–48 °C", AANNAME) en 54 (eindkern); Pulled pork op brood 70 (saus) en 88 (malsheid testen). Zalm en overige standaardrecepten: geen `coreAt`.

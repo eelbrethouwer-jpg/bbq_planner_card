@@ -59,6 +59,16 @@ const CASES=[
    'Steak\nBereiding: Schroei direct op 250 °C. Gaar daarna indirect op 150 °C tot 54 °C kern.',{core:'54',method:'directindirect'}],
   ['pulled pork met verhoging naar 160 °C is geen reverse sear',
    'Pulled pork\nBereiding: Gaar indirect op 120 °C. Verhoog daarna naar 160 °C tot 92 °C kern.',{core:'92',method:'indirect'}],
+  ['reverse sear zonder label (review): kern NA de schroeizin is de eindkern, 48 is het opstookdoel',
+   'Ribeye\nBereiding: Zet de kamado indirect op 110 °C. Gaar tot 48 °C in de kern. Verhoog de temperatuur naar 260 °C en schroei 1 minuut per kant. Haal van de BBQ bij 54 °C kern. Rust 10 minuten.',{core:'54',method:'combo',phase2Temp:'260',grill:'110',rest:'10',suggest:48}],
+  ['reverse sear: eindkern-label na het opstookdoel',
+   'Ribeye\nBereiding: Zet de kamado indirect op 110 °C. Gaar tot 48 °C in de kern. Verhoog de temperatuur naar 260 °C en schroei kort.\nEindkern 55 °C.',{core:'55',method:'combo',phase2Temp:'260',suggest:48}],
+  ['reverse sear: haal van het rooster bij 52 °C',
+   'Ribeye\nBereiding: Zet de kamado indirect op 110 °C. Gaar tot 46 °C in de kern. Verhoog de temperatuur naar 260 °C en schroei 1 minuut per kant. Haal van het rooster bij 52 °C.',{core:'52',method:'combo',phase2Temp:'260',suggest:46}],
+  ['reverse sear: hoge waarde staat vóór de schroeizin: leeg met controleer',
+   'Ribeye\nBereiding: Zet de kamado indirect op 110 °C. Gaar tot 54 °C in de kern. Verhoog de temperatuur naar 260 °C en schroei 1 minuut per kant. Rust 10 minuten.',{core:'',method:'combo',phase2Temp:'260',evidenceCore:/controleer/}],
+  ['duur: "Rust 60 minuten. Bereidingstijd 600 minuten."',
+   'Pulled pork\nBBQ temperatuur 120 °C indirect. Rust 60 minuten. Bereidingstijd 600 minuten.',{cook:'600',rest:'60'}],
   ['geen temperaturen',
    'Zonder temperaturen\nIngrediënten\n2 kg procureur\nBereiding\nKruid het vlees en gaar langzaam.',{core:'',grill:'',phase2Temp:''}]
 ];
@@ -99,6 +109,7 @@ for(const name of wanted){
       for(const [label,text,exp] of CASES){
         const r=await analyse(page,text);
         for(const [k,v] of Object.entries(exp)){
+          if(k==='suggest'){ok(r.stages.some(x=>x.suggestCoreAt===v)&&r.stages.every(x=>x.coreAt===null),name+' · '+label+': '+v+' is een voorstel voor coreAt, geen coreAt: '+JSON.stringify(r.stages));continue;}
           if(k==='evidenceCore'){ok(v.test(r.evidence.core),name+' · '+label+': evidence.core "'+r.evidence.core+'"');continue;}
           ok(String(r.fields[k])===v,name+' · '+label+': '+k+' = "'+r.fields[k]+'" (verwacht "'+v+'")');
         }

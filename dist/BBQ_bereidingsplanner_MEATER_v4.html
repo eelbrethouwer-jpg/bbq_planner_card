@@ -1890,28 +1890,37 @@ function analyzeRecipeText(raw){
   findB(/\b(?:bbq|kamado)\s*[:=]?\s*(?:op\s+)?\d{2,3}\s*(?:°\s*)?(?:c\b|graden\b)/i);
  const bbq=bbqLine.match(temp);
  const durationLine=find(/(?:bereidingstijd|totale bereiding|bereiding duurt).{0,70}\d+(?:[,.]\d+)?\s*(?:[–-]\s*\d+)?\s*(?:uur|minuten)/i);
- const dm=durationLine.match(/(\d+(?:[,.]\d+)?)\s*[–-]\s*(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i)||
-  durationLine.match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);
+ const durText=durationLine.slice(Math.max(0,durationLine.search(/bereidingstijd|totale bereiding|bereiding duurt/i))),
+  dm=durText.match(/(\d+(?:[,.]\d+)?)\s*[–-]\s*(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i)||
+  durText.match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);
  const dur=dm?(dm.length===4?(Number(dm[1].replace(',','.'))+Number(dm[2].replace(',','.')))/2:Number(dm[1].replace(',','.')))*(dm[dm.length-1].toLowerCase()==='uur'?60:1):'';
- const restLine=find(/(?:rusttijd|laat).{0,80}\d+(?:[,.]\d+)?\s*(?:uur|minuten)/i),rm=restLine.match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);
+ const restLine=find(/(?:rusttijd|\brust\b|laat).{0,80}\d+(?:[,.]\d+)?\s*(?:uur|minuten)/i),rm=restLine.slice(Math.max(0,restLine.search(/rusttijd|\brust\b|laat/i))).match(/(\d+(?:[,.]\d+)?)\s*(uur|minuten)/i);
  const rest=rm?Number(rm[1].replace(',','.'))*(rm[2].toLowerCase()==='uur'?60:1):'';
  const modes=[...source.matchAll(/\b(indirect|direct)\b/gi)].map(m=>m[1].toLowerCase());
  // v5.11: reverse sear (indirect, daarna opstoken en schroeien op hoge temperatuur) = combo; de schroeitemperatuur is fase 2, nooit een kern.
  const firstIndirect=source.search(/\bindirect\b/i),explicitRs=/reverse[\s-]?sear/i.test(source),searCue=/\b(?:reverse[\s-]?sear\w*|(?:dicht)?schroei\w*|sear\w*|opstook\w*|opstoken|stook\w*\s+(?:je\s+|de\s+(?:bbq|kamado|grill)\s+)?op|verhoog\w*)\b/i;
- const hotTemps=[];
+ const hotTemps=[];let cueEnd=-1,cueSentence='';
  for(const sm of blanked.matchAll(/[^.!?\n]+/g)){
   if(!searCue.test(sm[0])||(!explicitRs&&sm.index<firstIndirect))continue;
+  const hotBefore=hotTemps.length;
   for(const tm of sm[0].matchAll(new RegExp(T,'gi'))){
    const v=Number(tm[1]);
    if(v>=180&&v<=450&&v>Number(bbq?.[1]||0)&&!/^\s*(?:in\s+de\s+)?kern/i.test(blanked.slice(sm.index+tm.index+tm[0].length)))hotTemps.push(v);
   }
+  // De eerste opstook-/schroeizin met een hoge temperatuur scheidt het opstookdoel (ervoor) van de eindkern (erna).
+  if(cueEnd<0&&hotTemps.length>hotBefore){cueEnd=sm.index+sm[0].length;cueSentence=sm[0].replace(/\s+/g,' ').trim();}
  }
  const searTemp=hotTemps.length?Math.max(...hotTemps):'';
  const reverseSear=explicitRs||(firstIndirect>=0&&searTemp!==''&&searTemp>=200);
  const method=reverseSear?'combo':modes.includes('indirect')&&modes.includes('direct')?(modes[0]==='indirect'?'combo':'directindirect'):(modes[0]||'indirect');
  const coreRank=hits=>{const vals=hits.map(h=>h.v);if(!vals.length)return{v:'',ambiguous:false};const mx=Math.max(...vals);return vals[vals.length-1]===mx?{v:mx,ambiguous:false}:{v:'',ambiguous:true};};
  const labelled=coreHits.filter(h=>h.label),finals=labelled.filter(h=>h.final);
- const coreRes=coreRank(finals.length?finals:labelled.length?labelled:coreHits.filter(h=>!(reverseSear&&h.trigger)));
+ const afterCue=reverseSear&&cueEnd>=0,pool=afterCue?coreHits.filter(h=>h.pos>=cueEnd):coreHits.filter(h=>!(reverseSear&&h.trigger));
+ // Na de opstookzin: "haal van de BBQ/het rooster bij NN °C" (zonder het woord kern) is ook een eindkern.
+ if(afterCue)for(const m of blanked.slice(cueEnd).matchAll(new RegExp('\\bhaal\\b[^.!?\\n]{0,40}?\\b(?:bbq|rooster|grill|kamado|vuur)\\b[^.!?\\n]{0,15}?\\b(?:bij|op|als)\\s+'+FILL+T,'gi')))if(Number(m[1])<=100)pool.push({v:Number(m[1]),pos:cueEnd+m.index,label:false,final:false,trigger:false});
+ pool.sort((a,b)=>a.pos-b.pos);
+ // Bij reverse sear telt alleen een kernwaarde NA de opstookzin als eindkern; staat er alleen een waarde ervoor, dan blijft het veld leeg (controleer).
+ const coreRes=finals.length||labelled.length?coreRank(finals.length?finals:labelled):afterCue&&!pool.length&&coreHits.length?{v:'',ambiguous:true}:coreRank(pool);
  const core=coreRes.v!==''?[null,String(coreRes.v)]:null;
  const name=(lines.find(l=>l.trim())||'Nieuw recept').trim().replace(/^\s*#+\s*/,'').replace(/\s+in het kort$/i,'').slice(0,150);
  const grateMatch=source.match(/\b(rvs|gietijzer|plancha|bakplaat|pizzasteen)\b/i);
@@ -1929,7 +1938,9 @@ function analyzeRecipeText(raw){
    const m=detail.match(/(?:bij|tot|vanaf)\s*(?:een\s*)?(?:kern(?:temperatuur)?\s*(?:van\s*)?)?(\d{2,3})\s*(?:°\s*)?(?:c\b|graden\b)/i);
    // v5.10: alleen een VOORSTEL voor coreAt, bij "bij/vanaf (ongeveer) NN °C" in een zin met "kern" (niet bij "tot"); de gebruiker bevestigt het in de stap. Nooit automatisch opgeslagen.
    const ms=/kern/i.test(detail)?detail.match(/\b(?:bij|vanaf)\s+(?:een\s+)?(?:kern(?:temperatuur)?\s+(?:van\s+)?)?(?:ongeveer|circa|ca\.|rond)?\s*(\d{2,3})\s*(?:°\s*)?(?:c\b|graden\b)/i):null;
-   const suggest=ms&&Number(ms[1])>=0&&Number(ms[1])<=120?Number(ms[1]):null;
+   let suggest=ms&&Number(ms[1])>=0&&Number(ms[1])<=120?Number(ms[1]):null;
+   // v5.11: bij reverse sear is de laatste kernwaarde vóór/in de opstookzin het opstookdoel: voorstel voor de stap met die zin (nooit automatisch opgeslagen).
+   if(suggest==null&&cueSentence&&detail.includes(cueSentence)){const pre=coreHits.filter(h=>h.pos<cueEnd&&h.v<=120&&detail.includes(String(h.v))).pop();if(pre)suggest=pre.v;}
    stages.push({title:detail.split(/[.!?]/)[0].slice(0,85),trigger:m?'Bij '+m[1]+'°C (controleer context)':/avond tevoren|avond van te voren/i.test(p)?'Avond vooraf':'Op volgorde; tijd onbekend',detail,...(suggest!=null?{suggestCoreAt:suggest}:{})});
    if(stages.length===30)break;
   }

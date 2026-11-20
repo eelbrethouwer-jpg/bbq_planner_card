@@ -82,7 +82,7 @@ try{
     const urgent=await s.text('[data-v5-urgent]');
     ok(/1 urgent conflict/.test(urgent)&&/Ribeye 500 g en Kippenpoten botsen op de grote kamado/.test(urgent),engineName+': urgent conflict bovenaan stap 2: '+urgent);
     ok(/Oplossing: Zet Kippenpoten op de kleine kamado/.test(urgent),engineName+': directe oplossing "Zet Kippenpoten op de kleine kamado"');
-    const order=await s.page.evaluate(()=>{const c=document.querySelector('#v5-root .v5-content');return ['[data-v5-urgent]','.v5-serve-card'].map(q=>[...c.children].indexOf(c.querySelector(q)));});
+    const order=await s.page.evaluate(()=>{const c=document.querySelector('#v5-root .v5-content');return ['[data-v5-urgent]','.v5-serve-card'].map(q=>[...c.children].indexOf([...c.children].find(k=>k.matches(q)||k.querySelector(q))));});
     ok(order[0]>=0&&order[0]<order[1],engineName+': het rode paneel staat boven de rest van stap 2 '+order);
     const red=await s.page.evaluate(()=>{const c=getComputedStyle(document.querySelector('[data-v5-urgent]')).borderTopColor.match(/\d+/g).map(Number);return c;});
     ok(red[0]>150&&red[1]<110&&red[2]<110,engineName+': het paneel is rood '+red);

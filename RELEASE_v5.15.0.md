@@ -1,5 +1,7 @@
 # BBQ Planner v5.15.0 — afgeronde sessies komen vanzelf in je bereidingshistorie
 
+**Status: gepubliceerd via release.yml.** Releaseakkoord van de eigenaar op 20 november 2026 (in de chat met de regisseur: "Merge en publiceer", 19:06).
+
 ## Het probleem
 Na een echte kooksessie rondde je af met "Sessie afronden", maar de sessie stond daarna niet onder "Vorige bereidingen". Die lijst werd alleen gevuld uit reviews, en een review ontstond alleen via het handmatige reviewformulier in de oude kookpagina. "Sessie afronden" bewaarde niets.
 
@@ -18,3 +20,5 @@ Geen nieuwe opslagsleutel en geen nieuw veld. De bereidingen gaan door dezelfde 
 Niet getest op een echte iPhone, in de Home Assistant-app of met een echte MEATER. Het gedrag is getest met een nagebootste klok en een gezaaide opslag in Chromium en WebKit (390 en 320 px). Of de live MEATER-kern bij het afronden werkelijk wordt overgenomen (alleen als de meting nog vers is, maximaal vijf minuten), en of de synchronisatie met je Home Assistant-account de nieuwe items netjes meeneemt, is nog niet in de praktijk gezien.
 
 Projectinformatie: [PROJECT_STATUS.md](https://github.com/eelbrethouwer-jpg/bbq_planner_card/blob/main/PROJECT_STATUS.md).
+
+Publicatie: goedgekeurd door de eigenaar op 2026-11-20

@@ -1,6 +1,6 @@
 # BBQ Planner v5.12.0 — geen pop-up-dialogen meer
 
-**Status: draft-PR, nog niet gemerged en niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel: mergen publiceert niets. Een releaseakkoord van de eigenaar is nodig voordat zo'n regel in een aparte PR komt.
+**Status: gepubliceerd als onderdeel van v5.13.1 (via release.yml).** v5.12.0 (PR #56) is niet apart gepubliceerd; de publicatie staat in RELEASE_v5.13.1.md.
 
 ## Wat verandert er?
 De Home Assistant-app (en een iframe) kan de pop-ups van de browser (`window.confirm`, `window.alert`, `window.prompt`) blokkeren. Dan doet een knop stilletjes niets: de bevestiging geeft "nee" terug en de actie gebeurt nooit. Sinds v5.9.0 gold dat al niet meer voor de v5-schermen; de oudere pagina's Recepten en Meer gebruikten nog pop-ups. Die zijn nu vervangen door een paneel of melding in de pagina:

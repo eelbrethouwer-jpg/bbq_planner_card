@@ -1,6 +1,6 @@
 # BBQ Planner v5.13.0 — meer BBQ Junkie-recepten in de catalogus
 
-**Status: draft-PR, nog niet gemerged en niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel: mergen publiceert niets. Een releaseakkoord van de eigenaar is nodig voordat zo'n regel in een aparte PR komt.
+**Status: gepubliceerd als onderdeel van v5.13.1 (via release.yml).** v5.13.0 (PR #58) is niet apart gepubliceerd; de publicatie staat in RELEASE_v5.13.1.md.
 
 ## Wat verandert er?
 De receptencatalogus onder Recepten (de kaarten "BBQ Junkie") is uitgebreid van 11 naar 23 recepten. Nieuw: rosbief (reverse sear), côte de boeuf (reverse sear), MOINK balls, pork belly burnt ends, butter chicken, Italiaanse gehaktbal-subs, rendang uit de Dutch Oven, Vlaams stoofvlees, pulled pork van Boston butt, Portugese kip piri piri, sticky chicken wings en flat iron steak met chimichurri.

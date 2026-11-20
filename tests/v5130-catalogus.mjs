@@ -1,4 +1,4 @@
-/* v5.13.0: validatie van de BBQ Junkie-receptencatalogus (V48_RECIPES).
+/* v5.13.0 / v5.14.0: validatie van de BBQ Junkie-receptencatalogus (V48_RECIPES).
    Puur Node, geen DOM en geen netwerk: de catalogus wordt uit dist/BBQ_bereidingsplanner_MEATER_v4.html gelezen en
    uitgevoerd. Dit controleert vorm, plausibiliteit en voedselveiligheid van de gegevens, niet of de externe foto's
    of receptpagina's online bereikbaar zijn (daarvoor is geen netwerk in CI). */
@@ -23,7 +23,7 @@ let n = 0;
 const ok = (name, fn) => { fn(); n++; };
 
 ok('aantal en ids', () => {
-  assert.ok(V48_RECIPES.length >= 22, 'catalogus uitgebreid: ' + V48_RECIPES.length);
+  assert.ok(V48_RECIPES.length >= 35, 'catalogus uitgebreid: ' + V48_RECIPES.length);
   assert.deepEqual(V48_RECIPES.map(r => r.id), V48_RECIPES.map((_, i) => i + 1), 'ids lopen door vanaf 1');
   assert.equal(new Set(V48_RECIPES.map(r => r.id)).size, V48_RECIPES.length);
 });
@@ -70,6 +70,17 @@ for (const r of V48_RECIPES) {
     if (r.category === 'varken' && core !== null) assert.ok(core >= 62, 'varken >= 62 °C' + at);
     if (r.category === 'rund' && core !== null) assert.ok(core >= 48, 'rund (heel stuk) >= 48 °C' + at);
     if (/pulled|burnt ends|buikspek/i.test(r.label)) assert.ok(core !== null && core >= 90, 'langzaam gegaard varken >= 90 °C' + at);
+    // v5.14.0: low & slow (brisket, ribs, short ribs) en nieuwe categorieen.
+    if (/brisket|spareribs|short ribs/i.test(r.label)) assert.ok(core !== null && core >= 90 && core <= 100, 'low & slow doel 90-100 °C' + at);
+    if (r.category === 'vis') assert.ok(core === null || core >= 50, 'vis >= 50 °C (bron 52, zie release-notities)' + at);
+    if (r.category === 'lam' && core !== null) assert.ok(core >= 48 && core <= 75, 'lam plausibel (heel vlees)' + at);
+    if (r.category === 'schaaldieren' && core !== null) assert.ok(core >= 60, 'schaaldieren >= 60 °C' + at);
+    if (['groenten', 'vegetarisch', 'dessert'].includes(r.category)) {
+      assert.ok(core === null, 'geen kerndoel bij groenten/vegetarisch/dessert' + at);
+      assert.ok(r.cook <= 120 && r.grill <= 250, 'plausibele tijd en temperatuur' + at);
+    }
+    if (r.category === 'vis' || r.category === 'schaaldieren') assert.ok(r.cook <= 90 && r.grill <= 260, 'vis gaart kort en niet te heet' + at);
+    if (r.category === 'lam' && core !== null) assert.ok(r.method === 'combo' || r.grill <= 250, 'lam: reverse sear of redelijke temperatuur' + at);
   });
   ok('tekstlengte en inhoud' + at, () => {
     for (const k of ['ingredients', 'preparation', 'methodText', 'note']) {
@@ -92,10 +103,31 @@ for (const r of V48_RECIPES) {
     }
   });
 }
-ok('nieuwe recepten van v5.13.0 aanwezig', () => {
+ok('nieuwe recepten van v5.13.0 en v5.14.0 aanwezig', () => {
   const slugs = V48_RECIPES.map(r => r.url.split('/').at(-2));
-  for (const s of ['rosbief-van-de-bbq', 'bbq-klassieker-moink-balls', 'pork-belly-burnt-ends', 'butter-chicken', 'italian-meatball-subs', 'rendang-dutch-oven', 'vlaams-stoofvlees'])
+  for (const s of ['rosbief-van-de-bbq', 'bbq-klassieker-moink-balls', 'pork-belly-burnt-ends', 'butter-chicken', 'italian-meatball-subs', 'rendang-dutch-oven', 'vlaams-stoofvlees',
+    'zalm-van-een-plankje', 'chimichurri-garnalen', 'gevlinderde-kip', 'coca-cola-drumsticks', 'lamsrack-van-de-bbq', 'gerookte-lamsbout', 'texas-style-brisket',
+    'overheerlijk-spareribs-recept', 'short-ribs', 'gepofte-bieten-bbq', 'courgette-bootjes', 'blauwe-bessen-crumble'])
     assert.ok(slugs.includes(s), s);
+});
+ok('de eerste 23 recepten (v5.13.0) staan nog op dezelfde plek; nieuwe ids 24 t/m 35 achteraan', () => {
+  assert.equal(V48_RECIPES[22].url.split('/').at(-2), 'flat-iron-steak-met-charcoal-chimichurri');
+  assert.equal(V48_RECIPES[23].url.split('/').at(-2), 'zalm-van-een-plankje');
+  assert.equal(V48_RECIPES.length, 35);
+});
+ok('v5.14.0 verdeling over categorieen: meer variatie', () => {
+  const by = {};
+  for (const r of V48_RECIPES) by[r.category] = (by[r.category] || 0) + 1;
+  for (const c of ['vis', 'schaaldieren', 'lam', 'groenten', 'vegetarisch', 'dessert']) assert.ok(by[c] >= 1, 'categorie aanwezig: ' + c);
+  assert.ok(by.lam >= 2 && by.gevogelte >= 6 && by.rund >= 8, JSON.stringify(by));
+});
+ok('lam (reverse sear) heeft fase 2 via V513_COMBO; geen lege fase 2', () => {
+  for (const s of ['lamsrack-van-de-bbq', 'gerookte-lamsbout']) {
+    const r = V48_RECIPES.find(x => x.url.includes('/' + s + '/'));
+    const d = v48RecipeData(r);
+    assert.equal(r.method, 'combo');
+    assert.ok(d.phase2Temp >= 190 && d.phase2Temp <= 250 && d.phase2Minutes >= 1 && d.phase2Minutes < r.cook && d.transitionMins >= 0, s);
+  }
 });
 ok('geen automatische import: catalogus wordt alleen via de toevoegen-knop opgeslagen', () => {
   assert.match(html, /data-v48-action="import"/);
@@ -103,4 +135,4 @@ ok('geen automatische import: catalogus wordt alleen via de toevoegen-knop opges
   const before = html.slice(0, html.indexOf('saveLocalRecipe(v48RecipeData('));
   assert.ok(before.lastIndexOf("btn.dataset.v48Action==='import'") > before.lastIndexOf('function v48Init'), 'alleen binnen de import-handler');
 });
-console.log('OK v5.13.0 catalogus: ' + V48_RECIPES.length + ' recepten, ' + n + ' controles');
+console.log('OK v5.14.0 catalogus: ' + V48_RECIPES.length + ' recepten, ' + n + ' controles');

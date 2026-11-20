@@ -31,7 +31,7 @@ const RIBEYE = {Ta: 120, c0: 9.5, target: 54, k: kFor(120, 9.5, 45.5, 40)}; // 9
 const KIP = {Ta: 180, c0: 5, target: 75, k: kFor(180, 5, 75, 55)};          // kippenpoot, 55 min recipe time
 
 caseOf('module: version, defaults and frozen API', () => {
-  assert.equal(ETA_VERSION, '5.13.1');
+  assert.equal(ETA_VERSION, '5.14.0');
   assert.equal(ETA_DEFAULTS.windowMin, 12);
   assert.equal(ETA_DEFAULTS.minSpanMin, 5);
   assert.equal(ETA_DEFAULTS.minPoints, 4);

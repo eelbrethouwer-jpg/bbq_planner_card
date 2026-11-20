@@ -2,6 +2,13 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.14.0 — Catalogus met meer variatie: 12 BBQ Junkie-recepten erbij (draft-PR, niet gepubliceerd)
+- `V48_RECIPES` in `dist/BBQ_bereidingsplanner_MEATER_v4.html` van 23 naar 35 recepten (ids 24-35 achteraan; ids 1-23 ongewijzigd): zalm van een plankje, chimichurri-garnalen, gevlinderde kip, Coca Cola drumsticks, lamsrack (reverse sear), gerookte lamsbout (reverse sear), Texas style brisket, spareribs (3-1-1), short ribs, gepofte bieten, courgette bootjes en blauwe bessen crumble. Alleen feiten + korte eigen samenvatting + link + gelinkte foto (`og:image` van de receptpagina, voldoet aan `validV45Photo`); geen tekstkopie, geen foto-kopie.
+- `V513_COMBO`: fase 2 voor de twee lamsrecepten (200 en 240 °C; duur 15 en 5 min en ombouwtijd 10 min zijn aannames, zie RELEASE). Alleen toegepast bij het bewuste toevoegen.
+- Filters in de catalogus: "Type gerecht" kreeg Lam, Vis, Schaaldieren en Vegetarisch; "Bereidingswijze" kreeg Indirect → direct. Voorheen waren die categorieen alleen onder "Alle typen" te vinden. Geen andere UI-wijziging.
+- Kerntemperaturen: kip 75 (gevlinderde kip: bron 70), zalm 52 (bron; zachter dan 63), lam 54/52 (bron), brisket 93, short ribs 95, spareribs 93; geen kern bij garnalen, bieten, courgette en dessert (bron noemt geen).
+- Geen wijziging van opslag, sleutels, engine of v6. `tests/v5130-catalogus.mjs` uitgebreid (35 recepten, veiligheidsvloer low & slow, vis, lam, schaaldieren, groenten/dessert, verdeling per categorie, fase 2 bij lam, uniek id/slug/foto); `tests/smoke.mjs` en `tests/v501-smoke.mjs`: 23 -> 35, filter gevogelte 4 -> 6 en nieuwe categoriefilters. Versie overal 5.14.0; publicatiebewaking: release 5.14.0.
+
 ## v5.13.1 — Planningsmeldingen werken vanzelf bij (draft-PR, niet gepubliceerd)
 - De meldingen "Je begint later dan gepland" (te laat / start nu), "Voorbereiding al voorbij" en de urgente conflicten van stap 2 (`BBQPlan.lateStart` / `prepOverdue` / `urgentIssues`, v5.7.0) werden alleen bij een render herberekend. Nu volgt `refreshPlanAlerts` (`dist/bbq-v5.js`) de klok terwijl de planner open staat.
 - Aanpak: de bestaande ene 30-seconden-timer roept naast `refreshLiveSchedule` nu ook `refreshPlanAlerts` aan (geen tweede timer; het v5.2.3-contract "één 1-s- en één 30-s-timer" blijft gelden). De meldingen staan in vaste plekken (`<div data-v5-slot="late|overdue|urgent">`); alleen die plek wordt bijgewerkt, en alleen als de nieuwe inhoud verschilt (geen volledige herrender, geen nieuwe opslag, geen berichten).

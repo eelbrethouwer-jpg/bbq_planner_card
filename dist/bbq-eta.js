@@ -1,4 +1,4 @@
-/* BBQ Planner v5.13.1 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen; en planningshulp (BBQPlan).
+/* BBQ Planner v5.14.0 — eigen schattingsmodule (ETA) voor Live, tijdlijn, slim advies en meldingen; en planningshulp (BBQPlan).
    Puur: geen DOM, geen klok, geen opslag, geen netwerk. `now` is altijd een parameter.
    Klassiek script (window.BBQEta), zodat de planner geen module-lader nodig heeft; dezelfde functies
    zijn via de ES-module-ingang in Node testbaar (zie tests/eta-engine.mjs). */
@@ -348,7 +348,7 @@ function estimate(input){
   }
   return out;
 }
-const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.13.1'});
+const api=Object.freeze({estimate,defaults:DEFAULTS,version:'5.14.0'});
 root.BBQEta=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
 

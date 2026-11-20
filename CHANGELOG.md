@@ -2,6 +2,13 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.12.1 — Paneel altijd in beeld (draft-PR, niet gepubliceerd)
+- Reviewbevinding MIDDEL op PR #56: het paneel van v5.12.0 (`v512Dialog`, `.v512-overlay` is `position:fixed`) stond gecentreerd in de iframe-viewport en kon in een hoge kaart-iframe (automatische hoogte, `bbq-child-height-v1`) buiten beeld staan. Nu schuift `v5121Reveal(panel)` het paneel na het openen in beeld, ook op de buitenste pagina.
+- Let op: `panel.scrollIntoView()` zelf doet dit niet, omdat een `position:fixed`-element de buitenste pagina niet meescrolt (aangetoond in Chromium en WebKit). `v5121Reveal` zet daarom een onzichtbare, niet-vaste markering op de plek van het paneel, roept daar `scrollIntoView({block:'center',behavior:'instant'})` op en verwijdert hem direct weer (in try/catch). Focus blijft `preventScroll`.
+- Overige panelen/meldingen (v5.9-v5.12) gecontroleerd: `showNotice`, nieuwe-sessie-, sessie-afronden- en voorbereidingspaneel en `v512FieldError` gebruiken al `scrollIntoView` op een element in de pagina; ongewijzigd. De korte toast is niet aangepast.
+- Alleen UI: geen opslag, sleutels, berichttypen of engine; v5.2.3-contract behouden.
+- Tests: nieuw `tests/v5121-paneel-in-beeld.mjs` (Playwright, Chromium + WebKit, 390 en 320 px; nagebootste HA-kaart met iframe van 3000 px, pagina op `scrollY=0` en onderaan, plus schermhoog iframe; dialogen geblokkeerd; faalt op de v5.12.0-code); in CI-job `mobile-browser`. Versie overal 5.12.1; publicatiebewaking: release 5.12.1.
+
 ## v5.12.0 — Geen pop-up-dialogen meer (draft-PR, niet gepubliceerd)
 - Alle `window.confirm`/`alert`/`prompt` op het gebruikerspad zijn vervangen door een in-pagina-paneel (`v512Dialog`/`v512Confirm` in `dist/BBQ_bereidingsplanner_MEATER_v4.html`, stijl in `dist/bbq-v520.css`): Voorbeeld herstellen, recepten importeren (samenvoegen/vervangen), recept verwijderen, Planning laden en "Kan planning niet laden", Deel de app (leesbaar veld + kopieerknop), boodschappenlijst kopiëren (tekstvak), en "Controleer de eindkerntemperatuur" (melding bij het veld). Alleen de PWA-installatievraag (`prompt.prompt()`) en de losse v6-voorbeeldpagina's (`v6/`, beschermd) blijven.
 - Annuleren (knop, Escape, tik naast het paneel) = niets verandert, opslag byte-gelijk; bevestigen voert dezelfde code uit als voorheen. Geen nieuwe opslag of sleutels.

@@ -55,6 +55,9 @@ async function calculated(page){
     'Apply must be HIDDEN when no production onApply exists');
   return count;
 }
+// Alle wachtcondities hieronder zijn positieve waitFor-condities: ze wachten hoogstens zo lang, een te trage CI-runner (WebKit, twee tabs, 2-s-polling)
+// mislukte eerder op 3,5-10 s. Een echte afwijking blijft een fout, alleen na een ruimere grens.
+const WAIT=30000;
 let checks=0;
 try{
   for(const browserType of [chromium,webkit]){
@@ -78,7 +81,7 @@ try{
         assert.ok(await page.locator('#v5-root').count(),'legacy planner missing');
         const before=await page.evaluate(snapshots);
         await page.goto(previewUrl,{waitUntil:'load'});
-        await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
+        await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:WAIT});
         assert.ok((await page.locator('#bbq6-beta-panel').innerText())
           .includes('Concept apart bewaren'));
         assert.equal(await page.locator('#bbq6-beta-panel .bbq6-dish').count(),2);
@@ -87,7 +90,7 @@ try{
         const count=await calculated(page);
         await page.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
         await page.waitForFunction(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')!==null,
-          null,{timeout:10000});
+          null,{timeout:WAIT});
         const draft=await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1'));
         const obj=JSON.parse(draft);
         assert.equal(obj.version,1);
@@ -116,11 +119,11 @@ try{
           });
           const modified=await page.evaluate(snapshots);
           await page.waitForFunction(()=>document.getElementById('bbq6-beta-status')
-            ?.textContent?.includes('gewijzigd'),null,{timeout:3500});
+            ?.textContent?.includes('gewijzigd'),null,{timeout:WAIT});
           assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0,
             'same-tab stale options must disappear');
           await page.waitForFunction(()=>document.getElementById('bbq6-draft-status')
-            ?.textContent?.includes('verouderd'),null,{timeout:4000});
+            ?.textContent?.includes('verouderd'),null,{timeout:WAIT});
           assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
             draft);
           assert.deepEqual(await page.evaluate(snapshots),modified);
@@ -136,7 +139,7 @@ try{
           page.once('dialog',dialog=>dialog.dismiss());
           await page.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
           await page.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
-            ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:5000});
+            ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:WAIT});
           assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
             draft,'declined overwrite altered existing draft');
 
@@ -148,20 +151,20 @@ try{
             input.dispatchEvent(new Event('input',{bubbles:true}));
           });
           await page.waitForFunction(()=>document.getElementById('bbq6-beta-status')
-            ?.textContent?.includes('gewijzigd'),null,{timeout:10000});
+            ?.textContent?.includes('gewijzigd'),null,{timeout:WAIT});
           assert.equal(await page.locator('#bbq6-beta-panel .bbq6-option').count(),0);
           assert.equal(await page.evaluate(()=>localStorage.getItem('bbq-v6-proposal-draft-v1')),
             draft);
           const changed=await page.evaluate(snapshots);
           assert.equal(JSON.parse(changed.plan).mealTime,'19:00');
-          await Promise.all([page.waitForEvent('load',{timeout:10000}),
+          await Promise.all([page.waitForEvent('load',{timeout:WAIT}),
             page.locator('#bbq6-refresh').click()]);
-          await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:10000});
+          await page.locator('#bbq6-beta-panel .bbq6-title').waitFor({timeout:WAIT});
           await page.waitForFunction(()=>document.getElementById('bbq6-draft-status')
-            ?.textContent?.includes('verouderd'),null,{timeout:10000});
+            ?.textContent?.includes('verouderd'),null,{timeout:WAIT});
           await page.locator('#bbq6-discard-draft').click();
           await page.waitForFunction(()=>
-            localStorage.getItem('bbq-v6-proposal-draft-v1')===null,null,{timeout:10000});
+            localStorage.getItem('bbq-v6-proposal-draft-v1')===null,null,{timeout:WAIT});
           assert.deepEqual(await page.evaluate(snapshots),changed);
           await legacy.close();
           console.log('PASS legacy second-tab invalidation, reload, draft discard '+browserType.name());
@@ -183,7 +186,7 @@ try{
         }
         const page=await context.newPage();
         await page.goto(previewUrl,{waitUntil:'load'});
-        await page.locator('#bbq6-beta-status').waitFor({timeout:10000});
+        await page.locator('#bbq6-beta-status').waitFor({timeout:WAIT});
         const message=await page.locator('#bbq6-beta-status').innerText();
         assert.ok(message.includes(fixture.expected),
           browserType.name()+' '+fixture.id+': '+message);
@@ -222,7 +225,7 @@ try{
       await Promise.all([first,second].map(page=>page.waitForFunction(()=>
         /^Concept (opgeslagen|bewaard|niet opgeslagen)/.test(
           document.querySelector('#bbq6-beta-panel .bbq6-notice')?.textContent||''
-        ),null,{timeout:10000})));
+        ),null,{timeout:WAIT})));
       const firstNotice=await first.locator('#bbq6-beta-panel .bbq6-notice').innerText();
       const secondNotice=await second.locator('#bbq6-beta-panel .bbq6-notice').innerText();
       const isSaved=t=>/^Concept (opgeslagen|bewaard)/.test(t);
@@ -236,7 +239,7 @@ try{
       const loser=isSaved(firstNotice)?second:first;
       await loser.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
       await loser.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
-        ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:10000});
+        ?.textContent?.includes('Vervangen geannuleerd'),null,{timeout:WAIT});
       assert.equal(await loser.evaluate(()=>
         localStorage.getItem('bbq-v6-proposal-draft-v1')),initialDraft,
         'dismiss must preserve original concept');
@@ -245,7 +248,7 @@ try{
       loser.once('dialog',d=>d.accept());
       await loser.locator('#bbq6-beta-panel [data-bbq6-action="save"]').click();
       await loser.waitForFunction(()=>document.querySelector('#bbq6-beta-panel .bbq6-notice')
-        ?.textContent?.match(/^Concept (opgeslagen|bewaard)/),null,{timeout:10000});
+        ?.textContent?.match(/^Concept (opgeslagen|bewaard)/),null,{timeout:WAIT});
       assert.equal(JSON.parse(await loser.evaluate(()=>
         localStorage.getItem('bbq-v6-proposal-draft-v1'))).version,1);
       assert.equal(await loser.evaluate(()=>
@@ -274,7 +277,7 @@ try{
         assert.equal(await page.locator('#bbq6-beta-panel').count(),0);
         const before=await page.evaluate(snapshots);
         const [download]=await Promise.all([
-          page.waitForEvent('download',{timeout:10000}),
+          page.waitForEvent('download',{timeout:WAIT}),
           page.locator('#bbq6-download-emergency').click()
         ]);
         const output=JSON.parse(await readFile(await download.path(),'utf8'));
@@ -287,10 +290,10 @@ try{
           'cancel journal deletion mutated backup/plan');
         page.once('dialog',dialog=>dialog.accept());
         await Promise.all([
-          page.waitForURL(legacyUrl,{timeout:10000}),
+          page.waitForURL(legacyUrl,{timeout:WAIT}),
           page.locator('#bbq6-discard-journal').click()
         ]);
-        await page.locator('#v5-root').waitFor({timeout:10000});
+        await page.locator('#v5-root').waitFor({timeout:WAIT});
         assert.equal(await page.locator('#bbq6-beta-panel').count(),0);
         const after=await page.evaluate(snapshots);
         assert.equal(after.plan,before.plan);

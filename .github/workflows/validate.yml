@@ -87,31 +87,43 @@ jobs:
   mobile-browser:
     # Playwright 1.56.1 ondersteunt ubuntu 26.04 nog niet; pin mobiele browserchecks op 24.04.
     runs-on: ubuntu-24.04
-    # Normaal ~10 min (installatie soms tot ~25 min). Zonder time-out kan een vastgelopen stap uren blijven hangen; faal dan na 45 min.
+    # Normaal ~10-25 min. Elke stap heeft hieronder een eigen time-out, zodat een hang als duidelijke fout
+    # van die stap faalt; deze job-grens is alleen het laatste vangnet.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Installeer browser voor mobiele viewporttest
+      - name: Stel apt in op herhalen en time-outs
+        # Gemeten oorzaak van de trage runs: `playwright install --with-deps` haalde 126 MB uit de apt-mirror van
+        # de runner in 14 min 23 s (146 kB/s); in de runs mislukte/hing de job in die installatiestap, niet in de tests.
+        timeout-minutes: 2
         run: |
-          npm install --no-save playwright@1.56.1
-          npx playwright install --with-deps chromium webkit
+          printf '%s\n' 'Acquire::Retries "5";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' 'Acquire::ftp::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99-ci-retries
+      - name: Installeer Playwright
+        timeout-minutes: 5
+        run: npm install --no-save playwright@1.56.1
+      - name: Bewaar gedownloade browsers tussen runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.56.1-${{ runner.os }}-chromium-webkit
+      - name: Download browsers (Chromium en WebKit)
+        timeout-minutes: 10
+        run: npx playwright install chromium webkit
+      - name: Installeer systeemafhankelijkheden van de browsers (apt, met herpoging)
+        # apt hervat deels gedownloade pakketten; een trage mirror krijgt zo tot 3 pogingen van elk 7 min i.p.v. één onbegrensde.
+        timeout-minutes: 25
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 420 sudo env "PATH=$PATH" npx playwright install-deps chromium webkit; then exit 0; fi
+            echo "::warning title=apt-installatie::poging $attempt van 3 mislukt of te traag (>7 min); opnieuw"
+          done
+          echo "::error title=apt-installatie::systeemafhankelijkheden van de browsers konden na 3 pogingen niet worden geinstalleerd (trage of onbereikbare apt-mirror, geen testfout)"
+          exit 1
       - name: Controleer iPhone-formulierbreedtes (Chromium/WebKit) en HA-iframe
-        run: |
-          node tests/mobile-bounds.mjs
-          node tests/v6-pr3-browser.mjs
-          node tests/v6-pr3-lock-browser.mjs
-          node tests/v6-pr3-real-v5-browser.mjs
-          node tests/v520-mobile-ux.mjs
-          node tests/v550-live-timeline.mjs
-          node tests/v551-panel-fullscreen.mjs
-          node tests/v570-planning-ui.mjs
-          node tests/v580-no-probe-ui.mjs
-          node tests/v590-cleanup.mjs
-          node tests/v5100-fasedoelen.mjs
-          node tests/v5110-generator.mjs
-          node tests/v5120-geen-dialogen.mjs
-          node tests/v5121-paneel-in-beeld.mjs
-          node tests/v5131-planning-live.mjs
+        # Draaier met time-out per test (6 min), procesgroep-kill bij een hang en eenmalige herpoging alleen
+        # voor infrastructuurfouten bij starten/laden (nooit voor assertions). Zie tests/run-browser-suite.mjs.
+        timeout-minutes: 30
+        run: node tests/run-browser-suite.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

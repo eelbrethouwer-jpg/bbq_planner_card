@@ -81,7 +81,8 @@ async function openPlanner(browser,width){
   await context.addInitScript(()=>{window.__dialogCalls=[];window.confirm=(...a)=>{window.__dialogCalls.push('confirm');return true};window.alert=()=>{window.__dialogCalls.push('alert')};window.prompt=()=>{window.__dialogCalls.push('prompt');return null};});
   // Alleen voor de test: een kopie van de planner met een hook die analyzeRecipeText uit de afgesloten functie haalt (de bestanden op schijf blijven ongewijzigd).
   await context.route(/BBQ_bereidingsplanner_MEATER_v4\.html/,async route=>{
-    const res=await route.fetch();let body=await res.text();
+    const res=await route.fetch({maxRetries:3}); // maxRetries: een hergebruikte keep-alive-verbinding naar de lokale testserver kan ECONNRESET geven (eenmalige CI-fout)
+    let body=await res.text();
     const anchor='initControls();renderAll();initLibraryUi();';
     if(!body.includes(anchor))throw new Error('anker voor de testhook ontbreekt');
     await route.fulfill({response:res,body:body.replace(anchor,'window.__t={analyzeRecipeText};'+anchor)});

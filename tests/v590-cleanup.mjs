@@ -50,7 +50,13 @@ async function open(browser,{width=390,seed=false}={}){
   s.count=sel=>page.locator(sel).count();
   s.visible=sel=>page.locator(sel).first().isVisible();
   s.text=sel=>page.locator(sel).first().evaluate(el=>el.innerText.replace(/\s+/g,' ').trim());
-  s.dump=()=>page.evaluate(()=>JSON.stringify(Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)]))));
+  // Byte-vergelijking van de hele opslag. ENIGE uitzondering: de schuifpositie die de app zelf onthoudt (bbq-v5-session-v1 -> view.scroll).
+  // Die wordt 1000 ms na elke scroll geschreven (saveViewSoon, bedoeld om de weergave te herstellen), dus een baseline kan net voor of na die
+  // vertraagde schrijfactie vallen. Dat was de oorzaak van de eenmalige WebKit-fout ("de oude pagina openen en sluiten verandert de opslag niet").
+  // Alle andere sleutels en alle andere velden (ook view.screen en view.legacyTab) blijven byte-gelijk getoetst.
+  s.dump=()=>page.evaluate(([SK])=>{const o=Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)]));
+    if(o[SK]){try{const j=JSON.parse(o[SK]);if(j&&j.view&&typeof j.view==='object'){j.view.scroll='(genegeerd)';o[SK]=JSON.stringify(j);}}catch{}}
+    return JSON.stringify(o);},[SESSION]);
   s.get=k=>page.evaluate(k=>localStorage.getItem(k),k);
   s.screen=()=>page.evaluate(()=>document.querySelector('#v5-root').dataset.screen);
   s.dialogCalls=()=>page.evaluate(()=>window.__dialogCalls.length);

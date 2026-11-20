@@ -66,7 +66,13 @@ async function open(browser,{width=390,clipboard='fail'}={}){
   s.same=async(ref,msg)=>{const d=await s.dump();if(d!==ref){const a=JSON.parse(ref),b=JSON.parse(d);for(const k of new Set([...Object.keys(a),...Object.keys(b)]))if(a[k]!==b[k])console.log('OPSLAG VERSCHIL',k,String(a[k]).slice(0,300),'=>',String(b[k]).slice(0,300));}ok(d===ref,msg);};
   // Als dump, maar zonder de scrollstand van de v5-schil (view.scroll, bestaand gedrag): de veldmelding scrolt zelf het veld in beeld.
   s.dumpData=async()=>{const o=JSON.parse(await s.dump());try{const m=JSON.parse(o[SESSION]);delete m.view;o[SESSION]=JSON.stringify(m)}catch(e){}return JSON.stringify(o)};
-  s.dump=()=>page.evaluate(()=>JSON.stringify(Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)]))));
+  // Byte-vergelijking van de hele opslag. ENIGE uitzondering: de schuifpositie die de app zelf onthoudt (bbq-v5-session-v1 -> view.scroll),
+  // 1000 ms na elke scroll geschreven (saveViewSoon); een baseline kan net voor of na die schrijfactie vallen (zelfde race als in v590, CI-run 44729320950).
+  // Alle andere sleutels en velden blijven byte-gelijk getoetst.
+  s.dump=()=>page.evaluate(()=>{const o=Object.fromEntries(Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)]));
+    const SK='bbq-v5-session-v1';
+    if(o[SK]){try{const j=JSON.parse(o[SK]);if(j&&j.view&&typeof j.view==='object'){j.view.scroll='(genegeerd)';o[SK]=JSON.stringify(j);}}catch{}}
+    return JSON.stringify(o);});
   s.get=k=>page.evaluate(k=>localStorage.getItem(k),k);
   s.json=async k=>JSON.parse(await s.get(k)||'null');
   s.panels=()=>page.locator('.v512-overlay').count();

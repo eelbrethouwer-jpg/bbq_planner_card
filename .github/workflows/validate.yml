@@ -35,6 +35,7 @@ jobs:
           node --check engine/plan.mjs
           node --check sw.js
           node tests/pwa-smoke.mjs
+          node tests/v5130-catalogus.mjs
       - name: Controleer releasefuncties
         run: |
           grep -q 'renderRecipeSteps(c)' dist/BBQ_bereidingsplanner_MEATER_v4.html

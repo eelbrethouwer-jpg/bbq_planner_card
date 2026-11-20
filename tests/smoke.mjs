@@ -430,7 +430,7 @@ try{
   assert.equal(errors.length,0,errors.join('\n'));
   // v4.8: cards from a curated source catalog, opt-in import only.
   assert.ok($('v48-catalog').closest('#v47-recipes'),'catalog belongs in the recipe screen');
-  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,11,'all curated catalog cards rendered');
+  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,23,'all curated catalog cards rendered');
   const first=$('v48-grid').querySelector('.v48-card');
   assert.ok(first.querySelector('.v48-cover img').src.startsWith('https://bbq-junkie.nl/wp-content/uploads/'),'card shows verified source image URL');
   assert.ok(first.querySelector('[data-v48-action="import"]'),'individual import control exists');
@@ -441,11 +441,11 @@ try{
   assert.match($('v48-grid').querySelector('.v48-card .v48-detail').textContent,/BBQ Junkie/,'source attribution in expanded detail');
   assert.ok(!(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')||'[]')).some(r=>r.name==='BBQ Junkie · Texas Style Buikspek'),'catalog browsing does not auto-add recipes');
   $('v48-cat').value='gevogelte';$('v48-cat').dispatchEvent(new window.Event('change',{bubbles:true}));
-  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,1,'filter by meat type');
+  assert.equal($('v48-grid').querySelectorAll('.v48-card').length,4,'filter by meat type');
   assert.match($('v48-grid').textContent,/Hot Honey Chickenwings/);
   $('v48-cat').value='all';$('v48-cat').dispatchEvent(new window.Event('change',{bubbles:true}));
   $('v48-time').value='30';$('v48-time').dispatchEvent(new window.Event('change',{bubbles:true}));
-  assert.ok($('v48-grid').querySelectorAll('.v48-card').length>0&&$('v48-grid').querySelectorAll('.v48-card').length<11,'grill duration filter works');
+  assert.ok($('v48-grid').querySelectorAll('.v48-card').length>0&&$('v48-grid').querySelectorAll('.v48-card').length<23,'grill duration filter works');
   $('v48-time').value='all';$('v48-time').dispatchEvent(new window.Event('change',{bubbles:true}));
   $('v48-search').value='iberico';$('v48-search').dispatchEvent(new window.Event('input',{bubbles:true}));
   assert.equal($('v48-grid').querySelectorAll('.v48-card').length,1,'search term matches one catalog item');

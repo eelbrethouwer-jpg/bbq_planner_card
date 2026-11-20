@@ -2,6 +2,13 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.13.0 — Catalogus uitgebreid met 12 BBQ Junkie-recepten (draft-PR, niet gepubliceerd)
+- `V48_RECIPES` in `dist/BBQ_bereidingsplanner_MEATER_v4.html` van 11 naar 23 recepten (ids 12-23 achteraan; ids 1-11 ongewijzigd): rosbief en côte de boeuf (reverse sear), MOINK balls, pork belly burnt ends, butter chicken, Italiaanse gehaktbal-subs, rendang, Vlaams stoofvlees, pulled pork Boston butt, kip piri piri, sticky chicken wings, flat iron steak. Alleen feiten + korte eigen samenvatting + link + gelinkte foto; geen tekstkopie, geen foto-kopie. Rijindeling van 16 velden ongewijzigd.
+- Foto: een `photoFile` met bestandsextensie wordt als volledige bestandsnaam gebruikt (het adres dat de receptpagina zelf als `og:image` opgeeft); zonder extensie blijft het oude `-recept-500x281.jpg`-patroon. Alle adressen voldoen aan `validV45Photo`.
+- `V513_COMBO`: fase-2-gegevens (220/230 °C, 5 min, 10 min ombouw) voor de twee reverse-sear-recepten, omdat `cleanLibraryRecipe` anders `phase2Temp` op 0 zou zetten. Alleen toegepast bij het bewuste toevoegen; geen automatische import.
+- Kerntemperaturen: kip >= 75 (wings 80), gehakt 72 (bron MOINK: 70), langzaam varken 93; waar de bron geen kern noemt bij kip of gehakt is de veilige waarde ingevuld.
+- Geen wijziging van opslag, sleutels, engine of v6. Nieuwe test `tests/v5130-catalogus.mjs` (puur Node; in CI-job `html-javascript`): unieke id/slug/naam/foto, foto-regex, plausibele tijden en temperaturen, kernveiligheidsvloer per categorie, tekstlengte <= 400, linkformaat, fase 2 bij combo, geen automatische import. `tests/smoke.mjs`: aantallen 11 -> 23 en filter gevogelte 1 -> 4. Versie overal 5.13.0; publicatiebewaking: release 5.13.0.
+
 ## v5.12.1 — Paneel altijd in beeld (draft-PR, niet gepubliceerd)
 - Reviewbevinding MIDDEL op PR #56: het paneel van v5.12.0 (`v512Dialog`, `.v512-overlay` is `position:fixed`) stond gecentreerd in de iframe-viewport en kon in een hoge kaart-iframe (automatische hoogte, `bbq-child-height-v1`) buiten beeld staan. Nu schuift `v5121Reveal(panel)` het paneel na het openen in beeld, ook op de buitenste pagina.
 - Let op: `panel.scrollIntoView()` zelf doet dit niet, omdat een `position:fixed`-element de buitenste pagina niet meescrolt (aangetoond in Chromium en WebKit). `v5121Reveal` zet daarom een onzichtbare, niet-vaste markering op de plek van het paneel, roept daar `scrollIntoView({block:'center',behavior:'instant'})` op en verwijdert hem direct weer (in try/catch). Focus blijft `preventScroll`.

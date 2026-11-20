@@ -1,6 +1,6 @@
 # BBQ Planner v5.14.0 — meer variatie in de BBQ Junkie-catalogus
 
-**Status: draft-PR, nog niet gemerged en niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel: mergen publiceert niets. Een releaseakkoord van de eigenaar is nodig voordat zo'n regel in een aparte PR komt.
+**Status: gepubliceerd via release.yml.** Releaseakkoord van de eigenaar op 20 november 2026 (in de chat met de regisseur: "Publiceren mag ook. Je mag doorgaan tot 15:00 uur", 11:08).
 
 ## Wat verandert er?
 De receptencatalogus onder Recepten (de kaarten "BBQ Junkie") is uitgebreid van 23 naar 35 recepten, nu met meer variatie. Nieuw:
@@ -36,3 +36,5 @@ Geen nieuwe opslagvelden of -sleutels en geen wijziging van opgeslagen gegevens.
 Niet getest op een echte iPhone, in de Home Assistant-app of met een echte MEATER. De foto-adressen komen van de receptpagina's zelf (het afbeeldingsadres dat de pagina zelf opgeeft); of ze vanaf jouw apparaat laden is niet geautomatiseerd gecontroleerd. Als een foto niet laadt, toont de kaart een vlam-pictogram.
 
 Projectinformatie: [PROJECT_STATUS.md](https://github.com/eelbrethouwer-jpg/bbq_planner_card/blob/main/PROJECT_STATUS.md).
+
+Publicatie: goedgekeurd door de eigenaar op 2026-11-20

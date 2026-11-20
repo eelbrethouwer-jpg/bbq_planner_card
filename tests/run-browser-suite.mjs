@@ -34,6 +34,7 @@ const SUITE = [
   'tests/v5120-geen-dialogen.mjs',
   'tests/v5121-paneel-in-beeld.mjs',
   'tests/v5131-planning-live.mjs',
+  'tests/v5150-sessiehistorie.mjs',
 ];
 const DEFAULT_TIMEOUT_S = 360; // langste test duurt ~2-3 min op een CI-runner; ruim 2x marge
 const TIMEOUT_S = {};

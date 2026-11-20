@@ -47,7 +47,7 @@ try{
  select('junkie');
  assert.equal(current(),'junkie');
  assert.ok(!pane('junkie').hidden,'catalog becomes visible');
- assert.equal($('v48-grid').querySelectorAll('.v48-card').length,11,'curated catalog remains intact');
+ assert.equal($('v48-grid').querySelectorAll('.v48-card').length,23,'curated catalog remains intact');
  assert.ok($('v48-grid').querySelector('[data-v48-action="import"]'),'existing opt-in import works');
  const right=d.querySelector('[data-v501-recipe-tab="junkie"]');
  right.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));

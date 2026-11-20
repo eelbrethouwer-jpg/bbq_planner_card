@@ -1,6 +1,6 @@
 # BBQ Planner v5.12.1 — paneel altijd in beeld
 
-**Status: draft-PR, nog niet gemerged en niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel: mergen publiceert niets. Een releaseakkoord van de eigenaar is nodig voordat zo'n regel in een aparte PR komt.
+**Status: gepubliceerd als onderdeel van v5.13.1 (via release.yml).** v5.12.1 (PR #57) is niet apart gepubliceerd; de publicatie staat in RELEASE_v5.13.1.md.
 
 ## Wat verandert er?
 In v5.12.0 kwamen de bevestigingen en kopieerpanelen (Voorbeeld herstellen, Planning laden, Deel de app, Boodschappenlijst kopiëren, recepten importeren en verwijderen) in de pagina in plaats van in een pop-up. Dat paneel stond in het midden van het scherm van de planner. Gebruik je de planner als gewone kaart in een Home Assistant-dashboard en is die kaart veel hoger dan je scherm (de kaart past zijn hoogte aan de inhoud aan), dan stond het paneel midden in de hoge kaart en kon het buiten beeld zijn tot je ernaartoe scrolde. In volledig scherm (panel-view) was het al in orde.

@@ -1,6 +1,6 @@
 # BBQ Planner v5.11.0 — receptgenerator herkent reverse sear
 
-**Status: draft-PR, nog niet gemerged en niet gepubliceerd.** Dit bestand bevat bewust geen goedkeuringsregel: mergen publiceert niets. Een releaseakkoord van de eigenaar is nodig voordat zo'n regel in een aparte PR komt.
+**Status: gepubliceerd als onderdeel van v5.13.1 (via release.yml).** v5.11.0 (PR #55) is niet apart gepubliceerd; de publicatie staat in RELEASE_v5.13.1.md.
 
 ## Wat verandert er?
 Bij "Recept uit tekst maken" koos de generator bij een reverse-sear-tekst (bijvoorbeeld de ribeye: indirect gaar tot circa 46 °C, bij ongeveer 47 °C opstoken naar 250 °C, schroeien tot 54 °C) het verkeerde kerndoel (47 in plaats van 54) en de verkeerde methode (indirect in plaats van combo). Een kerndoel van 47 plant een ribeye te rauw. Dat is verholpen; alleen de tekstanalyse is aangepast.

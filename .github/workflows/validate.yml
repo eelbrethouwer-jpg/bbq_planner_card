@@ -97,7 +97,7 @@ jobs:
         # de runner in 14 min 23 s (146 kB/s); in de runs mislukte/hing de job in die installatiestap, niet in de tests.
         timeout-minutes: 2
         run: |
-          printf '%s\n' 'Acquire::Retries "5";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' 'Acquire::ftp::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99-ci-retries
+          printf '%s\n' 'Acquire::Retries "5";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' 'Acquire::ftp::Timeout "30";' 'DPkg::Lock::Timeout "120";' | sudo tee /etc/apt/apt.conf.d/99-ci-retries
       - name: Installeer Playwright
         timeout-minutes: 5
         run: npm install --no-save playwright@1.56.1
@@ -116,6 +116,9 @@ jobs:
           for attempt in 1 2 3; do
             if timeout 420 sudo env "PATH=$PATH" npx playwright install-deps chromium webkit; then exit 0; fi
             echo "::warning title=apt-installatie::poging $attempt van 3 mislukt of te traag (>7 min); opnieuw"
+            # `timeout` stopt alleen sudo/node; een achtergebleven apt-get houdt anders het dpkg-slot vast (gezien in CI-run 44720808569).
+            sudo pkill -TERM -x apt-get || true; sleep 3; sudo pkill -KILL -x apt-get || true; sudo pkill -KILL -f /usr/lib/apt/methods/ || true; sleep 2
+            sudo dpkg --configure -a || true
           done
           echo "::error title=apt-installatie::systeemafhankelijkheden van de browsers konden na 3 pogingen niet worden geinstalleerd (trage of onbereikbare apt-mirror, geen testfout)"
           exit 1

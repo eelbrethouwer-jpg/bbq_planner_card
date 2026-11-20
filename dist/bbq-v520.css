@@ -235,3 +235,17 @@ body.v5-ready.v5-legacy #v5-back{background:#192d34;color:var(--v5-text);border:
 #v5-root .v5-confirm .v5-row .v5-btn,#v5-root .v5-notice .v5-row .v5-btn{flex:1 1 140px;min-height:44px;white-space:normal}
 #v5-root .v5-notice{border-color:#af804e;background:linear-gradient(145deg,#2d2518,#221c12)}
 #v47-more .v520-advanced .v5-btn{width:100%;justify-content:flex-start;text-align:left;white-space:normal;margin:0 0 8px;min-height:48px}
+
+/* v5.12: bevestigingen, meldingen en kopieervelden in de pagina in plaats van window.confirm/alert/prompt (geblokkeerd in de HA-app/iframe). Alleen weergave. */
+.v512-overlay{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-end;justify-content:center;padding:12px max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:#050b0ecc;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.v512-panel{width:100%;max-width:520px;max-height:calc(100% - 8px);overflow-y:auto;margin:auto;padding:14px;border:1px solid #af804e;border-radius:16px;background:linear-gradient(145deg,#2d2518,#221c12);color:var(--text,#f5f1e8);box-shadow:0 18px 50px #000a;min-width:0}
+.v512-panel h3{margin:0 0 6px;font-size:18px;line-height:1.25;overflow-wrap:anywhere}
+.v512-panel p{font-size:13px;line-height:1.45;margin:6px 0;overflow-wrap:anywhere}
+.v512-label{display:block;font-size:12px;font-weight:700;margin:10px 0 4px;color:#dfe7e6}
+.v512-field{display:block;width:100%;max-width:100%;min-width:0;padding:10px;border:1px solid #6b7f84;border-radius:10px;background:#0f1a1f;color:#f5f1e8;font-size:16px;line-height:1.4;user-select:text;-webkit-user-select:text;resize:none}
+textarea.v512-field{min-height:150px;max-height:40vh;resize:vertical}
+.v512-panel .v512-status{min-height:1.2em;color:#b4c4c6}
+.v512-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.v512-row .btn{flex:1 1 140px;min-height:44px;white-space:normal;justify-content:center}
+.v512-field-error{margin:6px 0 0;padding:8px 10px;border:1px solid #c0554a;border-radius:10px;background:#3a1d1d;color:#ffd9d4;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+input[aria-invalid="true"]{border-color:#c0554a}

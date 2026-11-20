@@ -61,8 +61,8 @@ const eq=(a,b,msg)=>{assert.deepEqual(a,b,msg);checks++;};
 
 async function open(browser,{ha=false,width=390,seed=null}={}){
   const context=await browser.newContext({viewport:{width,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2,timezoneId:'Europe/Amsterdam',locale:'nl-NL',serviceWorkers:'block'});
-  // Dialogen tellen: de v5-schil en de receptbewerker gebruiken er geen voor het fasedoel (alleen de bestaande import vraagt om bevestiging).
-  await context.addInitScript(()=>{window.__dialogCalls=[];const oc=window.confirm;window.confirm=(...a)=>{window.__dialogCalls.push('confirm:'+a[0]);return true};
+  // Dialogen tellen: de v5-schil en de receptbewerker gebruiken er geen voor het fasedoel (sinds v5.12 ook de import niet meer: die vraagt in de pagina, en confirm() geeft hier false).
+  await context.addInitScript(()=>{window.__dialogCalls=[];const oc=window.confirm;window.confirm=(...a)=>{window.__dialogCalls.push('confirm:'+a[0]);return false};
     window.alert=(...a)=>{window.__dialogCalls.push('alert:'+a[0])};window.prompt=(...a)=>{window.__dialogCalls.push('prompt:'+a[0]);return null};});
   if(seed)await context.addInitScript(([k,sk,payload])=>{if(!sessionStorage.getItem('__seeded')){localStorage.setItem(k,JSON.stringify(payload.state));localStorage.setItem(sk,JSON.stringify(payload.session));sessionStorage.setItem('__seeded','1')}},[KEY,SKEY,seed]);
   // Alleen voor de test: een kopie van de planner met een hook die een paar bestaande functies uit de afgesloten functie haalt (de bestanden
@@ -186,6 +186,7 @@ try{
     // Oude back-up (v5.9.0-formaat) en een back-up met coreAt importeren; daarna exporteren.
     const s=await open(browser);
     await s.page.locator('#library-file').setInputFiles(LIB_FIXTURE_PATH);
+    await s.page.locator('.v512-overlay [data-v512="ok"]').click(); // v5.12: bevestiging in de pagina (geen window.confirm)
     await s.page.waitForFunction(()=>document.querySelector('#library-feedback')&&/geïmporteerd|mislukt/.test(document.querySelector('#library-feedback').textContent));
     ok(/2 recepten geïmporteerd/.test(await s.page.locator('#library-feedback').textContent()),engineName+': import van de fixture-back-up: '+await s.page.locator('#library-feedback').textContent());
     const book=JSON.parse(await s.page.evaluate(k=>localStorage.getItem(k),LIB));
@@ -320,6 +321,7 @@ try{
     eq(got,[['Fixture nieuw recept met coreAt',[70,88.5,0,null,null,null,null,null]]],engineName+': HA → planner (cleanBooks + opschoning): coreAt behouden, ongeldig weggevallen');
     // Planner → HA: een oud recept importeren; daarna staan beide recepten in de HA-opslag, het oude zonder coreAt.
     await s.f.locator('#library-file').setInputFiles(LIB_FIXTURE_PATH);
+    await s.f.locator('.v512-overlay [data-v512="ok"]').click(); // v5.12: bevestiging in de pagina (geen window.confirm)
     await s.page.waitForTimeout(600);
     const written=await s.page.evaluate(()=>window.__writes.at(-1));
     ok(!!written,engineName+': de planner schrijft naar de HA-opslag');

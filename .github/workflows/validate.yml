@@ -108,6 +108,7 @@ jobs:
           node tests/v590-cleanup.mjs
           node tests/v5100-fasedoelen.mjs
           node tests/v5110-generator.mjs
+          node tests/v5120-geen-dialogen.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

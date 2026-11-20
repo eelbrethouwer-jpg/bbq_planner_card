@@ -2,6 +2,11 @@
 
 > Actueel gepubliceerd: [v5.6.0](https://github.com/eelbrethouwer-jpg/bbq_planner_card/releases/tag/v5.6.0) (17 november 2026). Een open PR is nog geen gepubliceerde versie.
 
+## v5.12.0 — Geen pop-up-dialogen meer (draft-PR, niet gepubliceerd)
+- Alle `window.confirm`/`alert`/`prompt` op het gebruikerspad zijn vervangen door een in-pagina-paneel (`v512Dialog`/`v512Confirm` in `dist/BBQ_bereidingsplanner_MEATER_v4.html`, stijl in `dist/bbq-v520.css`): Voorbeeld herstellen, recepten importeren (samenvoegen/vervangen), recept verwijderen, Planning laden en "Kan planning niet laden", Deel de app (leesbaar veld + kopieerknop), boodschappenlijst kopiëren (tekstvak), en "Controleer de eindkerntemperatuur" (melding bij het veld). Alleen de PWA-installatievraag (`prompt.prompt()`) en de losse v6-voorbeeldpagina's (`v6/`, beschermd) blijven.
+- Annuleren (knop, Escape, tik naast het paneel) = niets verandert, opslag byte-gelijk; bevestigen voert dezelfde code uit als voorheen. Geen nieuwe opslag of sleutels.
+- Tests: nieuw `tests/v5120-geen-dialogen.mjs` (Playwright, Chromium + WebKit, 390 en 320 px; dialogen geblokkeerd, `page.on('dialog')` mag nooit afgaan); `tests/smoke.mjs` en `tests/v5100-fasedoelen.mjs` tikken nu op het paneel; versie overal 5.12.0; publicatiebewaking: release 5.12.0 (geen andere wijziging).
+
 ## v5.11.0 — Receptgenerator: reverse sear en kerndoel (draft-PR, niet gepubliceerd)
 - Alleen parsinglogica in `analyzeRecipeText` (`dist/BBQ_bereidingsplanner_MEATER_v4.html`); geen nieuwe opslagvelden of -sleutels, geen wijziging van opgeslagen recepten.
 - Kerndoel: een gelabelde kern (`kerntemperatuur`, `eindkern`, `doelkern`, `kern:`) gaat voor op een tussen-waarde; eind-labels gaan voor op `kerntemperatuur`. Zonder label is het doel de hoogste kernwaarde die ook de laatste is, anders blijft het veld leeg met herkomst "meerdere kernwaarden, controleer". Een "bij/vanaf NN °C kern" is bij reverse sear een opstook-trigger, geen doel.

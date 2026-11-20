@@ -27,6 +27,9 @@ const {window}=dom;
 const doc=window.document;
 const $=x=>doc.getElementById(x);
 function click(el){assert.ok(el,'Missing button');el.click()}
+// v5.12: confirmations are in-page panels (no window.confirm); tap a panel button and let the pending promise continue.
+const settle=()=>new Promise(r=>setImmediate(r));
+async function answer(key){const b=doc.querySelector('.v512-overlay [data-v512="'+key+'"]');assert.ok(b,'in-page panel button '+key);b.click();await settle();}
 function count(){return doc.querySelectorAll('#dishes article.dish').length}
 try{
   assert.equal(errors.length,0,'startup JavaScript errors');
@@ -209,7 +212,11 @@ try{
   receipt.checked=true;receipt.dispatchEvent(new window.Event('change',{bubbles:true}));
   assert.ok(Object.values(JSON.parse(window.localStorage.getItem('kamado-bereidingsplanner-v1')).v45ShopDone).some(Boolean),'shopping checked state persists');
 
-  click($('reset'));assert.equal(count(),3,'reset restores default plan');
+  {const stored=window.localStorage.getItem('kamado-bereidingsplanner-v1');
+   click($('reset'));await settle();assert.ok(doc.querySelector('.v512-overlay'),'reset asks in the page (no window.confirm)');
+   await answer('cancel');assert.ok(!doc.querySelector('.v512-overlay'),'cancel closes the reset panel');
+   assert.equal(window.localStorage.getItem('kamado-bereidingsplanner-v1'),stored,'cancelling reset leaves the plan storage byte-equal');}
+  click($('reset'));await settle();await answer('ok');assert.equal(count(),3,'reset restores default plan');
   assert.equal(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length,2,'reviews survive plan reset');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-book-v1')).length>0,'custom recipes survive plan reset');
 
@@ -380,6 +387,7 @@ try{
   click(doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"] [data-library-action="use"]'));
   assert.equal(count(),countBeforeUse+1,'reusable cookbook entry added to planning');
   click(doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"] [data-library-action="delete"]'));
+  await settle();await answer('ok');
   assert.ok(!doc.querySelector('#library-items [data-library-name="Ribeye proefrecept bewerkt"]'),'deleted recipe hidden');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-deletions-v1')).some(x=>x.name==='Ribeye proefrecept bewerkt'),'deletion tombstone persisted');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-reviews-v1')).length===2,'reviews are never erased by cookbook edits');
@@ -397,13 +405,13 @@ try{
   ]};
   $('library-import-mode').value='merge';
   mockFile(backup);importFile.dispatchEvent(new window.Event('change',{bubbles:true}));
-  await new Promise(r=>setImmediate(r));
+  await settle();await answer('ok');
   assert.ok(readLibrary().some(r=>r.name==='Meegenomen van iPhone'),'merged backup cookbook recipe added');
   assert.ok(readLibrary().some(r=>r.name==='BBQ proefgerecht'),'merge keeps older imported recipes');
   assert.ok(readLibrary().find(r=>r.name==='Meegenomen van iPhone').recipeSteps.length===1,'import preserves recipe stages');
   $('library-import-mode').value='replace';
   mockFile(backup);importFile.dispatchEvent(new window.Event('change',{bubbles:true}));
-  await new Promise(r=>setImmediate(r));
+  await settle();await answer('ok');
   assert.deepEqual(Array.from(readLibrary(),r=>r.name),['Meegenomen van iPhone'],'replace removes other personal recipes');
   assert.ok(JSON.parse(window.localStorage.getItem('kamado-recipe-deletions-v1')).some(r=>r.name==='BBQ proefgerecht'),'replace creates deletion sync tombstones');
   assert.ok([...$('preset').options].some(x=>x.value==='Pulled pork op brood'),'built-ins preserved after replacing local cookbook');

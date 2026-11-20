@@ -111,6 +111,7 @@ jobs:
           node tests/v5110-generator.mjs
           node tests/v5120-geen-dialogen.mjs
           node tests/v5121-paneel-in-beeld.mjs
+          node tests/v5131-planning-live.mjs
 
   version-consistency:
     runs-on: ubuntu-latest

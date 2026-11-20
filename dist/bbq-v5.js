@@ -9,6 +9,7 @@
    v5.6.0: one line "Meldingen op je telefoon" in step 2 and on Live (HA card only), with a test notification.
    v5.8.0: without a probe Live shows an honest range ("geschat, geen meting"), a button "Kern invoeren" for a hand thermometer
            (source "handmatig, HH:MM", never LIVE) and one optional kamado temperature; in-page panel, no dialogs.
+   v5.13.1: the messages 'te laat' / 'urgent' / 'voorbereiding al voorbij' follow the clock (refreshPlanAlerts in the single 30-s timer): only their own slot is patched, only when changed, never when hidden or focused.
    v5.9.0: cleanup, no new function: the old cooking page and both old draaiboeken left the normal navigation (still reachable under
            Meer → Geavanceerd), one task list (Live), and "Nieuwe sessie" / "Sessie afronden" (plus the remaining notices of this layer)
            use in-page panels instead of window.confirm/alert; cancelling changes nothing. No storage change.
@@ -186,6 +187,12 @@ window.initBBQV5=function(b){
       issues.map(i=>'<li><strong>'+escape(i.title)+'</strong><br><span>Oplossing: '+escape(i.solution)+'</span></li>').join('')+'</ul>'+
       '<p>Er verandert niets tot je kiest.</p><div class="v5-row">'+action('Toch doorgaan','prep-confirm','subtle v5-emph')+action('Annuleren','prep-cancel','subtle')+'</div></section>';
   }
+  // v5.13.1: vaste plekken voor de tijdsafhankelijke meldingen; de timer (refreshPlanAlerts) schrijft alleen in deze plekken.
+  function slot(name,html){return '<div class="v5-slot" data-v5-slot="'+name+'">'+html+'</div>'}
+  function overduePanel(tasks){
+    let overdue=[];try{overdue=b.getPrepOverdue?b.getPrepOverdue(tasks.filter(t=>t.meta).map(t=>({id:t.id,title:t.title,...t.meta}))):[]}catch(e){}
+    return overdue.length?'<section class="v5-card v5-overdue" role="alert" data-v5-overdue aria-label="Voorbereiding al voorbij"><h3>⏰ Voorbereiding al voorbij</h3>'+overdue.map(o=>'<div class="v5-issue" data-v5-overdue-task="'+escape(o.id)+'"><strong>'+escape(o.title)+'</strong><small>Stond gepland: '+escape(o.when)+'</small><p class="v5-fix"><span>Alternatief:</span> '+escape(o.alternative)+'</p></div>').join('')+'</section>':'';
+  }
   function lateModel(){try{return b.getLateStart?b.getLateStart():null}catch(e){return null}}
   function lateBanner(){
     const late=lateModel();if(!late||!late.late||lateHide)return '';
@@ -225,7 +232,7 @@ window.initBBQV5=function(b){
   function setup(){
     const s=state(),c=b.calculate();
     const alerts=c.alerts||[];
-    return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+(function(){const is=planIssues();return urgentPanel(is)+prepConfirmPanel(is)})()+
+    return heading('Stap 2 van 3','Plan de BBQ-dag','Bepaal wanneer je wilt serveren en verdeel gerechten over beide kamado’s. Bereidingstijden blijven schattingen.')+progress(2)+(function(){const is=planIssues();return slot('urgent',urgentPanel(is))+prepConfirmPanel(is)})()+
     '<div class="v5-card v5-serve-card"><h3>🍽️ Serveermoment</h3><div class="v5-grid v5-serve-fields">'+
       '<label class="v5-field">Datum<span class="v5-input-frame"><input class="v5-input" type="date" data-v5-setting="date" value="'+escape(s.date)+'"></span></label>'+
       '<label class="v5-field">Serveren om<span class="v5-input-frame"><input class="v5-input" type="time" data-v5-setting="mealTime" value="'+escape(s.mealTime)+'"></span></label>'+
@@ -267,9 +274,8 @@ window.initBBQV5=function(b){
   }
   function prep(){
     const tasks=prepTasks(),done=state().v46Done||{},count=tasks.filter(t=>done[t.id]).length;
-    let overdue=[];try{overdue=b.getPrepOverdue?b.getPrepOverdue(tasks.filter(t=>t.meta).map(t=>({id:t.id,title:t.title,...t.meta}))):[]}catch(e){}
-    return heading('Stap 3 van 3','Voorbereiden','Alles wat je alvast kunt doen. Een taak zonder exacte tijd mag je zelf inplannen; de app verzint geen startmoment.')+progress(3)+lateBanner()+
-    (overdue.length?'<section class="v5-card v5-overdue" role="alert" data-v5-overdue aria-label="Voorbereiding al voorbij"><h3>⏰ Voorbereiding al voorbij</h3>'+overdue.map(o=>'<div class="v5-issue" data-v5-overdue-task="'+escape(o.id)+'"><strong>'+escape(o.title)+'</strong><small>Stond gepland: '+escape(o.when)+'</small><p class="v5-fix"><span>Alternatief:</span> '+escape(o.alternative)+'</p></div>').join('')+'</section>':'')+
+    return heading('Stap 3 van 3','Voorbereiden','Alles wat je alvast kunt doen. Een taak zonder exacte tijd mag je zelf inplannen; de app verzint geen startmoment.')+progress(3)+slot('late',lateBanner())+
+    slot('overdue',overduePanel(tasks))+
     '<div class="v5-card"><div class="v5-between"><h3>✅ Voorbereidingslijst</h3><span class="v5-chip neutral">'+count+' / '+tasks.length+' gedaan</span></div>'+
     (tasks.length?checklist(tasks):'<div class="v5-empty">Geen afzonderlijke voorbereidingsstappen vastgelegd. Bekijk het recept voor snij- en voorbereidingsinstructies.</div>')+'</div>'+
     '<div class="v5-card"><h3>🛒 Nog nodig?</h3><p class="v5-muted">Je automatische boodschappenlijst, voorraad en uitgebreide receptinstructies blijven beschikbaar.</p>'+action('Open boodschappenlijst','more')+'</div>'+
@@ -724,6 +730,37 @@ window.initBBQV5=function(b){
       '<h2>'+escape(p.title)+'</h2><p class="v5-hero-detail">'+escape(p.detail)+'</p>'+
       '<div class="v5-hero-actions">'+primary+action('📖 Recept','recipe-in-live')+'</div>';
   }
+  /* v5.13.1: de meldingen "te laat" / "urgent" / "voorbereiding al voorbij" volgen de klok zonder herrender.
+     Alleen de eigen plek (data-v5-slot) wordt bijgewerkt, en alleen als de inhoud verandert. Geen update als het tabblad verborgen is,
+     als de focus in die plek staat (een knop of veld wordt nooit onder je vingers vervangen) of als de gebruiker een bevestiging open heeft
+     (late-ask: het voorstel blijft staan tot bevestigen of annuleren; de nieuwe serveertijd wordt bij het tikken opnieuw berekend). */
+  function refreshPlanAlerts(){
+    if(document.hidden||document.body.classList.contains('v5-legacy'))return;
+    const root=$('v5-root');
+    if(!root||root.dataset.screen!==screen)return;
+    const fill=(name,html)=>{
+      const el=root.querySelector('[data-v5-slot="'+name+'"]');
+      if(!el||el.innerHTML===html)return;
+      const a=document.activeElement;
+      if(a&&a!==document.body&&el.contains(a))return;
+      const doc=document.documentElement,before=doc.scrollHeight,above=el.getBoundingClientRect().top<0;
+      el.innerHTML=html;
+      // Staat de plek boven het zichtbare deel, dan schuift de inhoud niet mee (WebKit kent geen scroll-verankering).
+      if(above&&window.scrollY>0){const d=doc.scrollHeight-before;if(d)window.scrollBy({top:d,left:0,behavior:'instant'})}
+    };
+    try{
+      if(screen==='live'||screen==='prep'){
+        const late=lateModel();
+        if(lateAsk&&late&&late.late&&!late.multi){/* bevestiging open: laat staan */}
+        else{if(!late||!late.late)lateAsk=false;fill('late',lateBanner())}
+      }
+      if(screen==='prep')fill('overdue',overduePanel(prepTasks()));
+      if(screen==='setup'){
+        const is=planIssues();fill('urgent',urgentPanel(is));
+        if(prepAsk&&!is.length){prepAsk=false;const p=root.querySelector('[data-v5-prep-confirm]');if(p&&!p.contains(document.activeElement))p.remove()}
+      }
+    }catch(e){}
+  }
   function refreshLiveSchedule(){
     if(screen!=='live'||document.body.classList.contains('v5-legacy')||document.hidden)return;
     const root=$('v5-root');
@@ -771,7 +808,7 @@ window.initBBQV5=function(b){
     return '<div class="v5-live-bar"><div class="v5-between"><strong>Serveren '+escape(s.mealTime)+' · '+countdown+'</strong><span>'+finished+'/'+all.length+' afgerond</span></div><progress max="'+Math.max(1,all.length)+'" value="'+finished+'" aria-label="Handelingen afgerond"></progress></div>'+
     '<div class="v5-between v5-live-head"><h1 class="v5-h1 v5-live-title">Jouw BBQ in uitvoering</h1>'+
       '<details class="v5-live-info" data-v5-key="live-info"><summary aria-label="Uitleg over tijden en metingen">ⓘ</summary><p>Geplande tijden zijn indicatief; alleen afgevinkt telt als uitgevoerd. Live MEATER-metingen komen alleen via Home Assistant. Een schatting is een indicatie: controleer altijd kern en gaarheid. In de tijdlijn is het stippelkader de planning en het gekleurde blok de verwachting.</p></details></div>'+
-    (tl?'<section class="v5-card v5-tl" data-v5-tl aria-label="Tijdlijn">'+tl+'</section>':'')+heroHtml(model)+lateBanner()+
+    (tl?'<section class="v5-card v5-tl" data-v5-tl aria-label="Tijdlijn">'+tl+'</section>':'')+heroHtml(model)+slot('late',lateBanner())+
     '<div data-v5-notify>'+notifyLine('live')+'</div>'+
     '<div class="v5-dishcards">'+dishes().map(dishCard).join('')+'</div>'+
     '<h2 class="v5-sectionhead" id="v5-all-steps">Volgende handelingen</h2><div class="v5-card v5-next-tasks">'+
@@ -1111,14 +1148,14 @@ window.initBBQV5=function(b){
     manualToggle(id,false);refreshLiveMeater();refreshLiveSchedule();
   });
   root.addEventListener('click',handleClick);nav.addEventListener('click',handleClick);
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render();else syncWakeLock()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&screen==='live'&&!document.body.classList.contains('v5-legacy'))render();else{syncWakeLock();refreshPlanAlerts()}});
   window.addEventListener('bbq-meater-updated',onSensorUpdate);
   window.addEventListener('bbq-notify-updated',refreshNotify);
   window.addEventListener('scroll',saveViewSoon,{passive:true});
   window.addEventListener('pagehide',saveView);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)saveView()});
   window.setInterval(refreshLiveMeater,1000); // display timer only
-  window.setInterval(refreshLiveSchedule,30000); // only refresh countdown and due-state text, never the Live DOM
+  window.setInterval(()=>{refreshLiveSchedule();refreshPlanAlerts()},30000); // één 30-s-timer: tekst van de planning (Live) en de meldingen te laat / urgent / voorbereiding; nooit een volledige herrender
   if(!restoreView())render();
 };
 })();
